@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class StartScreen extends StatefulWidget {
   const StartScreen({super.key});
 
@@ -112,17 +114,21 @@ class _StartScreenState extends State<StartScreen> with TickerProviderStateMixin
                           
                           // Logo and mascot
                           Container(
-                            width: 80,
-                            height: 80,
+                            width: 100,
+                            height: 100,
                             margin: const EdgeInsets.only(bottom: 24),
-                            decoration: const BoxDecoration(
+                            decoration: BoxDecoration(
                               gradient: AppColors.primaryGradient,
                               shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.black.withOpacity(0.2), // viền giống figma
+                                width: 2,
+                              ),
                             ),
-                            child: const Center(
-                              child: Text(
-                                '🐱',
-                                style: TextStyle(fontSize: 32),
+                            child: ClipOval(
+                              child: Image.asset(
+                                'lib/shared/assets/images/LOGO.jpg', // đường dẫn logo của bạn
+                                fit: BoxFit.cover,
                               ),
                             ),
                           ),

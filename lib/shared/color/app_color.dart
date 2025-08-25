@@ -7,8 +7,8 @@ class AppColors {
   static const Color primaryPink = Color(0xFFEC4899);
   
   // Gradient colors từ Figma
-  static const Color gradientStart = Color(0xFFC084FC); // Tím nhạt
-  static const Color gradientMiddle = Color(0xFF8B5CF6); // Tím đậm hơn
+  static const Color gradientStart =  Color(0xFFC084FC); // Tím nhạt
+  static const Color gradientMiddle = Color(0xFFF472B6); // Tím đậm hơn
   static const Color gradientEnd = Color(0xFF60A5FA); // Xanh dương
   
   // Màu nền và text
