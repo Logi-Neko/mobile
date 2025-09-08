@@ -20,7 +20,7 @@ void main() {
 }
 
 class LoginNekoApp extends StatelessWidget {
-  const LoginNekoApp({Key? key}) : super(key: key);
+  const LoginNekoApp({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -79,7 +79,7 @@ class LoginNekoApp extends StatelessWidget {
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           ),
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 0,
           color: AppColors.cardBackground,
           shape: RoundedRectangleBorder(

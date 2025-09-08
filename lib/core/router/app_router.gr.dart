@@ -11,10 +11,16 @@ part of 'app_router.dart';
 
 abstract class _$AppRouter extends RootStackRouter {
   // ignore: unused_element
-  _$AppRouter({super.navigatorKey});
+  _$AppRouter();
 
   @override
   final Map<String, PageFactory> pagesMap = {
+    CustomerAuthRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const CustomerAuthScreen(),
+      );
+    },
     StartRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -22,6 +28,20 @@ abstract class _$AppRouter extends RootStackRouter {
       );
     }
   };
+}
+
+/// generated route for
+/// [CustomerAuthScreen]
+class CustomerAuthRoute extends PageRouteInfo<void> {
+  const CustomerAuthRoute({List<PageRouteInfo>? children})
+      : super(
+          CustomerAuthRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'CustomerAuthRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
 }
 
 /// generated route for
