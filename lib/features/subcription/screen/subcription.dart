@@ -1,0 +1,237 @@
+import 'package:flutter/material.dart';
+import '../widgets/subcription_card.dart';
+
+class SubscriptionScreen extends StatelessWidget {
+  const SubscriptionScreen({Key? key}) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFE691F7),
+              Color(0xFF9C64F7),
+              Color(0xFF4A90E2),
+            ],
+          ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Row(
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.black.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: IconButton(
+                              icon: const Icon(
+                                Icons.arrow_back_ios,
+                                color: Colors.white,
+                                size: 18,
+                              ),
+                              onPressed: () => Navigator.pop(context),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'Quay lại',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Container(
+                            width: 50,
+                            height: 50,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.orange,
+                              image: DecorationImage(
+                                image: AssetImage("lib/shared/assets/images/LOGO.jpg"),
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          const Text(
+                            'LogiNeko',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+
+                      // Premium card
+                      Container(
+                        width: 280,
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [Color(0xFF7B68EE), Color(0xFF4A90E2)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Column(
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            Text(
+                              'LogiNeko Premium',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Text(
+                              'Mở khóa tất cả các cấp độ và tính năng độc quyền',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 14,
+                                height: 1.4,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 20),
+
+                      const Text(
+                        'Tham gia để thấy sự tiến bộ với gói Plus',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          height: 1.4,
+                        ),
+                      ),
+                      const Spacer(),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(width: 24),
+
+                Expanded(
+                  flex: 1,
+                  child: Column(
+                    children: [
+                      const SizedBox(height: 40),
+
+                      const Text(
+                        'Tiết kiệm 25% với gói hàng năm của chúng tôi!',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          height: 1,
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      // Yearly plan
+                      PricingCardWidget(
+                        period: '1 năm',
+                        originalPrice: '2.386.000 đ',
+                        finalPrice: '1.790.000 đ',
+                        discount: '25% OFF',
+                        subPrice: "149.000 đ/tháng"
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Monthly plan
+                      MonthlyPricingCard(),
+                      const SizedBox(height: 24),
+
+                      Container(
+                        width: double.infinity,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xFF4A90E2),
+                              Color(0xFF357ABD),
+                            ],
+                          ),
+                          borderRadius: BorderRadius.circular(25),
+                        ),
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // upgrade
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.transparent,
+                            shadowColor: Colors.transparent,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(25),
+                            ),
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                'Nâng cấp lên gói Plus',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                '👑',
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+
+                      const Text(
+                        'Hủy bất cứ lúc nào. Thanh toán định kỳ',
+                        style: TextStyle(
+                          color: Colors.white60,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
