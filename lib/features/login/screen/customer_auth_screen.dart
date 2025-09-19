@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:auto_route/auto_route.dart';
 import '../../../shared/color/app_color.dart';
 import '../widgets/auth_tab_content.dart';
+import 'package:logi_neko/core/router/app_router.dart';
 
+@RoutePage()
 class CustomerAuthScreen extends StatefulWidget {
   const CustomerAuthScreen({super.key});
 
@@ -283,22 +285,88 @@ class _CustomerAuthScreenState extends State<CustomerAuthScreen>
                             controller: _tabController,
                             children: [
                               // Registration Tab
-                              SingleChildScrollView(
+                              Padding(
                                 padding: EdgeInsets.symmetric(
                                   horizontal: isHorizontal ? 20 : 24,
                                   vertical: isHorizontal ? 16 : 20,
                                 ),
-                                child: RegistrationTabContent(
-                                  formKey: _registrationFormKey,
-                                  usernameController: _regUsernameController,
-                                  passwordController: _regPasswordController,
-                                  emailController: _regEmailController,
-                                  firstNameController: _regFirstNameController,
-                                  lastNameController: _regLastNameController,
-                                  obscurePassword: _regObscurePassword,
-                                  isLoading: _regIsLoading,
-                                  onTogglePassword: _toggleRegPassword,
-                                  onSubmit: _handleRegistration,
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  children: [
+                                    // Icon and title
+                                    Container(
+                                      width: 80,
+                                      height: 80,
+                                      decoration: BoxDecoration(
+                                        gradient: AppColors.primaryGradient,
+                                        shape: BoxShape.circle,
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: AppColors.primaryPurple.withOpacity(0.3),
+                                            blurRadius: 12,
+                                            offset: const Offset(0, 4),
+                                          ),
+                                        ],
+                                      ),
+                                      child: const Icon(
+                                        Icons.person_add_rounded,
+                                        color: Colors.white,
+                                        size: 40,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 24),
+                                    const Text(
+                                      'Tạo tài khoản mới',
+                                      style: TextStyle(
+                                        fontSize: 24,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.textPrimary,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    Text(
+                                      'Đăng ký tài khoản để truy cập\nvào các tính năng học tập',
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontSize: 16,
+                                        color: AppColors.textSecondary,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 32),
+                                    // Registration button
+                                    SizedBox(
+                                      width: double.infinity,
+                                      child: ElevatedButton(
+                                        onPressed: () {
+                                          // context.router.push(const MultiStepRegistrationRoute());
+                                        },
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: AppColors.primaryPurple,
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                          elevation: 2,
+                                        ),
+                                        child: const Row(
+                                          mainAxisAlignment: MainAxisAlignment.center,
+                                          children: [
+                                            Icon(Icons.arrow_forward_rounded),
+                                            SizedBox(width: 8),
+                                            Text(
+                                              'Bắt đầu đăng ký',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
                                 ),
                               ),
                               
