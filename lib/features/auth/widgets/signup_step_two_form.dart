@@ -1,8 +1,11 @@
 // lib/features/auth/widgets/signup_step_two_form.dart
 
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../../../core/config/logger.dart';
 import '../../../shared/color/app_color.dart';
+import '../bloc/auth_bloc.dart';
+import '../dto/signup_request.dart';
 
 class SignUpStepTwoForm extends StatefulWidget {
   final String username;
@@ -31,18 +34,23 @@ class _SignUpStepTwoFormState extends State<SignUpStepTwoForm> {
     super.dispose();
   }
 
+  // Trong hàm _submitRegistration của signup_step_two_form.dart
+
   void _submitRegistration() {
+    logger.i('Submit button clicked!');
     if (_formKey.currentState!.validate()) {
-      final fullName = _fullNameController.text;
-      final password = _passwordController.text;
+      // 1. Tạo một đối tượng SignUpRequest từ dữ liệu đã thu thập
+      final signUpRequest = SignUpRequest(
+        username: widget.username,
+        email: widget.email,
+        fullName: _fullNameController.text,
+        password: _passwordController.text,
+      );
 
-      logger.i('Sẵn sàng gọi API đăng ký với:');
-      logger.i('Username: ${widget.username}');
-      logger.i('Email: ${widget.email}');
-      logger.i('Full Name: $fullName');
-      logger.i('Password: $password');
-
-      // Viết code gọi API của bạn ở đây
+      // 2. Gửi sự kiện đến BLoC với chỉ 1 đối tượng duy nhất
+      context.read<AuthBloc>().add(
+        AuthRegisterSubmitted(request: signUpRequest),
+      );
     }
   }
 

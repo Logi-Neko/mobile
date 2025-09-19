@@ -6,8 +6,8 @@ import 'package:logi_neko/features/login/screen/customer_auth_screen.dart';
 import 'package:auto_route/auto_route.dart';
 
 import '../../features/login/screen/forgot_password_screen.dart';
-import '../../features/register/screens/signup_step_one_screen.dart';
-import '../../features/register/screens/signup_step_two_screen.dart';
+import '../../features/auth/screens/signup_step_one_screen.dart';
+import '../../features/auth/screens/signup_step_two_screen.dart';
 
 part 'app_router.gr.dart';
 
