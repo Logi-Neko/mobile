@@ -39,6 +39,23 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const LoginScreen(),
       );
     },
+    SignUpStepOneRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const SignUpStepOneScreen(),
+      );
+    },
+    SignUpStepTwoRoute.name: (routeData) {
+      final args = routeData.argsAs<SignUpStepTwoRouteArgs>();
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: SignUpStepTwoScreen(
+          key: args.key,
+          username: args.username,
+          email: args.email,
+        ),
+      );
+    },
     StartRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -102,6 +119,63 @@ class LoginRoute extends PageRouteInfo<void> {
   static const String name = 'LoginRoute';
 
   static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [SignUpStepOneScreen]
+class SignUpStepOneRoute extends PageRouteInfo<void> {
+  const SignUpStepOneRoute({List<PageRouteInfo>? children})
+      : super(
+          SignUpStepOneRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'SignUpStepOneRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [SignUpStepTwoScreen]
+class SignUpStepTwoRoute extends PageRouteInfo<SignUpStepTwoRouteArgs> {
+  SignUpStepTwoRoute({
+    Key? key,
+    required String username,
+    required String email,
+    List<PageRouteInfo>? children,
+  }) : super(
+          SignUpStepTwoRoute.name,
+          args: SignUpStepTwoRouteArgs(
+            key: key,
+            username: username,
+            email: email,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'SignUpStepTwoRoute';
+
+  static const PageInfo<SignUpStepTwoRouteArgs> page =
+      PageInfo<SignUpStepTwoRouteArgs>(name);
+}
+
+class SignUpStepTwoRouteArgs {
+  const SignUpStepTwoRouteArgs({
+    this.key,
+    required this.username,
+    required this.email,
+  });
+
+  final Key? key;
+
+  final String username;
+
+  final String email;
+
+  @override
+  String toString() {
+    return 'SignUpStepTwoRouteArgs{key: $key, username: $username, email: $email}';
+  }
 }
 
 /// generated route for

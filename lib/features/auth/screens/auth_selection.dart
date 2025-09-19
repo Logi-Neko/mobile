@@ -116,8 +116,7 @@ class _AuthSelectionScreenState extends State<AuthSelectionScreen>
     HapticFeedback.lightImpact();
 
 
-
-    _showMessage(context, 'Chuyển đến màn hình đăng ký', AppColors.gradientStart);
+    context.router.push(const SignUpStepOneRoute());
   }
 
   void _handleLogin(BuildContext context) {
