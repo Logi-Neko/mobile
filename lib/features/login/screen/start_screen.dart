@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:logi_neko/core/router/app_router.dart';
-
+import 'package:logi_neko/core/config/logger.dart';
 @RoutePage()
 class StartScreen extends StatefulWidget {
   const StartScreen({super.key});
@@ -196,7 +196,8 @@ class _StartScreenState extends State<StartScreen> with TickerProviderStateMixin
                                       height: 48,
                                       child: ElevatedButton(
                                         onPressed: () {
-                                          context.router.push(const CustomerAuthRoute());
+                                           logger.i("Go to registration");
+                                          context.router.push(const AuthSelectionRoute());
                                         },
                                         style: ElevatedButton.styleFrom(
                                           backgroundColor: AppColors.buttonPrimary,

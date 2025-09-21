@@ -25,7 +25,8 @@ class AppColors {
   // Màu card và surface
   static const Color cardBackground = Color(0xFFFFFFFF);
   static const Color surfaceLight = Color(0xFFF1F5F9);
-  
+  static const Color inputBackground = Color(0xFFF1F5F9);
+
   // Màu accent
   static const Color accent = Color(0xFFFF6B6B);
   static const Color success = Color(0xFF10B981);
@@ -33,6 +34,7 @@ class AppColors {
   static const Color error = Color(0xFFEF4444);
   
   // Gradient definitions
+
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
