@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:logi_neko/features/quiz/quizChoice/ui/screen/screen.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
 import '../../bloc/lesson.dart';
 import '../../repository/lesson_repo.dart';
@@ -380,7 +381,7 @@ class _LessonScreenState extends State<LessonScreen>
                     child: ElevatedButton(
                       onPressed: () {
                         Navigator.pop(context);
-                        // TODO: Navigate to lesson detail/video player
+                        _navigateToQuizScreen(lesson);
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.blue,
@@ -404,6 +405,18 @@ class _LessonScreenState extends State<LessonScreen>
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  void _navigateToQuizScreen(Lesson lesson) {
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => QuizChoiceScreen(
+          lessonId: lesson.id,
+          lessonName: lesson.name,
+        ),
       ),
     );
   }
