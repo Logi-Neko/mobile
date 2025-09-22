@@ -156,5 +156,7 @@ class VideoQuestion {
     }
   }
 
-  get validOptions => null;
+  List<String> get validOptions {
+    return options.where((option) => option.isNotEmpty).toList();
+  }
 }

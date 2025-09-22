@@ -100,8 +100,6 @@ class _LessonViewState extends State<LessonView>
                         children: [
                           _buildHeader(state),
                           const SizedBox(height: 16),
-                          _buildTabBar(state),
-                          const SizedBox(height: 8),
                         ],
                       ),
                     ),
@@ -338,10 +336,11 @@ class _LessonViewState extends State<LessonView>
 
   Widget _buildLessonDetailSheet(Lesson lesson) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      width: MediaQuery.of(context).size.width * 0.8,
+      height: MediaQuery.of(context).size.height * 0.8,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         children: [

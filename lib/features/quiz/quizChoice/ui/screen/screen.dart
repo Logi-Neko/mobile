@@ -1,9 +1,11 @@
+// Updated screen.dart - key changes in the BlocConsumer listener
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logi_neko/features/quiz/quizChoice/ui/widgets/answer_button.dart';
 import 'package:logi_neko/features/quiz/quizChoice/ui/widgets/equation_display.dart';
 import 'package:logi_neko/features/quiz/quizChoice/ui/widgets/progress_indicator.dart';
+import 'package:logi_neko/features/quiz/result/ui/screen/result_screen.dart';
 import '../../repository/quiz_repo.dart';
 import '../../bloc/quiz_bloc.dart';
 import '../../dto/quiz.dart';
@@ -90,7 +92,8 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
                   ),
                 );
               } else if (state is QuizCompleted) {
-                _showCompletionDialog();
+                // Navigate to result screen instead of showing dialog
+                _navigateToResultScreen(state);
               }
             },
             builder: (context, state) {
@@ -326,78 +329,38 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
     Future.delayed(Duration(seconds: 2), () {
       if (mounted && context.read<VideoBloc>().canGoNext()) {
         context.read<VideoBloc>().add(NextVideo());
+      } else if (mounted) {
+        // This is the last question, trigger completion
+        context.read<VideoBloc>().add(NextVideo());
       }
     });
   }
 
-  void _showCompletionDialog() {
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          title: Row(
-            children: [
-              Icon(Icons.celebration, color: Colors.orange, size: 28),
-              SizedBox(width: 8),
-              Text('Hoàn thành!'),
-            ],
-          ),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text('Bạn đã hoàn thành tất cả các câu hỏi trong bài học này.'),
-              SizedBox(height: 16),
-              Container(
-                padding: EdgeInsets.all(12),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                  border: Border.all(color: Colors.green.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.check_circle, color: Colors.green, size: 24),
-                    SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Chúc mừng! Bạn đã nắm vững kiến thức.',
-                        style: TextStyle(
-                          color: Colors.green.shade800,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                Navigator.of(context).pop(); // Return to previous screen
-              },
-              child: Text('Hoàn thành'),
-            ),
-            ElevatedButton(
-              onPressed: () {
-                Navigator.of(context).pop(); // Close dialog
-                context.read<VideoBloc>().add(ResetToFirstVideo());
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.blue,
-                foregroundColor: Colors.white,
-              ),
-              child: Text('Làm lại'),
-            ),
-          ],
-        );
-      },
+  void _navigateToResultScreen(QuizCompleted state) {
+    final stats = state.completionStats;
+
+    // Reset orientation to portrait for result screen
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+      DeviceOrientation.landscapeLeft,
+      DeviceOrientation.landscapeRight,
+    ]);
+
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder: (context) => ResultScreen(
+          score: stats['correctAnswers'] as int,
+          total: stats['totalQuestions'] as int,
+          lessonId: widget.lessonId,
+          lessonName: widget.lessonName,
+          submittedAnswers: state.submittedAnswers,
+          videos: state.videos,
+          percentage: stats['percentage'] as double,
+          passed: stats['passed'] as bool,
+        ),
+      ),
     );
   }
 }

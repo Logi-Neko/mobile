@@ -1,5 +1,7 @@
+// Updated quiz_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:logi_neko/features/quiz/result/dto/result.dart';
 import '../repository/quiz_repo.dart';
 import '../dto/quiz.dart';
 
@@ -60,16 +62,34 @@ class VideosLoaded extends VideoState {
   final int currentIndex;
   final VideoData currentVideo;
   final Map<String, int> progress;
+  final Map<int, String> submittedAnswers; // Track submitted answers
 
   VideosLoaded({
     required this.videos,
     required this.currentIndex,
     required this.currentVideo,
     required this.progress,
+    this.submittedAnswers = const {},
   });
 
+  VideosLoaded copyWith({
+    List<VideoData>? videos,
+    int? currentIndex,
+    VideoData? currentVideo,
+    Map<String, int>? progress,
+    Map<int, String>? submittedAnswers,
+  }) {
+    return VideosLoaded(
+      videos: videos ?? this.videos,
+      currentIndex: currentIndex ?? this.currentIndex,
+      currentVideo: currentVideo ?? this.currentVideo,
+      progress: progress ?? this.progress,
+      submittedAnswers: submittedAnswers ?? this.submittedAnswers,
+    );
+  }
+
   @override
-  List<Object?> get props => [videos, currentIndex, currentVideo, progress];
+  List<Object?> get props => [videos, currentIndex, currentVideo, progress, submittedAnswers];
 }
 
 class VideoDetailLoaded extends VideoState {
@@ -87,6 +107,7 @@ class QuestionAnswered extends VideoState {
   final List<VideoData> videos;
   final int currentIndex;
   final Map<String, int> progress;
+  final Map<int, String> submittedAnswers;
 
   QuestionAnswered({
     required this.currentVideo,
@@ -95,23 +116,53 @@ class QuestionAnswered extends VideoState {
     required this.videos,
     required this.currentIndex,
     required this.progress,
+    required this.submittedAnswers,
   });
 
   @override
-  List<Object?> get props => [currentVideo, selectedAnswerIndex, isCorrect, videos, currentIndex, progress];
+  List<Object?> get props => [currentVideo, selectedAnswerIndex, isCorrect, videos, currentIndex, progress, submittedAnswers];
 }
 
 class QuizCompleted extends VideoState {
   final List<VideoData> videos;
-  final Map<String, dynamic> completionStats;
+  final Map<int, String> submittedAnswers;
+  final QuizResultData? resultData;
 
   QuizCompleted({
     required this.videos,
-    required this.completionStats,
+    required this.submittedAnswers,
+    this.resultData,
   });
 
+  // Calculate local results
+  Map<String, dynamic> get completionStats {
+    int correctAnswers = 0;
+    int totalQuestions = videos.length;
+
+    for (int i = 0; i < videos.length; i++) {
+      final video = videos[i];
+      final submittedAnswer = submittedAnswers[video.id];
+      if (submittedAnswer != null) {
+        final correctAnswer = ['A', 'B', 'C', 'D'][video.videoQuestion.correctAnswerIndex];
+        if (submittedAnswer == correctAnswer) {
+          correctAnswers++;
+        }
+      }
+    }
+
+    double percentage = totalQuestions > 0 ? (correctAnswers / totalQuestions) * 100 : 0;
+
+    return {
+      'totalQuestions': totalQuestions,
+      'correctAnswers': correctAnswers,
+      'percentage': percentage,
+      'passed': percentage >= 60, // Assuming 60% is passing
+      'completedAt': DateTime.now().toIso8601String(),
+    };
+  }
+
   @override
-  List<Object?> get props => [videos, completionStats];
+  List<Object?> get props => [videos, submittedAnswers, resultData];
 }
 
 class VideoError extends VideoState {
@@ -149,6 +200,7 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
           currentIndex: 0,
           currentVideo: currentVideo,
           progress: progress,
+          submittedAnswers: {},
         ));
       } else {
         emit(VideoError('No videos found for this lesson'));
@@ -177,20 +229,16 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         final nextVideo = currentState.videos[nextIndex];
         final progress = _calculateProgress(nextIndex, currentState.videos.length);
 
-        emit(VideosLoaded(
-          videos: currentState.videos,
+        emit(currentState.copyWith(
           currentIndex: nextIndex,
           currentVideo: nextVideo,
           progress: progress,
         ));
       } else {
-        // Quiz completed
+        // Quiz completed - emit completion state
         emit(QuizCompleted(
           videos: currentState.videos,
-          completionStats: {
-            'totalVideos': currentState.videos.length,
-            'completedAt': DateTime.now().toIso8601String(),
-          },
+          submittedAnswers: currentState.submittedAnswers,
         ));
       }
     } else if (currentState is QuestionAnswered) {
@@ -205,15 +253,13 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
           currentIndex: nextIndex,
           currentVideo: nextVideo,
           progress: progress,
+          submittedAnswers: currentState.submittedAnswers,
         ));
       } else {
         // Quiz completed
         emit(QuizCompleted(
           videos: currentState.videos,
-          completionStats: {
-            'totalVideos': currentState.videos.length,
-            'completedAt': DateTime.now().toIso8601String(),
-          },
+          submittedAnswers: currentState.submittedAnswers,
         ));
       }
     }
@@ -226,8 +272,7 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
       final previousVideo = currentState.videos[previousIndex];
       final progress = _calculateProgress(previousIndex, currentState.videos.length);
 
-      emit(VideosLoaded(
-        videos: currentState.videos,
+      emit(currentState.copyWith(
         currentIndex: previousIndex,
         currentVideo: previousVideo,
         progress: progress,
@@ -242,6 +287,7 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         currentIndex: previousIndex,
         currentVideo: previousVideo,
         progress: progress,
+        submittedAnswers: currentState.submittedAnswers,
       ));
     }
   }
@@ -253,8 +299,7 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         final targetVideo = currentState.videos[event.index];
         final progress = _calculateProgress(event.index, currentState.videos.length);
 
-        emit(VideosLoaded(
-          videos: currentState.videos,
+        emit(currentState.copyWith(
           currentIndex: event.index,
           currentVideo: targetVideo,
           progress: progress,
@@ -274,14 +319,42 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         currentIndex: 0,
         currentVideo: firstVideo,
         progress: progress,
+        submittedAnswers: {}, // Reset answers
+      ));
+    } else if (currentState is QuizCompleted) {
+      final firstVideo = currentState.videos.first;
+      final progress = _calculateProgress(0, currentState.videos.length);
+
+      emit(VideosLoaded(
+        videos: currentState.videos,
+        currentIndex: 0,
+        currentVideo: firstVideo,
+        progress: progress,
+        submittedAnswers: {}, // Reset answers
       ));
     }
   }
 
-  void _onAnswerQuestion(AnswerQuestion event, Emitter<VideoState> emit) {
+  Future<void> _onAnswerQuestion(AnswerQuestion event, Emitter<VideoState> emit) async {
     final currentState = state;
     if (currentState is VideosLoaded) {
       final isCorrect = event.selectedAnswerIndex == currentState.currentVideo.videoQuestion.correctAnswerIndex;
+      final selectedAnswerLetter = ['A', 'B', 'C', 'D'][event.selectedAnswerIndex];
+
+      // Submit answer to API
+      try {
+        await _videoRepository.submitVideoAnswer(
+          currentState.currentVideo.id,
+          selectedAnswerLetter,
+        );
+      } catch (e) {
+        print('Failed to submit answer: $e');
+        // Continue anyway with local tracking
+      }
+
+      // Update local tracking
+      final updatedAnswers = Map<int, String>.from(currentState.submittedAnswers);
+      updatedAnswers[currentState.currentVideo.id] = selectedAnswerLetter;
 
       emit(QuestionAnswered(
         currentVideo: currentState.currentVideo,
@@ -290,6 +363,7 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         videos: currentState.videos,
         currentIndex: currentState.currentIndex,
         progress: currentState.progress,
+        submittedAnswers: updatedAnswers,
       ));
     }
   }
