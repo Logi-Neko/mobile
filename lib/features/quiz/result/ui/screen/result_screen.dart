@@ -1,4 +1,6 @@
+// result_screen.dart - Back to original simple UI
 import 'package:flutter/material.dart';
+import 'package:logi_neko/features/quiz/quizChoice/dto/quiz.dart';
 import '../widgets/result_header.dart';
 import '../widgets/result_score.dart';
 import '../widgets/result_buttons.dart';
@@ -6,11 +8,23 @@ import '../widgets/result_buttons.dart';
 class ResultScreen extends StatelessWidget {
   final int score;
   final int total;
+  final int? lessonId;
+  final String? lessonName;
+  final Map<int, String>? submittedAnswers;
+  final List<VideoData>? videos;
+  final double? percentage;
+  final bool? passed;
 
   const ResultScreen({
     Key? key,
     required this.score,
     required this.total,
+    this.lessonId,
+    this.lessonName,
+    this.submittedAnswers,
+    this.videos,
+    this.percentage,
+    this.passed,
   }) : super(key: key);
 
   @override
@@ -29,7 +43,10 @@ class ResultScreen extends StatelessWidget {
                   const SizedBox(height: 10),
                   ResultScore(score: score, total: total),
                   const SizedBox(height: 10),
-                  ResultButtons(),
+                  ResultButtons(
+                    onRetry: () => _onRetry(context),
+                    onHome: () => _onHome(context),
+                  ),
                   Container(
                     margin: const EdgeInsets.all(12),
                     padding: const EdgeInsets.all(16),
@@ -61,5 +78,15 @@ class ResultScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  void _onRetry(BuildContext context) {
+    // Navigate back to quiz with reset
+    Navigator.of(context).popUntil((route) => route.isFirst);
+  }
+
+  void _onHome(BuildContext context) {
+    // Navigate to home screen
+    Navigator.of(context).popUntil((route) => route.isFirst);
   }
 }

@@ -1,27 +1,14 @@
-import 'dart:convert';
-import 'package:http/http.dart' as http;
-import '../bloc/quiz.dart';
+import 'package:logi_neko/core/common/apiService.dart';
+import '../dto/quiz.dart';
 
-class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:8081';
+class VideoApi {
+  static Future<ApiResponse<List<VideoData>>> getVideosByLessonId(int lessonId) async {
+    final response = await ApiService.get('/videos', queryParameters: {'lessonId': lessonId});
+    return ApiService.parseListResponse(response, VideoData.fromJson, 'Failed to load videos');
+  }
 
-  static Future<QuizResponse> getVideosByLessonId(int lessonId) async {
-    try {
-      final response = await http.get(
-        Uri.parse('$baseUrl/videos?lessonId=$lessonId'),
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      );
-
-      if (response.statusCode == 200) {
-        final Map<String, dynamic> jsonData = json.decode(response.body);
-        return QuizResponse.fromJson(jsonData);
-      } else {
-        throw Exception('Failed to load videos for lesson $lessonId: ${response.statusCode}');
-      }
-    } catch (e) {
-      throw Exception('Error fetching videos for lesson $lessonId: $e');
-    }
+  static Future<ApiResponse<VideoData>> getVideoById(int id) async {
+    final response = await ApiService.get('/videos/$id');
+    return ApiService.parseObjectResponse(response, VideoData.fromJson, 'Failed to load video');
   }
 }

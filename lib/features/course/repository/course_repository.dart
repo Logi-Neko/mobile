@@ -1,5 +1,5 @@
 import '../api/api.dart';
-import '../bloc/course.dart';
+import '../dto/course.dart';
 
 abstract class CourseRepository {
   Future<List<Course>> getCourses();
@@ -7,12 +7,10 @@ abstract class CourseRepository {
 }
 
 class CourseRepositoryImpl implements CourseRepository {
-  final ApiService _apiService = ApiService();
-
   @override
   Future<List<Course>> getCourses() async {
     try {
-      final response = await ApiService.getCourses();
+      final response = await CourseApi.getCourses();
       return response.data;
     } catch (e) {
       throw RepositoryException('Failed to fetch courses: $e');
@@ -22,7 +20,7 @@ class CourseRepositoryImpl implements CourseRepository {
   @override
   Future<Course> getCourseById(int id) async {
     try {
-      final response = await ApiService.getCourseById(id);
+      final response = await CourseApi.getCourseById(id);
       return response.data;
     } catch (e) {
       throw RepositoryException('Failed to fetch course with id $id: $e');

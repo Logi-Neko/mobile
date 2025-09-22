@@ -170,47 +170,6 @@ class LessonHeaderWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildProgressCircle(double progress) {
-    return Container(
-      width: 60,
-      height: 60,
-      child: Stack(
-        children: [
-          Container(
-            width: 60,
-            height: 60,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-          ),
-          SizedBox(
-            width: 60,
-            height: 60,
-            child: CircularProgressIndicator(
-              value: progress,
-              strokeWidth: 4,
-              backgroundColor: Colors.white.withOpacity(0.2),
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-            ),
-          ),
-          Positioned.fill(
-            child: Center(
-              child: Text(
-                "${(progress * 100).toInt()}%",
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildStatChip({
     required IconData icon,
     required String label,

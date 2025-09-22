@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import '../../bloc/lesson.dart';
+import '../../dto/lesson.dart';
 
 class LessonGridWidget extends StatelessWidget {
   final List<Lesson> lessons;

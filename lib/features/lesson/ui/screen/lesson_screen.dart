@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logi_neko/features/quiz/quizChoice/ui/screen/screen.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
-import '../../bloc/lesson.dart';
+import '../../dto/lesson.dart';
+import '../../bloc/lesson_bloc.dart';
 import '../../repository/lesson_repo.dart';
 import '../widgets/lesson_grid_widget.dart';
 import '../widgets/lesson_header_widget.dart';
 
-class LessonScreen extends StatefulWidget {
+class LessonScreen extends StatelessWidget {
   final int courseId;
   final String courseName;
   final String courseDescription;
@@ -19,61 +21,48 @@ class LessonScreen extends StatefulWidget {
   });
 
   @override
-  State<LessonScreen> createState() => _LessonScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => LessonBloc(LessonRepositoryImpl())..add(LoadLessonsByCourseId(courseId)),
+      child: LessonView(
+        courseId: courseId,
+        courseName: courseName,
+        courseDescription: courseDescription,
+      ),
+    );
+  }
 }
 
-class _LessonScreenState extends State<LessonScreen>
+class LessonView extends StatefulWidget {
+  final int courseId;
+  final String courseName;
+  final String courseDescription;
+
+  const LessonView({
+    super.key,
+    required this.courseId,
+    required this.courseName,
+    required this.courseDescription,
+  });
+
+  @override
+  State<LessonView> createState() => _LessonViewState();
+}
+
+class _LessonViewState extends State<LessonView>
     with SingleTickerProviderStateMixin {
-  final LessonRepository _repository = LessonRepositoryImpl();
-
   late TabController _tabController;
-
-  List<Lesson> _allLessons = [];
-  List<Lesson> _freeLessons = [];
-  List<Lesson> _premiumLessons = [];
-  List<Lesson> _completedLessons = [];
-
-  bool _isLoading = true;
-  String? _error;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 4, vsync: this);
-    _loadLessons();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadLessons() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
-
-      final lessons = await _repository.getLessonsByCourseId(widget.courseId);
-
-      setState(() {
-        _allLessons = lessons.where((lesson) => lesson.isActive).toList();
-        _allLessons.sort((a, b) => a.order.compareTo(b.order));
-
-        _freeLessons = _allLessons.where((lesson) => !lesson.isPremium).toList();
-        _premiumLessons = _allLessons.where((lesson) => lesson.isPremium).toList();
-        _completedLessons = []; // TODO: Filter completed lessons from user progress
-
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
-    }
   }
 
   @override
@@ -85,33 +74,78 @@ class _LessonScreenState extends State<LessonScreen>
           gradient: AppColors.primaryGradient,
         ),
         child: SafeArea(
-          child: NestedScrollView(
-            headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-              return <Widget>[
-                SliverToBoxAdapter(
-                  child: Column(
-                    children: [
-                      LessonHeaderWidget(
-                        courseName: widget.courseName,
-                        courseDescription: widget.courseDescription,
-                        totalLessons: _allLessons.length,
-                        completedLessons: _completedLessons.length,
-                        onBack: () => Navigator.pop(context),
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+          child: BlocConsumer<LessonBloc, LessonState>(
+            listener: (context, state) {
+              if (state is LessonError) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(state.message),
+                    backgroundColor: Colors.red,
+                    action: SnackBarAction(
+                      label: 'Thử lại',
+                      onPressed: () {
+                        context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
+                      },
+                    ),
                   ),
-                ),
-              ];
+                );
+              }
             },
-            body: _buildTabView(),
+            builder: (context, state) {
+              return NestedScrollView(
+                headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+                  return <Widget>[
+                    SliverToBoxAdapter(
+                      child: Column(
+                        children: [
+                          _buildHeader(state),
+                          const SizedBox(height: 16),
+                        ],
+                      ),
+                    ),
+                  ];
+                },
+                body: _buildTabView(state),
+              );
+            },
           ),
         ),
       ),
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildHeader(LessonState state) {
+    int totalLessons = 0;
+    int completedLessons = 0; // TODO: Get from user progress
+
+    if (state is LessonsLoaded) {
+      totalLessons = state.lessons.where((lesson) => lesson.isActive).length;
+    }
+
+    return LessonHeaderWidget(
+      courseName: widget.courseName,
+      courseDescription: widget.courseDescription,
+      totalLessons: totalLessons,
+      completedLessons: completedLessons,
+      onBack: () => Navigator.pop(context),
+    );
+  }
+
+  Widget _buildTabBar(LessonState state) {
+    List<Lesson> allLessons = [];
+    List<Lesson> freeLessons = [];
+    List<Lesson> premiumLessons = [];
+    List<Lesson> completedLessons = [];
+
+    if (state is LessonsLoaded) {
+      allLessons = state.lessons.where((lesson) => lesson.isActive).toList();
+      allLessons.sort((a, b) => a.order.compareTo(b.order));
+
+      freeLessons = allLessons.where((lesson) => !lesson.isPremium).toList();
+      premiumLessons = allLessons.where((lesson) => lesson.isPremium).toList();
+      completedLessons = []; // TODO: Filter completed lessons from user progress
+    }
+
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
@@ -135,7 +169,7 @@ class _LessonScreenState extends State<LessonScreen>
               children: [
                 const Icon(Icons.all_inclusive, size: 16),
                 const SizedBox(width: 6),
-                Text("Tất cả (${_allLessons.length})"),
+                Text("Tất cả (${allLessons.length})"),
               ],
             ),
           ),
@@ -145,7 +179,7 @@ class _LessonScreenState extends State<LessonScreen>
               children: [
                 const Icon(Icons.play_circle_outline, size: 16),
                 const SizedBox(width: 6),
-                Text("Miễn phí (${_freeLessons.length})"),
+                Text("Miễn phí (${freeLessons.length})"),
               ],
             ),
           ),
@@ -155,7 +189,7 @@ class _LessonScreenState extends State<LessonScreen>
               children: [
                 const Icon(Icons.star, size: 16),
                 const SizedBox(width: 6),
-                Text("Premium (${_premiumLessons.length})"),
+                Text("Premium (${premiumLessons.length})"),
               ],
             ),
           ),
@@ -165,7 +199,7 @@ class _LessonScreenState extends State<LessonScreen>
               children: [
                 const Icon(Icons.check_circle, size: 16),
                 const SizedBox(width: 6),
-                Text("Hoàn thành (${_completedLessons.length})"),
+                Text("Hoàn thành (${completedLessons.length})"),
               ],
             ),
           ),
@@ -174,50 +208,72 @@ class _LessonScreenState extends State<LessonScreen>
     );
   }
 
-  Widget _buildTabView() {
+  Widget _buildTabView(LessonState state) {
+    List<Lesson> allLessons = [];
+    List<Lesson> freeLessons = [];
+    List<Lesson> premiumLessons = [];
+    List<Lesson> completedLessons = [];
+
+    if (state is LessonsLoaded) {
+      allLessons = state.lessons.where((lesson) => lesson.isActive).toList();
+      allLessons.sort((a, b) => a.order.compareTo(b.order));
+
+      freeLessons = allLessons.where((lesson) => !lesson.isPremium).toList();
+      premiumLessons = allLessons.where((lesson) => lesson.isPremium).toList();
+      completedLessons = []; // TODO: Filter completed lessons from user progress
+    }
+
     return TabBarView(
       controller: _tabController,
       children: [
         RefreshIndicator(
-          onRefresh: _loadLessons,
+          onRefresh: () async {
+            context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
+          },
           child: LessonGridWidget(
-            lessons: _allLessons,
-            isLoading: _isLoading,
-            error: _error,
-            onRetry: _loadLessons,
+            lessons: allLessons,
+            isLoading: state is LessonLoading,
+            error: state is LessonError ? state.message : null,
+            onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
             onLessonSelected: _onLessonSelected,
             emptyMessage: "Chưa có bài học nào",
           ),
         ),
         RefreshIndicator(
-          onRefresh: _loadLessons,
+          onRefresh: () async {
+            context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
+          },
           child: LessonGridWidget(
-            lessons: _freeLessons,
-            isLoading: _isLoading,
-            error: _error,
-            onRetry: _loadLessons,
+            lessons: freeLessons,
+            isLoading: state is LessonLoading,
+            error: state is LessonError ? state.message : null,
+            onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
             onLessonSelected: _onLessonSelected,
             emptyMessage: "Chưa có bài học miễn phí nào",
           ),
         ),
         RefreshIndicator(
-          onRefresh: _loadLessons,
+          onRefresh: () async {
+            context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
+          },
           child: LessonGridWidget(
-            lessons: _premiumLessons,
-            isLoading: _isLoading,
-            error: _error,
-            onRetry: _loadLessons,
+            lessons: premiumLessons,
+            isLoading: state is LessonLoading,
+            error: state is LessonError ? state.message : null,
+            onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
             onLessonSelected: _onLessonSelected,
             emptyMessage: "Chưa có bài học premium nào",
           ),
         ),
         RefreshIndicator(
-          onRefresh: _loadLessons,
+          onRefresh: () async {
+            context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
+          },
           child: LessonGridWidget(
-            lessons: _completedLessons,
-            isLoading: _isLoading,
-            error: _error,
-            onRetry: _loadLessons,
+            lessons: completedLessons,
+            isLoading: state is LessonLoading,
+            error: state is LessonError ? state.message : null,
+            onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
             onLessonSelected: _onLessonSelected,
             emptyMessage: "Chưa hoàn thành bài học nào",
           ),
@@ -280,10 +336,11 @@ class _LessonScreenState extends State<LessonScreen>
 
   Widget _buildLessonDetailSheet(Lesson lesson) {
     return Container(
-      height: MediaQuery.of(context).size.height * 0.85,
+      width: MediaQuery.of(context).size.width * 0.8,
+      height: MediaQuery.of(context).size.height * 0.8,
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Column(
         children: [
