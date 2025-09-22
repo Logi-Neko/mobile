@@ -1,64 +1,45 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logi_neko/features/lesson/ui/screen/lesson_screen.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
-import '../../bloc/course.dart';
+import '../../bloc/course_bloc.dart';
 import '../../repository/course_repository.dart';
+import '../../dto/course.dart';
 import '../widgets/course_grid_widget.dart';
 
-class MainCoursesScreen extends StatefulWidget {
-  const MainCoursesScreen({super.key});
+class CourseScreen extends StatelessWidget {
+  const CourseScreen({super.key});
 
   @override
-  State<MainCoursesScreen> createState() => _MainCoursesScreenState();
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create: (context) => CourseBloc(CourseRepositoryImpl())..add(LoadCourses()),
+      child: const CourseView(),
+    );
+  }
 }
 
-class _MainCoursesScreenState extends State<MainCoursesScreen>
+class CourseView extends StatefulWidget {
+  const CourseView({super.key});
+
+  @override
+  State<CourseView> createState() => _CourseViewState();
+}
+
+class _CourseViewState extends State<CourseView>
     with SingleTickerProviderStateMixin {
-  final CourseRepository _repository = CourseRepositoryImpl();
-
   late TabController _tabController;
-
-  List<Course> _allCourses = [];
-  List<Course> _freeCourses = [];
-  List<Course> _premiumCourses = [];
-
-  bool _isLoading = true;
-  String? _error;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
-    _loadCourses();
   }
 
   @override
   void dispose() {
     _tabController.dispose();
     super.dispose();
-  }
-
-  Future<void> _loadCourses() async {
-    try {
-      setState(() {
-        _isLoading = true;
-        _error = null;
-      });
-
-      final courses = await _repository.getCourses();
-
-      setState(() {
-        _allCourses = courses.where((course) => course.isActive).toList();
-        _freeCourses = _allCourses.where((course) => !course.isPremium).toList();
-        _premiumCourses = _allCourses.where((course) => course.isPremium).toList();
-        _isLoading = false;
-      });
-    } catch (e) {
-      setState(() {
-        _error = e.toString();
-        _isLoading = false;
-      });
-    }
   }
 
   @override
@@ -74,8 +55,6 @@ class _MainCoursesScreenState extends State<MainCoursesScreen>
             children: [
               _buildHeader(),
               _buildTitle(),
-              const SizedBox(height: 12),
-              // _buildTabBar(),
               const SizedBox(height: 8),
               Expanded(child: _buildTabView()),
             ],
@@ -116,112 +95,260 @@ class _MainCoursesScreenState extends State<MainCoursesScreen>
   }
 
   Widget _buildTitle() {
-    return Column(
-      children: [
-        const Text(
-          "Khóa học",
-          style: TextStyle(
-            color: Colors.white,
-            fontSize: 24,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-        if (!_isLoading && _error == null)
-          Text(
-            "${_allCourses.length} khóa học có sẵn",
-            style: const TextStyle(
-              color: Colors.white70,
-              fontSize: 12,
+    return BlocBuilder<CourseBloc, CourseState>(
+      builder: (context, state) {
+        return Column(
+          children: [
+            const Text(
+              "Khóa học",
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
             ),
-          ),
-      ],
+            if (state is CourseLoaded)
+              Text(
+                "${state.courses.where((course) => course.isActive).length} khóa học có sẵn",
+                style: const TextStyle(
+                  color: Colors.white70,
+                  fontSize: 12,
+                ),
+              ),
+          ],
+        );
+      },
     );
   }
 
   Widget _buildTabBar() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(25),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        indicator: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(25),
-        ),
-        labelColor: Colors.black,
-        unselectedLabelColor: Colors.white,
-        dividerColor: Colors.transparent,
-        tabs: [
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.all_inclusive, size: 18),
-                const SizedBox(width: 8),
-                Text("Tất cả (${_allCourses.length})"),
-              ],
-            ),
+    return BlocBuilder<CourseBloc, CourseState>(
+      builder: (context, state) {
+        final allCourses = state is CourseLoaded
+            ? state.courses.where((course) => course.isActive).toList()
+            : <Course>[];
+        final freeCourses = allCourses.where((course) => !course.isPremium).toList();
+        final premiumCourses = allCourses.where((course) => course.isPremium).toList();
+
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 16),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.2),
+            borderRadius: BorderRadius.circular(25),
           ),
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.free_breakfast, size: 18),
-                const SizedBox(width: 8),
-                Text("Miễn phí (${_freeCourses.length})"),
-              ],
+          child: TabBar(
+            controller: _tabController,
+            indicator: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(25),
             ),
+            labelColor: Colors.black,
+            unselectedLabelColor: Colors.white,
+            dividerColor: Colors.transparent,
+            tabs: [
+              Tab(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.all_inclusive, size: 18),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text("Tất cả (${allCourses.length})"),
+                    ),
+                  ],
+                ),
+              ),
+              Tab(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.free_breakfast, size: 18),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text("Miễn phí (${freeCourses.length})"),
+                    ),
+                  ],
+                ),
+              ),
+              Tab(
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.star, size: 18),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text("Premium (${premiumCourses.length})"),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.star, size: 18),
-                const SizedBox(width: 8),
-                Text("Premium (${_premiumCourses.length})"),
-              ],
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 
   Widget _buildTabView() {
-    return RefreshIndicator(
-      onRefresh: _loadCourses,
-      child: TabBarView(
-        controller: _tabController,
-        children: [
-          CourseGridWidget(
-            courses: _allCourses,
-            isLoading: _isLoading,
-            error: _error,
-            onRetry: _loadCourses,
-            onCourseSelected: _onCourseSelected,
-            emptyMessage: "Chưa có khóa học nào",
-          ),
-          CourseGridWidget(
-            courses: _freeCourses,
-            isLoading: _isLoading,
-            error: _error,
-            onRetry: _loadCourses,
-            onCourseSelected: _onCourseSelected,
-            emptyMessage: "Chưa có khóa học miễn phí nào",
-          ),
-          CourseGridWidget(
-            courses: _premiumCourses,
-            isLoading: _isLoading,
-            error: _error,
-            onRetry: _loadCourses,
-            onCourseSelected: _onCourseSelected,
-            emptyMessage: "Chưa có khóa học premium nào",
-          ),
-        ],
-      ),
+    return BlocConsumer<CourseBloc, CourseState>(
+      listener: (context, state) {
+        if (state is CourseError) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(state.message),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      },
+      builder: (context, state) {
+        if (state is CourseLoading) {
+          return _buildLoadingTabView();
+        }
+
+        if (state is CourseLoaded) {
+          final allCourses = state.courses.where((course) => course.isActive).toList();
+          final freeCourses = allCourses.where((course) => !course.isPremium).toList();
+          final premiumCourses = allCourses.where((course) => course.isPremium).toList();
+
+          return RefreshIndicator(
+            onRefresh: () async {
+              context.read<CourseBloc>().add(LoadCourses());
+            },
+            child: TabBarView(
+              controller: _tabController,
+              children: [
+                CourseGridWidget(
+                  courses: allCourses,
+                  isLoading: false,
+                  error: null,
+                  onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
+                  onCourseSelected: _onCourseSelected,
+                  emptyMessage: "Chưa có khóa học nào",
+                ),
+                CourseGridWidget(
+                  courses: freeCourses,
+                  isLoading: false,
+                  error: null,
+                  onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
+                  onCourseSelected: _onCourseSelected,
+                  emptyMessage: "Chưa có khóa học miễn phí nào",
+                ),
+                CourseGridWidget(
+                  courses: premiumCourses,
+                  isLoading: false,
+                  error: null,
+                  onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
+                  onCourseSelected: _onCourseSelected,
+                  emptyMessage: "Chưa có khóa học premium nào",
+                ),
+              ],
+            ),
+          );
+        }
+
+        if (state is CourseError) {
+          return _buildErrorTabView(state.message);
+        }
+
+        return _buildEmptyTabView();
+      },
+    );
+  }
+
+  Widget _buildLoadingTabView() {
+    return TabBarView(
+      controller: _tabController,
+      children: [
+        CourseGridWidget(
+          courses: const [],
+          isLoading: true,
+          error: null,
+          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
+          onCourseSelected: _onCourseSelected,
+          emptyMessage: "Chưa có khóa học nào",
+        ),
+        CourseGridWidget(
+          courses: const [],
+          isLoading: true,
+          error: null,
+          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
+          onCourseSelected: _onCourseSelected,
+          emptyMessage: "Chưa có khóa học miễn phí nào",
+        ),
+        CourseGridWidget(
+          courses: const [],
+          isLoading: true,
+          error: null,
+          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
+          onCourseSelected: _onCourseSelected,
+          emptyMessage: "Chưa có khóa học premium nào",
+        ),
+      ],
+    );
+  }
+
+  Widget _buildErrorTabView(String error) {
+    return TabBarView(
+      controller: _tabController,
+      children: [
+        CourseGridWidget(
+          courses: const [],
+          isLoading: false,
+          error: error,
+          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
+          onCourseSelected: _onCourseSelected,
+          emptyMessage: "Chưa có khóa học nào",
+        ),
+        CourseGridWidget(
+          courses: const [],
+          isLoading: false,
+          error: error,
+          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
+          onCourseSelected: _onCourseSelected,
+          emptyMessage: "Chưa có khóa học miễn phí nào",
+        ),
+        CourseGridWidget(
+          courses: const [],
+          isLoading: false,
+          error: error,
+          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
+          onCourseSelected: _onCourseSelected,
+          emptyMessage: "Chưa có khóa học premium nào",
+        ),
+      ],
+    );
+  }
+
+  Widget _buildEmptyTabView() {
+    return TabBarView(
+      controller: _tabController,
+      children: [
+        CourseGridWidget(
+          courses: const [],
+          isLoading: false,
+          error: null,
+          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
+          onCourseSelected: _onCourseSelected,
+          emptyMessage: "Chưa có khóa học nào",
+        ),
+        CourseGridWidget(
+          courses: const [],
+          isLoading: false,
+          error: null,
+          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
+          onCourseSelected: _onCourseSelected,
+          emptyMessage: "Chưa có khóa học miễn phí nào",
+        ),
+        CourseGridWidget(
+          courses: const [],
+          isLoading: false,
+          error: null,
+          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
+          onCourseSelected: _onCourseSelected,
+          emptyMessage: "Chưa có khóa học premium nào",
+        ),
+      ],
     );
   }
 

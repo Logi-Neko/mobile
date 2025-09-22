@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
 class ResultButtons extends StatelessWidget {
-  const ResultButtons({super.key});
+  final VoidCallback onRetry;
+  final VoidCallback onHome;
+
+  const ResultButtons({
+    super.key,
+    required this.onRetry,
+    required this.onHome,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -14,7 +21,7 @@ class ResultButtons extends StatelessWidget {
               height: 45,
               margin: const EdgeInsets.only(right: 8),
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: onRetry,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue[600],
                   foregroundColor: Colors.white,
@@ -55,7 +62,7 @@ class ResultButtons extends StatelessWidget {
                 borderRadius: BorderRadius.circular(12),
               ),
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: onHome,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.transparent,
                   shadowColor: Colors.transparent,

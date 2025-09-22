@@ -1,8 +1,9 @@
 // Updated quiz_repo.dart
-import 'package:logi_neko/features/quiz/result/api/api.dart';
+import 'package:logi_neko/features/quiz/quizChoice/api/api.dart';
+import 'package:logi_neko/features/quiz/quizChoice/dto/quiz.dart';
 import 'package:logi_neko/features/quiz/result/dto/result.dart';
 import '../api/api.dart';
-import '../dto/quiz.dart';
+
 
 abstract class VideoRepository {
   Future<List<VideoData>> getVideosByLessonId(int lessonId);
