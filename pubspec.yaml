@@ -20,6 +20,8 @@ dependencies:
   equatable: ^2.0.5
   http: ^1.2.2
   cached_network_image: ^3.3.0
+  dio: ^5.9.0
+  flutter_secure_storage: ^9.2.2
 
 
 
@@ -34,7 +36,6 @@ dev_dependencies:
 flutter:
 
   assets:
+  - .env
   - lib/shared/assets/images/
   uses-material-design: true
-
-

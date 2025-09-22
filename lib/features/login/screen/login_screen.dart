@@ -1,21 +1,63 @@
 import 'package:auto_route/annotations.dart';
 import 'package:flutter/material.dart';
+import 'package:auto_route/auto_route.dart';
 import '../widgets/branding_background.dart';
 import '../widgets/login_form.dart';
+
 @RoutePage()
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    // Không tạo BlocProvider mới, sử dụng AuthBloc từ main.dart
+    return Scaffold(
       body: Stack(
         children: [
-          // Nền gradient toàn màn hình
-          BrandingBackground(),
+          // Nền gradient toàn màn hình (full screen)
+          const BrandingBackground(),
 
-          // Card chứa form đăng nhập
-          LoginFormCard(),
+          // SafeArea chỉ áp dụng cho content
+          SafeArea(
+            child: Stack(
+              children: [
+                // Card chứa form đăng nhập
+                const LoginFormCard(),
+
+                // Button quay lại với thiết kế đẹp hơn
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  child: GestureDetector(
+                    onTap: () => context.router.maybePop(),
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.15),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.3),
+                          width: 1,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.1),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: const Icon(
+                        Icons.arrow_back_ios_new_rounded,
+                        color: Colors.white,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ],
       ),
     );

@@ -10,13 +10,13 @@ class ForgotPasswordScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Scaffold(
+    return Scaffold(
       body: Stack(
         children: [
           // Nền gradient toàn màn hình
-          BrandingBackground(),
+          const BrandingBackground(),
 
-          // Card chứa form quên mật khẩu
+          // Card chứa form quên mật khẩu (loại bỏ const vì đây là StatefulWidget)
           ForgotPasswordFormCard(),
         ],
       ),

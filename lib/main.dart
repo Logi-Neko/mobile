@@ -3,14 +3,14 @@ import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logi_neko/core/router/app_router.dart';
 import 'package:logi_neko/features/auth/repository/auth_repository.dart';
-
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 
 final _appRouter = AppRouter();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+  await dotenv.load(fileName: ".env");
   // Force landscape orientation
   await SystemChrome.setPreferredOrientations([
     DeviceOrientation.landscapeLeft,
