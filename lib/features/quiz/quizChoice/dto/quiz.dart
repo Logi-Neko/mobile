@@ -155,4 +155,6 @@ class VideoQuestion {
         return 0;
     }
   }
+
+  get validOptions => null;
 }
