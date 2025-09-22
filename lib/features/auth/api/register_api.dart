@@ -20,14 +20,22 @@ class AuthApiService {
     logger.i('Status: ${response.statusCode}');
     logger.i('Response: ${response.body}');
 
-
     if (response.statusCode == 200 || response.statusCode == 201) {
-
       return jsonDecode(response.body) as Map<String, dynamic>;
     } else {
       logger.i('Status: ${response.statusCode}');
       final error = jsonDecode(response.body);
       throw Exception('Đăng ký thất bại: ${error['message'] ?? response.body}');
     }
+  }
+
+  Future<Map<String, dynamic>> login(Map<String, dynamic> body) async {
+    final url = Uri.parse("$_baseUrl/login/exchange");
+    final response = await http.post(
+      url,
+      headers: {"Content-Type": "application/json"},
+      body: jsonEncode(body),
+    );
+    return jsonDecode(response.body);
   }
 }

@@ -32,9 +32,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
 
 class AuthRegisterSubmitted extends AuthEvent {
-  // Chỉ chứa 1 thuộc tính
   final SignUpRequest request;
-
   const AuthRegisterSubmitted({required this.request});
 }
 
