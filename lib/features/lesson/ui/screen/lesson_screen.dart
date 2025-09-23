@@ -23,7 +23,8 @@ class LessonScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => LessonBloc(LessonRepositoryImpl())..add(LoadLessonsByCourseId(courseId)),
+      create: (context) => LessonBloc(LessonRepositoryImpl())
+        ..add(LoadLessonsByCourseId(courseId)),
       child: LessonView(
         courseId: courseId,
         courseName: courseName,
@@ -77,18 +78,7 @@ class _LessonViewState extends State<LessonView>
           child: BlocConsumer<LessonBloc, LessonState>(
             listener: (context, state) {
               if (state is LessonError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.red,
-                    action: SnackBarAction(
-                      label: 'Thử lại',
-                      onPressed: () {
-                        context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
-                      },
-                    ),
-                  ),
-                );
+                _showErrorSnackBar(context, state);
               }
             },
             builder: (context, state) {
@@ -131,83 +121,6 @@ class _LessonViewState extends State<LessonView>
     );
   }
 
-  Widget _buildTabBar(LessonState state) {
-    List<Lesson> allLessons = [];
-    List<Lesson> freeLessons = [];
-    List<Lesson> premiumLessons = [];
-    List<Lesson> completedLessons = [];
-
-    if (state is LessonsLoaded) {
-      allLessons = state.lessons.where((lesson) => lesson.isActive).toList();
-      allLessons.sort((a, b) => a.order.compareTo(b.order));
-
-      freeLessons = allLessons.where((lesson) => !lesson.isPremium).toList();
-      premiumLessons = allLessons.where((lesson) => lesson.isPremium).toList();
-      completedLessons = []; // TODO: Filter completed lessons from user progress
-    }
-
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(25),
-      ),
-      child: TabBar(
-        controller: _tabController,
-        indicator: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(25),
-        ),
-        labelColor: Colors.black,
-        unselectedLabelColor: Colors.white,
-        dividerColor: Colors.transparent,
-        isScrollable: true,
-        tabs: [
-          Tab(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.all_inclusive, size: 16),
-                const SizedBox(width: 6),
-                Text("Tất cả (${allLessons.length})"),
-              ],
-            ),
-          ),
-          Tab(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.play_circle_outline, size: 16),
-                const SizedBox(width: 6),
-                Text("Miễn phí (${freeLessons.length})"),
-              ],
-            ),
-          ),
-          Tab(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.star, size: 16),
-                const SizedBox(width: 6),
-                Text("Premium (${premiumLessons.length})"),
-              ],
-            ),
-          ),
-          Tab(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                const Icon(Icons.check_circle, size: 16),
-                const SizedBox(width: 6),
-                Text("Hoàn thành (${completedLessons.length})"),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildTabView(LessonState state) {
     List<Lesson> allLessons = [];
     List<Lesson> freeLessons = [];
@@ -234,6 +147,7 @@ class _LessonViewState extends State<LessonView>
             lessons: allLessons,
             isLoading: state is LessonLoading,
             error: state is LessonError ? state.message : null,
+            errorCode: state is LessonError ? state.errorCode : null, // ✅ THÊM errorCode
             onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
             onLessonSelected: _onLessonSelected,
             emptyMessage: "Chưa có bài học nào",
@@ -247,6 +161,7 @@ class _LessonViewState extends State<LessonView>
             lessons: freeLessons,
             isLoading: state is LessonLoading,
             error: state is LessonError ? state.message : null,
+            errorCode: state is LessonError ? state.errorCode : null, // ✅ THÊM errorCode
             onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
             onLessonSelected: _onLessonSelected,
             emptyMessage: "Chưa có bài học miễn phí nào",
@@ -260,6 +175,7 @@ class _LessonViewState extends State<LessonView>
             lessons: premiumLessons,
             isLoading: state is LessonLoading,
             error: state is LessonError ? state.message : null,
+            errorCode: state is LessonError ? state.errorCode : null, // ✅ THÊM errorCode
             onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
             onLessonSelected: _onLessonSelected,
             emptyMessage: "Chưa có bài học premium nào",
@@ -273,12 +189,66 @@ class _LessonViewState extends State<LessonView>
             lessons: completedLessons,
             isLoading: state is LessonLoading,
             error: state is LessonError ? state.message : null,
+            errorCode: state is LessonError ? state.errorCode : null, // ✅ THÊM errorCode
             onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
             onLessonSelected: _onLessonSelected,
             emptyMessage: "Chưa hoàn thành bài học nào",
           ),
         ),
       ],
+    );
+  }
+
+  void _showErrorSnackBar(BuildContext context, LessonError state) {
+    Color backgroundColor = Colors.red;
+    IconData icon = Icons.error;
+    String? actionLabel;
+    VoidCallback? action;
+
+    if (state.errorCode != null) {
+      switch (state.errorCode!) {
+        case 'NETWORK_ERROR':
+          backgroundColor = Colors.orange;
+          icon = Icons.wifi_off;
+          actionLabel = 'Thử lại';
+          action = () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
+          break;
+        case 'UNAUTHORIZED':
+          backgroundColor = Colors.purple;
+          icon = Icons.lock;
+          actionLabel = 'Đăng nhập';
+          break;
+        case 'TIMEOUT_ERROR':
+          backgroundColor = Colors.amber;
+          icon = Icons.access_time;
+          actionLabel = 'Thử lại';
+          action = () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
+          break;
+        default:
+          actionLabel = 'Thử lại';
+          action = () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
+      }
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            Expanded(child: Text(state.message)),
+          ],
+        ),
+        backgroundColor: backgroundColor,
+        duration: const Duration(seconds: 4),
+        action: actionLabel != null && action != null
+            ? SnackBarAction(
+          label: actionLabel,
+          textColor: Colors.white,
+          onPressed: action,
+        )
+            : null,
+      ),
     );
   }
 

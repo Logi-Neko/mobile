@@ -1,46 +1,22 @@
-import 'dart:convert';
+// lib/core/network/api_service.dart
+
 import 'package:dio/dio.dart';
+import 'package:logi_neko/core/interceptor/auth_interceptor.dart';
+import '../config/logger.dart';
+import '../storage/token_storage.dart';
+import '../exception/exceptions.dart';
+import './ApiResponse.dart';
+import 'package:flutter/foundation.dart';
 
-class ApiResponse<T> {
-  final int status;
-  final String code;
-  final String message;
-  final T data;
-
-  ApiResponse({
-    required this.status,
-    required this.code,
-    required this.message,
-    required this.data,
-  });
-
-  factory ApiResponse.fromJson(Map<String, dynamic> json, T Function(dynamic) fromJsonT) {
-    return ApiResponse<T>(
-      status: json['status'] ?? 0,
-      code: json['code'] ?? '',
-      message: json['message'] ?? '',
-      data: fromJsonT(json['data']),
-    );
-  }
-}
-
-class ApiException implements Exception {
-  final String message;
-  final int statusCode;
-  final dynamic data;
-
-  ApiException(this.message, this.statusCode, {this.data});
-
-  @override
-  String toString() => 'ApiException: $message (Status: $statusCode)';
-}
-
-abstract class ApiService {
+class ApiService {
   static const String baseUrl = 'http://10.0.2.2:8081';
 
   static late Dio _dio;
+  static late TokenStorage _tokenStorage;
 
-  static void initialize() {
+  static Future<void> initialize() async  {
+    _tokenStorage = TokenStorage.instance;
+
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
       connectTimeout: const Duration(seconds: 30),
@@ -56,13 +32,17 @@ abstract class ApiService {
   }
 
   static void _setupInterceptors() {
-    _dio.interceptors.add(
-      InterceptorsWrapper(
-        onError: (error, handler) {
-          handler.next(error);
-        },
-      ),
-    );
+    _dio.interceptors.add(DioErrorInterceptor(dio: _dio));
+
+    // _dio.interceptors.add(AuthInterceptor());
+
+    if (kDebugMode) {
+      _dio.interceptors.add(LogInterceptor(
+        requestBody: true,
+        responseBody: true,
+        logPrint: (obj) => logger.d(obj),
+      ));
+    }
   }
 
   static Dio get dio {
@@ -74,211 +54,404 @@ abstract class ApiService {
     }
   }
 
-  static Future<Response> get(
+  // =================================================================
+  // GENERIC API METHODS WITH EXCEPTION HANDLING
+  // =================================================================
+
+  /// Generic GET method với exception handling
+  static Future<ApiResponse<T>> get<T>(
       String path, {
         Map<String, dynamic>? queryParameters,
         Options? options,
         CancelToken? cancelToken,
+        T Function(dynamic)? fromJson,
       }) async {
-    try {
-      final response = await dio.get(
+    return await ExceptionHelper.handleApiCall<ApiResponse<T>>(() async {
+      final response = await _dio.get(
         path,
         queryParameters: queryParameters,
         options: options,
         cancelToken: cancelToken,
       );
-      return response;
-    } on DioException catch (e) {
-      throw _handleDioError(e);
-    } catch (e) {
-      throw ApiException('Unexpected error: $e', 0);
-    }
+
+      return _parseResponse<T>(response, fromJson);
+    });
   }
 
-  static Future<Response> post(
+  /// Generic POST method với exception handling
+  static Future<ApiResponse<T>> post<T>(
       String path, {
         dynamic data,
         Map<String, dynamic>? queryParameters,
         Options? options,
         CancelToken? cancelToken,
+        T Function(dynamic)? fromJson,
       }) async {
-    try {
-      final response = await dio.post(
+    return await ExceptionHelper.handleApiCall<ApiResponse<T>>(() async {
+      final response = await _dio.post(
         path,
         data: data,
         queryParameters: queryParameters,
         options: options,
         cancelToken: cancelToken,
       );
-      return response;
-    } on DioException catch (e) {
-      throw _handleDioError(e);
-    } catch (e) {
-      throw ApiException('Unexpected error: $e', 0);
-    }
+
+      return _parseResponse<T>(response, fromJson);
+    });
   }
 
-  static Future<Response> put(
+  /// Generic PUT method với exception handling
+  static Future<ApiResponse<T>> put<T>(
       String path, {
         dynamic data,
         Map<String, dynamic>? queryParameters,
         Options? options,
         CancelToken? cancelToken,
+        T Function(dynamic)? fromJson,
       }) async {
-    try {
-      final response = await dio.put(
+    return await ExceptionHelper.handleApiCall<ApiResponse<T>>(() async {
+      final response = await _dio.put(
         path,
         data: data,
         queryParameters: queryParameters,
         options: options,
         cancelToken: cancelToken,
       );
-      return response;
-    } on DioException catch (e) {
-      throw _handleDioError(e);
-    } catch (e) {
-      throw ApiException('Unexpected error: $e', 0);
-    }
+
+      return _parseResponse<T>(response, fromJson);
+    });
   }
 
-  static Future<Response> delete(
+  /// Generic DELETE method với exception handling
+  static Future<ApiResponse<T>> delete<T>(
       String path, {
         dynamic data,
         Map<String, dynamic>? queryParameters,
         Options? options,
         CancelToken? cancelToken,
+        T Function(dynamic)? fromJson,
       }) async {
-    try {
-      final response = await dio.delete(
+    return await ExceptionHelper.handleApiCall<ApiResponse<T>>(() async {
+      final response = await _dio.delete(
         path,
         data: data,
         queryParameters: queryParameters,
         options: options,
         cancelToken: cancelToken,
       );
-      return response;
-    } on DioException catch (e) {
-      throw _handleDioError(e);
-    } catch (e) {
-      throw ApiException('Unexpected error: $e', 0);
-    }
+
+      return _parseResponse<T>(response, fromJson);
+    });
   }
 
-  static Future<Response> patch(
+  /// Generic PATCH method với exception handling
+  static Future<ApiResponse<T>> patch<T>(
       String path, {
         dynamic data,
         Map<String, dynamic>? queryParameters,
         Options? options,
         CancelToken? cancelToken,
+        T Function(dynamic)? fromJson,
       }) async {
-    try {
-      final response = await dio.patch(
+    return await ExceptionHelper.handleApiCall<ApiResponse<T>>(() async {
+      final response = await _dio.patch(
         path,
         data: data,
         queryParameters: queryParameters,
         options: options,
         cancelToken: cancelToken,
       );
-      return response;
-    } on DioException catch (e) {
-      throw _handleDioError(e);
-    } catch (e) {
-      throw ApiException('Unexpected error: $e', 0);
-    }
+
+      return _parseResponse<T>(response, fromJson);
+    });
   }
 
+  // =================================================================
+  // SPECIALIZED RESPONSE PARSERS
+  // =================================================================
 
-  static ApiResponse<List<T>> parseListResponse<T>(
+  /// Parse response cho object đơn lẻ
+  static Future<ApiResponse<T>> getObject<T>(
+      String path, {
+        Map<String, dynamic>? queryParameters,
+        required T Function(Map<String, dynamic>) fromJson,
+        Options? options,
+        CancelToken? cancelToken,
+      }) async {
+    return await get<T>(
+      path,
+      queryParameters: queryParameters,
+      options: options,
+      cancelToken: cancelToken,
+      fromJson: (data) => fromJson(data as Map<String, dynamic>),
+    );
+  }
+
+  /// Parse response cho list objects
+  static Future<ApiResponse<List<T>>> getList<T>(
+      String path, {
+        Map<String, dynamic>? queryParameters,
+        required T Function(Map<String, dynamic>) fromJson,
+        Options? options,
+        CancelToken? cancelToken,
+      }) async {
+    return await get<List<T>>(
+      path,
+      queryParameters: queryParameters,
+      options: options,
+      cancelToken: cancelToken,
+      fromJson: (data) => (data as List)
+          .map((item) => fromJson(item as Map<String, dynamic>))
+          .toList(),
+    );
+  }
+
+  /// Post object và trả về object
+  static Future<ApiResponse<T>> postObject<T>(
+      String path, {
+        dynamic data,
+        Map<String, dynamic>? queryParameters,
+        required T Function(Map<String, dynamic>) fromJson,
+        Options? options,
+        CancelToken? cancelToken,
+      }) async {
+    return await post<T>(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+      cancelToken: cancelToken,
+      fromJson: (responseData) => fromJson(responseData as Map<String, dynamic>),
+    );
+  }
+
+  /// Put object và trả về object
+  static Future<ApiResponse<T>> putObject<T>(
+      String path, {
+        dynamic data,
+        Map<String, dynamic>? queryParameters,
+        required T Function(Map<String, dynamic>) fromJson,
+        Options? options,
+        CancelToken? cancelToken,
+      }) async {
+    return await put<T>(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+      cancelToken: cancelToken,
+      fromJson: (responseData) => fromJson(responseData as Map<String, dynamic>),
+    );
+  }
+
+  /// Delete và trả về response status
+  static Future<ApiResponse<bool>> deleteResource(
+      String path, {
+        dynamic data,
+        Map<String, dynamic>? queryParameters,
+        Options? options,
+        CancelToken? cancelToken,
+      }) async {
+    return await delete<bool>(
+      path,
+      data: data,
+      queryParameters: queryParameters,
+      options: options,
+      cancelToken: cancelToken,
+      fromJson: (data) => true, // Delete thành công
+    );
+  }
+
+  // =================================================================
+  // RESPONSE PARSING HELPERS
+  // =================================================================
+
+  /// Parse response thành ApiResponse
+  static ApiResponse<T> _parseResponse<T>(
       Response response,
-      T Function(Map<String, dynamic>) fromJson,
-      String errorMessage,
+      T Function(dynamic)? fromJson,
       ) {
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> jsonResponse = response.data;
+    if (response.statusCode == null || response.statusCode! < 200 || response.statusCode! >= 300) {
+      throw ClientException(
+        message: 'Invalid response status: ${response.statusCode}',
+        statusCode: response.statusCode,
+      );
+    }
+
+    try {
+      final responseData = response.data;
+
+      // Nếu response data là null
+      if (responseData == null) {
+        return ApiResponse<T>(
+          status: response.statusCode!,
+          message: 'Success',
+          data: null,
+        );
+      }
+
+      // Nếu response data không phải Map (response trực tiếp)
+      if (responseData is! Map<String, dynamic>) {
+        final parsedData = fromJson != null ? fromJson(responseData) : null;
+        return ApiResponse<T>(
+          status: response.statusCode!,
+          message: 'Success',
+          data: parsedData,
+        );
+      }
+
+      // Parse theo cấu trúc ApiResponse chuẩn
+      final json = responseData as Map<String, dynamic>;
 
       return ApiResponse.fromJson(
-        jsonResponse,
-            (data) => (data as List)
-            .map((item) => fromJson(item as Map<String, dynamic>))
-            .toList(),
+        json,
+        fromJson,
       );
-    } else {
-      throw ApiException('$errorMessage: ${response.statusCode}', response.statusCode ?? 0);
-    }
-  }
-
-  static ApiResponse<T> parseObjectResponse<T>(
-      Response response,
-      T Function(Map<String, dynamic>) fromJson,
-      String errorMessage,
-      ) {
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> jsonResponse = response.data;
-
-      return ApiResponse.fromJson(
-        jsonResponse,
-            (data) => fromJson(data as Map<String, dynamic>),
+    } catch (e) {
+      logger.e('Error parsing response: $e');
+      throw ServerException(
+        message: 'Không thể xử lý phản hồi từ server',
+        details: e.toString(),
       );
-    } else {
-      throw ApiException('$errorMessage: ${response.statusCode}', response.statusCode ?? 0);
     }
   }
 
-  static T parseSimpleResponse<T>(
-      Response response,
-      T Function(Map<String, dynamic>) fromJson,
-      String errorMessage,
-      ) {
-    if (response.statusCode == 200) {
-      final Map<String, dynamic> jsonData = response.data;
-      return fromJson(jsonData);
-    } else {
-      throw ApiException('$errorMessage: ${response.statusCode}', response.statusCode ?? 0);
-    }
+  // =================================================================
+  // UTILITY METHODS
+  // =================================================================
+
+  /// Set authorization token
+  static Future<void> setAuthToken(String token) async {
+    _dio.options.headers['Authorization'] = 'Bearer $token';
   }
 
-  static ApiException _handleDioError(DioException error) {
-    switch (error.type) {
-      case DioExceptionType.connectionTimeout:
-        return ApiException('Connection timeout', 0);
-      case DioExceptionType.sendTimeout:
-        return ApiException('Send timeout', 0);
-      case DioExceptionType.receiveTimeout:
-        return ApiException('Receive timeout', 0);
-      case DioExceptionType.badResponse:
-        final statusCode = error.response?.statusCode ?? 0;
-        final message = error.response?.data?['message'] ?? 'Server error';
-        return ApiException(message, statusCode, data: error.response?.data);
-      case DioExceptionType.cancel:
-        return ApiException('Request cancelled', 0);
-      case DioExceptionType.connectionError:
-        return ApiException('Connection error', 0);
-      case DioExceptionType.badCertificate:
-        return ApiException('Bad certificate', 0);
-      case DioExceptionType.unknown:
-      default:
-        return ApiException('Unknown error: ${error.message}', 0);
-    }
+  /// Clear authorization token
+  static Future<void> clearAuthToken() async {
+    _dio.options.headers.remove('Authorization');
   }
 
-  static void setAuthToken(String token) {
-    dio.options.headers['Authorization'] = 'Bearer $token';
-  }
-
-  static void clearAuthToken() {
-    dio.options.headers.remove('Authorization');
-  }
-
+  /// Update base URL
   static void updateBaseUrl(String newBaseUrl) {
-    dio.options.baseUrl = newBaseUrl;
+    _dio.options.baseUrl = newBaseUrl;
   }
 
+  /// Add custom header
   static void addHeader(String key, String value) {
-    dio.options.headers[key] = value;
+    _dio.options.headers[key] = value;
   }
 
+  /// Remove header
   static void removeHeader(String key) {
-    dio.options.headers.remove(key);
+    _dio.options.headers.remove(key);
+  }
+
+  /// Get current headers
+  static Map<String, dynamic> get headers => _dio.options.headers;
+
+  /// Check if has auth token
+  static bool get hasAuthToken =>
+      _dio.options.headers.containsKey('Authorization');
+
+  /// Get current base URL
+  static String get currentBaseUrl => _dio.options.baseUrl;
+
+  // =================================================================
+  // FILE UPLOAD/DOWNLOAD METHODS
+  // =================================================================
+
+  /// Upload file
+  static Future<ApiResponse<T>> uploadFile<T>(
+      String path,
+      String filePath, {
+        String? fileName,
+        Map<String, dynamic>? data,
+        Map<String, dynamic>? queryParameters,
+        T Function(dynamic)? fromJson,
+        ProgressCallback? onSendProgress,
+        CancelToken? cancelToken,
+      }) async {
+    return await ExceptionHelper.handleApiCall<ApiResponse<T>>(() async {
+      final formData = FormData();
+
+      formData.files.add(
+        MapEntry(
+          'file',
+          await MultipartFile.fromFile(
+            filePath,
+            filename: fileName,
+          ),
+        ),
+      );
+
+      // Add other data
+      if (data != null) {
+        data.forEach((key, value) {
+          formData.fields.add(MapEntry(key, value.toString()));
+        });
+      }
+
+      final response = await _dio.post(
+        path,
+        data: formData,
+        queryParameters: queryParameters,
+        onSendProgress: onSendProgress,
+        cancelToken: cancelToken,
+      );
+
+      return _parseResponse<T>(response, fromJson);
+    });
+  }
+
+  /// Download file
+  static Future<void> downloadFile(
+      String url,
+      String savePath, {
+        Map<String, dynamic>? queryParameters,
+        ProgressCallback? onReceiveProgress,
+        CancelToken? cancelToken,
+      }) async {
+    return await ExceptionHelper.handleApiCall<void>(() async {
+      await _dio.download(
+        url,
+        savePath,
+        queryParameters: queryParameters,
+        onReceiveProgress: onReceiveProgress,
+        cancelToken: cancelToken,
+      );
+    });
+  }
+
+  /// Execute multiple requests concurrently
+  static Future<List<Response>> batch(List<RequestOptions> requests) async {
+    return await ExceptionHelper.handleApiCall<List<Response>>(() async {
+      final futures = requests.map((request) => _dio.fetch(request)).toList();
+      return await Future.wait(futures);
+    });
+  }
+
+  /// Cancel all pending requests
+  static void cancelAllRequests([String? reason]) {
+    // Implementation would depend on how you track active requests
+    // This is a placeholder for the concept
   }
 }
-
+// extension ApiServiceExtension on ApiService {
+//   /// Quick method để call API và chỉ lấy data
+//   static Future<T?> fetchData<T>(
+//       String path, {
+//         Map<String, dynamic>? queryParameters,
+//         T Function(dynamic)? fromJson,
+//       }) async {
+//     try {
+//       final response = await get<T>(
+//         path,
+//         queryParameters: queryParameters,
+//         fromJson: fromJson,
+//       );
+//       return response.data;
+//     } catch (e) {
+//       logger.e('Failed to fetch data from $path: $e');
+//       return null;
+//     }
+//   }
+// }

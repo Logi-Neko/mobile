@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
-import '../../dto/quiz.dart';
+import '../../dto/video.dart';
 
 class EquationDisplay extends StatelessWidget {
   final VideoData videoData;

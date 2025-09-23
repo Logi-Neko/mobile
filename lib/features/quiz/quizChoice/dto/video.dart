@@ -1,37 +1,3 @@
-class QuizResponse {
-  final int status;
-  final String code;
-  final String message;
-  final List<VideoData> data;
-
-  QuizResponse({
-    required this.status,
-    required this.code,
-    required this.message,
-    required this.data,
-  });
-
-  factory QuizResponse.fromJson(Map<String, dynamic> json) {
-    return QuizResponse(
-      status: json['status'] ?? 0,
-      code: json['code'] ?? '',
-      message: json['message'] ?? '',
-      data: (json['data'] as List?)
-          ?.map((item) => VideoData.fromJson(item))
-          .toList() ?? [],
-    );
-  }
-
-  Map<String, dynamic> toJson() {
-    return {
-      'status': status,
-      'code': code,
-      'message': message,
-      'data': data.map((item) => item.toJson()).toList(),
-    };
-  }
-}
-
 class VideoData {
   final int id;
   final String title;
