@@ -5,6 +5,7 @@ class CourseGridWidget extends StatelessWidget {
   final List<Course> courses;
   final bool isLoading;
   final String? error;
+  final String? errorCode;
   final VoidCallback? onRetry;
   final Function(Course)? onCourseSelected;
   final String emptyMessage;
@@ -15,6 +16,7 @@ class CourseGridWidget extends StatelessWidget {
     required this.courses,
     this.isLoading = false,
     this.error,
+    this.errorCode,
     this.onRetry,
     this.onCourseSelected,
     this.emptyMessage = "Chưa có khóa học nào",
@@ -42,45 +44,7 @@ class CourseGridWidget extends StatelessWidget {
     }
 
     if (error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white, size: 60),
-            const SizedBox(height: 16),
-            const Text(
-              "Có lỗi xảy ra",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                error!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (onRetry != null)
-              ElevatedButton(
-                onPressed: onRetry,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: const Text("Thử lại"),
-              ),
-          ],
-        ),
-      );
+      return _buildEnhancedErrorWidget();
     }
 
     if (courses.isEmpty) {
@@ -136,6 +100,94 @@ class CourseGridWidget extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+
+  Widget _buildEnhancedErrorWidget() {
+    IconData errorIcon = Icons.error_outline;
+    String errorTitle = "Có lỗi xảy ra";
+    Color errorColor = Colors.white;
+    String retryButtonText = "Thử lại";
+
+    // Customize based on error code
+    if (errorCode != null) {
+      switch (errorCode!) {
+        case 'NETWORK_ERROR':
+          errorIcon = Icons.wifi_off;
+          errorTitle = "Không có kết nối";
+          retryButtonText = "Kiểm tra kết nối";
+          break;
+        case 'TIMEOUT_ERROR':
+          errorIcon = Icons.access_time;
+          errorTitle = "Kết nối quá chậm";
+          retryButtonText = "Thử lại";
+          break;
+        case 'UNAUTHORIZED':
+          errorIcon = Icons.lock_outlined;
+          errorTitle = "Phiên đã hết hạn";
+          retryButtonText = "Đăng nhập lại";
+          break;
+        case 'NOT_FOUND':
+          errorIcon = Icons.search_off;
+          errorTitle = "Không tìm thấy";
+          retryButtonText = "Làm mới";
+          break;
+        case 'SERVER_ERROR':
+          errorIcon = Icons.cloud_off;
+          errorTitle = "Lỗi máy chủ";
+          retryButtonText = "Thử lại sau";
+          break;
+        default:
+          break;
+      }
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(errorIcon, color: errorColor, size: 60),
+          const SizedBox(height: 16),
+          Text(
+            errorTitle,
+            style: TextStyle(
+              color: errorColor,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              error!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+          ),
+          const SizedBox(height: 24),
+          if (onRetry != null)
+            ElevatedButton.icon(
+              onPressed: onRetry,
+              icon: Icon(
+                errorCode == 'NETWORK_ERROR' ? Icons.refresh : Icons.refresh,
+                size: 18,
+              ),
+              label: Text(retryButtonText),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 12,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
@@ -198,8 +250,6 @@ class CourseCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Nội dung bên dưới
             Padding(
               padding: const EdgeInsets.all(12),
               child: Column(
@@ -229,50 +279,6 @@ class CourseCard extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _buildThumbnail() {
-    if (course.thumbnailUrl.isNotEmpty) {
-      return ClipRRect(
-        borderRadius: const BorderRadius.vertical(
-          top: Radius.circular(16),
-        ),
-        child: SizedBox(
-          height: 100,
-          width: double.infinity,
-          child: Image.network(
-            course.thumbnailUrl,
-            fit: BoxFit.cover,
-            loadingBuilder: (context, child, loadingProgress) {
-              if (loadingProgress == null) return child;
-              return const Center(child: CircularProgressIndicator());
-            },
-            errorBuilder: (context, error, stackTrace) {
-              return const Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(Icons.image_not_supported, size: 30, color: Colors.grey),
-                    SizedBox(height: 4),
-                    Text(
-                      "Không thể tải ảnh",
-                      style: TextStyle(fontSize: 10, color: Colors.grey),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-      );
-    }
-
-    return const SizedBox(
-      height: 100,
-      child: Center(
-        child: Icon(Icons.school, size: 30, color: Colors.grey),
       ),
     );
   }

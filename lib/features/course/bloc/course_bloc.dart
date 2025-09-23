@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:logi_neko/core/exception/exceptions.dart';
 import '../repository/course_repository.dart';
 import '../dto/course.dart';
 
@@ -53,10 +54,10 @@ class CourseOperationSuccess extends CourseState {
 
 class CourseError extends CourseState {
   final String message;
-  CourseError(this.message);
-
+  final String? errorCode;
+  CourseError(this.message, {this.errorCode});
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, errorCode];
 }
 
 class CourseBloc extends Bloc<CourseEvent, CourseState> {
@@ -72,8 +73,11 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
     try {
       final courses = await _courseRepository.getCourses();
       emit(CourseLoaded(courses));
+    } on AppException catch (e) {
+      final errorMessage = ExceptionHelper.getLocalizedErrorMessage(e);
+      emit(CourseError(errorMessage, errorCode: e.errorCode));
     } catch (e) {
-      emit(CourseError('Failed to load courses: $e'));
+      emit(CourseError('Có lỗi không xác định xảy ra khi tải danh sách khóa học'));
     }
   }
 
@@ -82,9 +86,18 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
     try {
       final course = await _courseRepository.getCourseById(event.id);
       emit(CourseDetailLoaded(course));
+    } on NotFoundException catch (e) {
+      emit(CourseError('Không tìm thấy khóa học này', errorCode: e.errorCode));
+    } on NetworkException catch (e) {
+      emit(CourseError('Không có kết nối mạng', errorCode: e.errorCode));
+    } on UnauthorizedException catch (e) {
+      emit(CourseError('Phiên đăng nhập đã hết hạn', errorCode: e.errorCode));
+    } on AppException catch (e) {
+      final errorMessage = ExceptionHelper.getLocalizedErrorMessage(e);
+      emit(CourseError(errorMessage, errorCode: e.errorCode));
     } catch (e) {
-      emit(CourseError('Failed to load course: $e'));
+      emit(CourseError(
+          'Có lỗi không xác định xảy ra khi tải thông tin khóa học'));
     }
   }
-
 }

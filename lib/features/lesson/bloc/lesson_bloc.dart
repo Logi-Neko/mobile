@@ -1,5 +1,6 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
+import 'package:logi_neko/core/exception/exceptions.dart';
 import '../repository/lesson_repo.dart';
 import '../dto/lesson.dart';
 
@@ -51,10 +52,12 @@ class LessonDetailLoaded extends LessonState {
 
 class LessonError extends LessonState {
   final String message;
-  LessonError(this.message);
+  final String? errorCode;
+
+  LessonError(this.message, {this.errorCode});
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, errorCode];
 }
 
 class LessonBloc extends Bloc<LessonEvent, LessonState> {
@@ -69,9 +72,19 @@ class LessonBloc extends Bloc<LessonEvent, LessonState> {
     emit(LessonLoading());
     try {
       final lessons = await _lessonRepository.getLessonsByCourseId(event.courseId);
+
       emit(LessonsLoaded(lessons));
+    } on NotFoundException catch (e) {
+      emit(LessonError('Không tìm thấy bài học cho khóa học này', errorCode: e.errorCode));
+    } on NetworkException catch (e) {
+      emit(LessonError('Không có kết nối mạng', errorCode: e.errorCode));
+    } on UnauthorizedException catch (e) {
+      emit(LessonError('Phiên đăng nhập đã hết hạn', errorCode: e.errorCode));
+    } on AppException catch (e) {
+      final errorMessage = ExceptionHelper.getLocalizedErrorMessage(e);
+      emit(LessonError(errorMessage, errorCode: e.errorCode));
     } catch (e) {
-      emit(LessonError('Failed to load lessons: $e'));
+      emit(LessonError('Có lỗi không xác định xảy ra khi tải danh sách bài học'));
     }
   }
 
@@ -80,8 +93,17 @@ class LessonBloc extends Bloc<LessonEvent, LessonState> {
     try {
       final lesson = await _lessonRepository.getLessonById(event.id);
       emit(LessonDetailLoaded(lesson));
+    } on NotFoundException catch (e) {
+      emit(LessonError('Không tìm thấy bài học này', errorCode: e.errorCode));
+    } on NetworkException catch (e) {
+      emit(LessonError('Không có kết nối mạng', errorCode: e.errorCode));
+    } on UnauthorizedException catch (e) {
+      emit(LessonError('Phiên đăng nhập đã hết hạn', errorCode: e.errorCode));
+    } on AppException catch (e) {
+      final errorMessage = ExceptionHelper.getLocalizedErrorMessage(e);
+      emit(LessonError(errorMessage, errorCode: e.errorCode));
     } catch (e) {
-      emit(LessonError('Failed to load lesson: $e'));
+      emit(LessonError('Có lỗi không xác định xảy ra khi tải thông tin bài học'));
     }
   }
 }

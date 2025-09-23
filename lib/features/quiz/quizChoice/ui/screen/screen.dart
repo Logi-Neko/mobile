@@ -1,4 +1,3 @@
-// Updated screen.dart - key changes in the BlocConsumer listener
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
@@ -6,10 +5,11 @@ import 'package:logi_neko/features/quiz/quizChoice/ui/widgets/answer_button.dart
 import 'package:logi_neko/features/quiz/quizChoice/ui/widgets/equation_display.dart';
 import 'package:logi_neko/features/quiz/quizChoice/ui/widgets/progress_indicator.dart';
 import 'package:logi_neko/features/quiz/result/ui/screen/result_screen.dart';
-import '../../repository/quiz_repo.dart';
-import '../../bloc/quiz_bloc.dart';
-import '../../dto/quiz.dart';
+import '../../repository/video_repo.dart';
+import '../../bloc/video_bloc.dart';
+import '../../dto/video.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
+
 
 class QuizChoiceScreen extends StatelessWidget {
   final int lessonId;
@@ -79,20 +79,8 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
           child: BlocConsumer<VideoBloc, VideoState>(
             listener: (context, state) {
               if (state is VideoError) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text(state.message),
-                    backgroundColor: Colors.red,
-                    action: SnackBarAction(
-                      label: 'Thử lại',
-                      onPressed: () {
-                        context.read<VideoBloc>().add(LoadVideosByLessonId(widget.lessonId));
-                      },
-                    ),
-                  ),
-                );
+                _showErrorSnackBar(context, state);
               } else if (state is QuizCompleted) {
-                // Navigate to result screen instead of showing dialog
                 _navigateToResultScreen(state);
               }
             },
@@ -102,7 +90,7 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
               }
 
               if (state is VideoError) {
-                return _buildErrorWidget(state.message);
+                return _buildErrorWidget(state);
               }
 
               if (state is VideosLoaded) {
@@ -119,7 +107,7 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
                 );
               }
 
-              return _buildErrorWidget('Không có dữ liệu');
+              return _buildErrorWidget(VideoError('Không có dữ liệu'));
             },
           ),
         ),
@@ -143,26 +131,113 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
     );
   }
 
-  Widget _buildErrorWidget(String message) {
+  Widget _buildErrorWidget(VideoError state) {
+    IconData errorIcon = Icons.error_outline;
+    String errorTitle = "Có lỗi xảy ra";
+    String retryButtonText = "Thử lại";
+
+    if (state.errorCode != null) {
+      switch (state.errorCode!) {
+        case 'NETWORK_ERROR':
+          errorIcon = Icons.wifi_off;
+          errorTitle = "Không có kết nối";
+          break;
+        case 'TIMEOUT_ERROR':
+          errorIcon = Icons.access_time;
+          errorTitle = "Kết nối quá chậm";
+          break;
+        case 'UNAUTHORIZED':
+          errorIcon = Icons.lock_outlined;
+          errorTitle = "Phiên đã hết hạn";
+          retryButtonText = "Đăng nhập lại";
+          break;
+      }
+    }
+
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(Icons.error_outline, color: Colors.white, size: 64),
+          Icon(errorIcon, color: Colors.white, size: 64),
           SizedBox(height: 16),
           Text(
-            message,
-            style: TextStyle(color: Colors.white, fontSize: 16),
-            textAlign: TextAlign.center,
+            errorTitle,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: 8),
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              state.message,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.white70, fontSize: 14),
+            ),
           ),
           SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
               context.read<VideoBloc>().add(LoadVideosByLessonId(widget.lessonId));
             },
-            child: Text('Thử lại'),
+            child: Text(retryButtonText),
           ),
         ],
+      ),
+    );
+  }
+
+  void _showErrorSnackBar(BuildContext context, VideoError state) {
+    Color backgroundColor = Colors.red;
+    IconData icon = Icons.error;
+    String? actionLabel;
+    VoidCallback? action;
+
+    if (state.errorCode != null) {
+      switch (state.errorCode!) {
+        case 'NETWORK_ERROR':
+          backgroundColor = Colors.orange;
+          icon = Icons.wifi_off;
+          actionLabel = 'Thử lại';
+          action = () => context.read<VideoBloc>().add(LoadVideosByLessonId(widget.lessonId));
+          break;
+        case 'UNAUTHORIZED':
+          backgroundColor = Colors.purple;
+          icon = Icons.lock;
+          actionLabel = 'Đăng nhập';
+          break;
+        case 'TIMEOUT_ERROR':
+          backgroundColor = Colors.amber;
+          icon = Icons.access_time;
+          actionLabel = 'Thử lại';
+          action = () => context.read<VideoBloc>().add(LoadVideosByLessonId(widget.lessonId));
+          break;
+        default:
+          actionLabel = 'Thử lại';
+          action = () => context.read<VideoBloc>().add(LoadVideosByLessonId(widget.lessonId));
+      }
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            Expanded(child: Text(state.message)),
+          ],
+        ),
+        backgroundColor: backgroundColor,
+        duration: const Duration(seconds: 4),
+        action: actionLabel != null && action != null
+            ? SnackBarAction(
+          label: actionLabel,
+          textColor: Colors.white,
+          onPressed: action,
+        )
+            : null,
       ),
     );
   }
@@ -178,7 +253,6 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Column(
         children: [
-          // Header
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -222,11 +296,9 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
 
           SizedBox(height: 20),
 
-          // Main content
           Expanded(
             child: Row(
               children: [
-                // Video/Equation display
                 Expanded(
                   flex: 3,
                   child: EquationDisplay(
@@ -236,7 +308,6 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
 
                 SizedBox(width: 20),
 
-                // Questions and answers
                 Expanded(
                   flex: 2,
                   child: Column(
@@ -255,7 +326,6 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
 
                       SizedBox(height: 20),
 
-                      // Answer options
                       Expanded(
                         child: _buildAnswerOptions(currentVideo, showResult, selectedAnswer, isCorrect),
                       ),
@@ -268,7 +338,6 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
 
           SizedBox(height: 20),
 
-          // Progress and navigation
           GameProgressIndicator(
             current: progress['current']!,
             total: progress['total']!,
@@ -325,12 +394,10 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
   void _onAnswerSelected(int index) {
     context.read<VideoBloc>().add(AnswerQuestion(index));
 
-    // Auto proceed to next question after showing result
     Future.delayed(Duration(seconds: 2), () {
       if (mounted && context.read<VideoBloc>().canGoNext()) {
         context.read<VideoBloc>().add(NextVideo());
       } else if (mounted) {
-        // This is the last question, trigger completion
         context.read<VideoBloc>().add(NextVideo());
       }
     });
@@ -339,7 +406,6 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
   void _navigateToResultScreen(QuizCompleted state) {
     final stats = state.completionStats;
 
-    // Reset orientation to portrait for result screen
     SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
