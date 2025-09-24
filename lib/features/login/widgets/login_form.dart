@@ -53,8 +53,11 @@ class _LoginFormCardState extends State<LoginFormCard> {
             ),
           );
 
-          // Navigate to home screen - xóa toàn bộ stack và chuyển về home
-          // context.router.pushAndClearStack(const HomeRoute());
+          // Navigate to course screen - xóa toàn bộ stack và chuyển đến course
+          context.router.pushAndPopUntil(
+            const CourseRoute(),
+            predicate: (route) => false,
+          );
         } else if (state is AuthFailure) {
           // Đăng nhập thất bại - lưu lỗi vào state để hiển thị
           setState(() {
