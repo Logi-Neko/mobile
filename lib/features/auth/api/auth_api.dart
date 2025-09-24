@@ -99,6 +99,31 @@ class AuthApiService {
     });
   }
 
+  /// Login với Google ID token
+  Future<ApiResponse<TokenResponse>> loginWithGoogle(String idToken) async {
+    return ExceptionHelper.handleApiCall(() async {
+      logger.i("🌍 POST /login/google");
+      final response = await _dio.post(
+        '/login/google',
+        data: {
+          'id_token': idToken,
+        },
+        options: Options(
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        ),
+      );
+      logger.i('Status: ${response.statusCode}');
+      logger.i('Response: ${response.data}');
+
+      return ApiResponse.fromJson(
+        response.data,
+        (json) => TokenResponse.fromJson(json as Map<String, dynamic>),
+      );
+    });
+  }
+
   /// Logout (thu hồi refresh token)
   Future<ApiResponse<String>> logout(String refreshToken) async {
     return ExceptionHelper.handleApiCall(() async {

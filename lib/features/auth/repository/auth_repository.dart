@@ -54,4 +54,11 @@ class AuthRepository {
       return await _apiService.resetPassword(oldPassword, newPassword);
     });
   }
+
+  /// Đăng nhập với Google
+  Future<ApiResponse<TokenResponse>> loginWithGoogle(String idToken) async {
+    return ExceptionHelper.handleApiCall(() async {
+      return await _apiService.loginWithGoogle(idToken);
+    });
+  }
 }

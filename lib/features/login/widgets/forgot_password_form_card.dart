@@ -2,7 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:auto_route/auto_route.dart';
 
+import '../../../core/router/app_router.dart';
 import '../../../shared/color/app_color.dart';
 import '../../auth/bloc/auth_bloc.dart';
 
@@ -16,6 +18,7 @@ class ForgotPasswordFormCard extends StatefulWidget {
 class _ForgotPasswordFormCardState extends State<ForgotPasswordFormCard> {
   final _formKey = GlobalKey<FormState>();
   final _usernameController = TextEditingController();
+  String? _errorMessage; // Thêm biến để lưu error message
 
   @override
   void dispose() {
@@ -29,6 +32,10 @@ class _ForgotPasswordFormCardState extends State<ForgotPasswordFormCard> {
       listener: (context, state) {
         if (state is AuthForgotPasswordSuccess) {
           // Hiển thị thông báo thành công
+          setState(() {
+            _errorMessage = null; // Clear error khi thành công
+          });
+
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
               content: Text('Yêu cầu đặt lại mật khẩu đã được gửi!'),
@@ -36,13 +43,15 @@ class _ForgotPasswordFormCardState extends State<ForgotPasswordFormCard> {
             ),
           );
         } else if (state is AuthFailure) {
-          // Hiển thị lỗi
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Lỗi: ${state.error}'),
-              backgroundColor: Colors.red,
-            ),
-          );
+          // Đặt lại mật khẩu thất bại - lưu lỗi vào state để hiển thị
+          setState(() {
+            _errorMessage = state.error;
+          });
+        } else if (state is AuthLoading) {
+          // Clear error khi bắt đầu loading
+          setState(() {
+            _errorMessage = null;
+          });
         }
       },
       child: Form(
@@ -122,6 +131,53 @@ class _ForgotPasswordFormCardState extends State<ForgotPasswordFormCard> {
                   ),
                   const SizedBox(height: 24),
 
+                  // Hiển thị lỗi dưới dạng text field nếu có
+                  if (_errorMessage != null) ...[
+                    Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: BoxDecoration(
+                        color: Colors.red.shade50,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.red.shade200),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.error_outline,
+                            color: Colors.red.shade600,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              _errorMessage!,
+                              style: TextStyle(
+                                color: Colors.red.shade700,
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                          IconButton(
+                            onPressed: () {
+                              setState(() {
+                                _errorMessage = null;
+                              });
+                            },
+                            icon: Icon(
+                              Icons.close,
+                              color: Colors.red.shade600,
+                              size: 18,
+                            ),
+                            constraints: const BoxConstraints(),
+                            padding: EdgeInsets.zero,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+
                   // Nút Gửi yêu cầu với loading state
                   _buildSubmitButton(),
                   const SizedBox(height: 16),
@@ -129,7 +185,11 @@ class _ForgotPasswordFormCardState extends State<ForgotPasswordFormCard> {
                   // Nút Quay lại đăng nhập
                   TextButton(
                     onPressed: () {
-                      Navigator.of(context).pop();
+                      // Navigate đến trang login mới và clear stack để không mang data cũ
+                      context.router.pushAndPopUntil(
+                        const LoginRoute(),
+                        predicate: (route) => false,
+                      );
                     },
                     child: const Text(
                       'Quay lại đăng nhập',

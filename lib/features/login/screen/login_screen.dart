@@ -1,6 +1,7 @@
 import 'package:auto_route/annotations.dart';
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
+import '../../../core/router/app_router.dart';
 import '../widgets/branding_background.dart';
 import '../widgets/login_form.dart';
 
@@ -29,7 +30,13 @@ class LoginScreen extends StatelessWidget {
                   top: 16,
                   left: 16,
                   child: GestureDetector(
-                    onTap: () => context.router.maybePop(),
+                    onTap: () {
+                      // Navigate về auth selection thay vì maybePop() vì stack có thể đã bị clear
+                      context.router.pushAndPopUntil(
+                        const AuthSelectionRoute(),
+                        predicate: (route) => false,
+                      );
+                    },
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(

@@ -4,6 +4,7 @@ import 'package:auto_route/annotations.dart';
 import 'package:flutter/material.dart';
 import '../../login/widgets/branding_background.dart';
 import '../widgets/signup_step_two_form.dart';
+
 @RoutePage()
 class SignUpStepTwoScreen extends StatelessWidget {
   final String username;

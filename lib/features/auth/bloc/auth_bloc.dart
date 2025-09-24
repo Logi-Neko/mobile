@@ -15,6 +15,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
         super(AuthInitial()) {
     on<AuthRegisterSubmitted>(_onRegisterSubmitted);
     on<AuthLoginSubmitted>(_onLoginSubmitted);
+    on<AuthGoogleLoginSubmitted>(_onGoogleLoginSubmitted);
     on<AuthForgotPasswordSubmitted>(_onForgotPasswordSubmitted);
     on<AuthRefreshTokenSubmitted>(_onRefreshTokenSubmitted);
     on<AuthLogoutSubmitted>(_onLogoutSubmitted);
@@ -56,6 +57,29 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthLoginSuccess(response.data!));
     } catch (e, s) {
       logger.i("❌ Login error in bloc: $e\n$s");
+      emit(AuthFailure(e.toString()));
+    }
+  }
+
+  Future<void> _onGoogleLoginSubmitted(
+      AuthGoogleLoginSubmitted event,
+      Emitter<AuthState> emit,
+      ) async {
+    logger.i("🔥 AuthGoogleLoginSubmitted received");
+    emit(AuthLoading());
+    try {
+      final response = await _authRepository.loginWithGoogle(event.idToken);
+      logger.i("✅ Google login response in bloc: $response");
+
+      // Tự động lưu token khi login thành công
+      if (response.data != null) {
+        await _tokenStorage.saveTokenResponse(response.data!);
+        logger.i("🔐 Tokens saved successfully");
+      }
+
+      emit(AuthLoginSuccess(response.data!));
+    } catch (e, s) {
+      logger.i("❌ Google login error in bloc: $e\n$s");
       emit(AuthFailure(e.toString()));
     }
   }
@@ -149,6 +173,14 @@ class AuthLoginSubmitted extends AuthEvent {
 
   @override
   List<Object> get props => [loginData];
+}
+
+class AuthGoogleLoginSubmitted extends AuthEvent {
+  final String idToken;
+  const AuthGoogleLoginSubmitted({required this.idToken});
+
+  @override
+  List<Object> get props => [idToken];
 }
 
 class AuthForgotPasswordSubmitted extends AuthEvent {
