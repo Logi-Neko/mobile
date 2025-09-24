@@ -5,6 +5,7 @@ class LessonGridWidget extends StatelessWidget {
   final List<Lesson> lessons;
   final bool isLoading;
   final String? error;
+  final String? errorCode;
   final VoidCallback? onRetry;
   final Function(Lesson)? onLessonSelected;
   final String emptyMessage;
@@ -14,6 +15,7 @@ class LessonGridWidget extends StatelessWidget {
     required this.lessons,
     this.isLoading = false,
     this.error,
+    this.errorCode,
     this.onRetry,
     this.onLessonSelected,
     this.emptyMessage = "Chưa có bài học nào",
@@ -40,45 +42,7 @@ class LessonGridWidget extends StatelessWidget {
     }
 
     if (error != null) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Icon(Icons.error_outline, color: Colors.white, size: 60),
-            const SizedBox(height: 16),
-            const Text(
-              "Có lỗi xảy ra",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32),
-              child: Text(
-                error!,
-                textAlign: TextAlign.center,
-                style: const TextStyle(color: Colors.white70, fontSize: 14),
-              ),
-            ),
-            const SizedBox(height: 24),
-            if (onRetry != null)
-              ElevatedButton(
-                onPressed: onRetry,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-                child: const Text("Thử lại"),
-              ),
-          ],
-        ),
-      );
+      return _buildEnhancedErrorWidget();
     }
 
     if (lessons.isEmpty) {
@@ -106,27 +70,21 @@ class LessonGridWidget extends StatelessWidget {
       );
     }
 
-    // Responsive grid based on screen orientation and size
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Determine grid layout based on screen width
         int crossAxisCount;
         double childAspectRatio;
 
         if (constraints.maxWidth > 1200) {
-          // Large screens (tablets in landscape)
           crossAxisCount = 4;
           childAspectRatio = 0.75;
         } else if (constraints.maxWidth > 800) {
-          // Medium screens (tablets in portrait, large phones in landscape)
           crossAxisCount = 3;
           childAspectRatio = 0.8;
         } else if (constraints.maxWidth > 600) {
-          // Small tablets, large phones
           crossAxisCount = 2;
           childAspectRatio = 0.85;
         } else {
-          // Small phones
           crossAxisCount = 1;
           childAspectRatio = 1.2;
         }
@@ -156,6 +114,68 @@ class LessonGridWidget extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildEnhancedErrorWidget() {
+    IconData errorIcon = Icons.error_outline;
+    String errorTitle = "Có lỗi xảy ra";
+    String retryButtonText = "Thử lại";
+
+    if (errorCode != null) {
+      switch (errorCode!) {
+        case 'NETWORK_ERROR':
+          errorIcon = Icons.wifi_off;
+          errorTitle = "Không có kết nối";
+          break;
+        case 'TIMEOUT_ERROR':
+          errorIcon = Icons.access_time;
+          errorTitle = "Kết nối quá chậm";
+          break;
+        case 'UNAUTHORIZED':
+          errorIcon = Icons.lock_outlined;
+          errorTitle = "Phiên đã hết hạn";
+          retryButtonText = "Đăng nhập lại";
+          break;
+      }
+    }
+
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(errorIcon, color: Colors.white, size: 60),
+          const SizedBox(height: 16),
+          Text(
+            errorTitle,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32),
+            child: Text(
+              error!,
+              textAlign: TextAlign.center,
+              style: const TextStyle(color: Colors.white70, fontSize: 14),
+            ),
+          ),
+          if (onRetry != null)
+            ElevatedButton(
+              onPressed: onRetry,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white,
+                foregroundColor: Colors.black,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(20),
+                ),
+              ),
+              child: Text(retryButtonText),
+            ),
+        ],
+      ),
     );
   }
 }
@@ -189,13 +209,10 @@ class LessonCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Thumbnail section
             Expanded(
               flex: 3,
               child: _buildThumbnail(),
             ),
-
-            // Content section
             Expanded(
               flex: 2,
               child: _buildContent(),
@@ -268,13 +285,10 @@ class LessonCard extends StatelessWidget {
             ),
           ),
 
-          // Premium badge
           if (lesson.isPremium) _buildPremiumBadge(),
 
-          // Lock overlay for inaccessible lessons
           if (!lesson.canAccess) _buildLockOverlay(),
 
-          // Duration badge
           Positioned(
             bottom: 8,
             right: 8,
@@ -331,7 +345,6 @@ class LessonCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Title
           Expanded(
             child: Text(
               lesson.name,
@@ -347,10 +360,8 @@ class LessonCard extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          // Stats row
           Row(
             children: [
-              // Videos count
               if (lesson.totalVideo > 0)
                 Row(
                   children: [
@@ -367,7 +378,6 @@ class LessonCard extends StatelessWidget {
                   ],
                 ),
 
-              // Rating
               if (lesson.star > 0)
                 Row(
                   children: [
@@ -386,7 +396,6 @@ class LessonCard extends StatelessWidget {
 
               const Spacer(),
 
-              // Status indicator
               _buildStatusIndicator(),
             ],
           ),

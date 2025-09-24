@@ -21,6 +21,12 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const AuthSelectionScreen(),
       );
     },
+    CourseRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const CourseScreen(),
+      );
+    },
     CustomerAuthRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -46,7 +52,12 @@ abstract class _$AppRouter extends RootStackRouter {
       );
     },
     SignUpStepTwoRoute.name: (routeData) {
-      final args = routeData.argsAs<SignUpStepTwoRouteArgs>();
+      final pathParams = routeData.inheritedPathParams;
+      final args = routeData.argsAs<SignUpStepTwoRouteArgs>(
+          orElse: () => SignUpStepTwoRouteArgs(
+                username: pathParams.getString('username'),
+                email: pathParams.getString('email'),
+              ));
       return AutoRoutePage<dynamic>(
         routeData: routeData,
         child: SignUpStepTwoScreen(
@@ -75,6 +86,20 @@ class AuthSelectionRoute extends PageRouteInfo<void> {
         );
 
   static const String name = 'AuthSelectionRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [CourseScreen]
+class CourseRoute extends PageRouteInfo<void> {
+  const CourseRoute({List<PageRouteInfo>? children})
+      : super(
+          CourseRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'CourseRoute';
 
   static const PageInfo<void> page = PageInfo<void>(name);
 }
@@ -150,6 +175,10 @@ class SignUpStepTwoRoute extends PageRouteInfo<SignUpStepTwoRouteArgs> {
             username: username,
             email: email,
           ),
+          rawPathParams: {
+            'username': username,
+            'email': email,
+          },
           initialChildren: children,
         );
 

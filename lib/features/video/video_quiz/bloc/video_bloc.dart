@@ -1,9 +1,9 @@
-// Updated quiz_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:logi_neko/features/quiz/result/dto/result.dart';
-import '../repository/quiz_repo.dart';
-import '../dto/quiz.dart';
+import 'package:logi_neko/core/exception/exceptions.dart';
+import 'package:logi_neko/features/video/result/dto/result.dart';
+import '../repository/video_repo.dart';
+import '../dto/video.dart';
 
 abstract class VideoEvent extends Equatable {
   @override
@@ -62,7 +62,7 @@ class VideosLoaded extends VideoState {
   final int currentIndex;
   final VideoData currentVideo;
   final Map<String, int> progress;
-  final Map<int, String> submittedAnswers; // Track submitted answers
+  final Map<int, String> submittedAnswers;
 
   VideosLoaded({
     required this.videos,
@@ -167,13 +167,14 @@ class QuizCompleted extends VideoState {
 
 class VideoError extends VideoState {
   final String message;
-  VideoError(this.message);
+  final String? errorCode;
+
+  VideoError(this.message, {this.errorCode});
 
   @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [message, errorCode];
 }
 
-// ==================== BLOC ====================
 class VideoBloc extends Bloc<VideoEvent, VideoState> {
   final VideoRepository _videoRepository;
 
@@ -205,8 +206,17 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
       } else {
         emit(VideoError('No videos found for this lesson'));
       }
+    } on NotFoundException catch (e) {
+      emit(VideoError('Không tìm thấy video cho bài học này', errorCode: e.errorCode));
+    } on NetworkException catch (e) {
+      emit(VideoError('Không có kết nối mạng', errorCode: e.errorCode));
+    } on UnauthorizedException catch (e) {
+      emit(VideoError('Phiên đăng nhập đã hết hạn', errorCode: e.errorCode));
+    } on AppException catch (e) {
+      final errorMessage = ExceptionHelper.getLocalizedErrorMessage(e);
+      emit(VideoError(errorMessage, errorCode: e.errorCode));
     } catch (e) {
-      emit(VideoError('Failed to load videos: $e'));
+      emit(VideoError('Có lỗi không xác định xảy ra khi tải video'));
     }
   }
 
@@ -215,8 +225,17 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
     try {
       final video = await _videoRepository.getVideoById(event.id);
       emit(VideoDetailLoaded(video));
+    } on NotFoundException catch (e) {
+      emit(VideoError('Không tìm thấy video này', errorCode: e.errorCode));
+    } on NetworkException catch (e) {
+      emit(VideoError('Không có kết nối mạng', errorCode: e.errorCode));
+    } on UnauthorizedException catch (e) {
+      emit(VideoError('Phiên đăng nhập đã hết hạn', errorCode: e.errorCode));
+    } on AppException catch (e) {
+      final errorMessage = ExceptionHelper.getLocalizedErrorMessage(e);
+      emit(VideoError(errorMessage, errorCode: e.errorCode));
     } catch (e) {
-      emit(VideoError('Failed to load video: $e'));
+      emit(VideoError('Có lỗi không xác định xảy ra khi tải video'));
     }
   }
 
@@ -319,7 +338,7 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         currentIndex: 0,
         currentVideo: firstVideo,
         progress: progress,
-        submittedAnswers: {}, // Reset answers
+        submittedAnswers: {},
       ));
     } else if (currentState is QuizCompleted) {
       final firstVideo = currentState.videos.first;
@@ -330,7 +349,7 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         currentIndex: 0,
         currentVideo: firstVideo,
         progress: progress,
-        submittedAnswers: {}, // Reset answers
+        submittedAnswers: {},
       ));
     }
   }
@@ -341,7 +360,6 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
       final isCorrect = event.selectedAnswerIndex == currentState.currentVideo.videoQuestion.correctAnswerIndex;
       final selectedAnswerLetter = ['A', 'B', 'C', 'D'][event.selectedAnswerIndex];
 
-      // Submit answer to API
       try {
         await _videoRepository.submitVideoAnswer(
           currentState.currentVideo.id,
@@ -349,7 +367,6 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         );
       } catch (e) {
         print('Failed to submit answer: $e');
-        // Continue anyway with local tracking
       }
 
       // Update local tracking
@@ -375,7 +392,6 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
     };
   }
 
-  // Helper methods for UI
   bool canGoNext() {
     final currentState = state;
     if (currentState is VideosLoaded) {

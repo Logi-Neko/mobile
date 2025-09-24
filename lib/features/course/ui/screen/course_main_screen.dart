@@ -6,7 +6,9 @@ import '../../bloc/course_bloc.dart';
 import '../../repository/course_repository.dart';
 import '../../dto/course.dart';
 import '../widgets/course_grid_widget.dart';
+import 'package:auto_route/auto_route.dart';
 
+@RoutePage()
 class CourseScreen extends StatelessWidget {
   const CourseScreen({super.key});
 
@@ -55,7 +57,7 @@ class _CourseViewState extends State<CourseView>
             children: [
               _buildHeader(),
               _buildTitle(),
-              const SizedBox(height: 8),
+              const SizedBox(height: 16),
               Expanded(child: _buildTabView()),
             ],
           ),
@@ -120,85 +122,11 @@ class _CourseViewState extends State<CourseView>
       },
     );
   }
-
-  Widget _buildTabBar() {
-    return BlocBuilder<CourseBloc, CourseState>(
-      builder: (context, state) {
-        final allCourses = state is CourseLoaded
-            ? state.courses.where((course) => course.isActive).toList()
-            : <Course>[];
-        final freeCourses = allCourses.where((course) => !course.isPremium).toList();
-        final premiumCourses = allCourses.where((course) => course.isPremium).toList();
-
-        return Container(
-          margin: const EdgeInsets.symmetric(horizontal: 16),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(25),
-          ),
-          child: TabBar(
-            controller: _tabController,
-            indicator: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(25),
-            ),
-            labelColor: Colors.black,
-            unselectedLabelColor: Colors.white,
-            dividerColor: Colors.transparent,
-            tabs: [
-              Tab(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.all_inclusive, size: 18),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text("Tất cả (${allCourses.length})"),
-                    ),
-                  ],
-                ),
-              ),
-              Tab(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.free_breakfast, size: 18),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text("Miễn phí (${freeCourses.length})"),
-                    ),
-                  ],
-                ),
-              ),
-              Tab(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    const Icon(Icons.star, size: 18),
-                    const SizedBox(width: 8),
-                    Flexible(
-                      child: Text("Premium (${premiumCourses.length})"),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   Widget _buildTabView() {
     return BlocConsumer<CourseBloc, CourseState>(
       listener: (context, state) {
         if (state is CourseError) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(state.message),
-              backgroundColor: Colors.red,
-            ),
-          );
+          _showErrorSnackBar(context, state);
         }
       },
       builder: (context, state) {
@@ -222,6 +150,7 @@ class _CourseViewState extends State<CourseView>
                   courses: allCourses,
                   isLoading: false,
                   error: null,
+                  errorCode: null,
                   onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
                   onCourseSelected: _onCourseSelected,
                   emptyMessage: "Chưa có khóa học nào",
@@ -230,6 +159,7 @@ class _CourseViewState extends State<CourseView>
                   courses: freeCourses,
                   isLoading: false,
                   error: null,
+                  errorCode: null,
                   onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
                   onCourseSelected: _onCourseSelected,
                   emptyMessage: "Chưa có khóa học miễn phí nào",
@@ -238,6 +168,7 @@ class _CourseViewState extends State<CourseView>
                   courses: premiumCourses,
                   isLoading: false,
                   error: null,
+                  errorCode: null,
                   onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
                   onCourseSelected: _onCourseSelected,
                   emptyMessage: "Chưa có khóa học premium nào",
@@ -248,7 +179,7 @@ class _CourseViewState extends State<CourseView>
         }
 
         if (state is CourseError) {
-          return _buildErrorTabView(state.message);
+          return _buildErrorTabView(state);
         }
 
         return _buildEmptyTabView();
@@ -264,6 +195,7 @@ class _CourseViewState extends State<CourseView>
           courses: const [],
           isLoading: true,
           error: null,
+          errorCode: null,
           onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
           onCourseSelected: _onCourseSelected,
           emptyMessage: "Chưa có khóa học nào",
@@ -272,6 +204,7 @@ class _CourseViewState extends State<CourseView>
           courses: const [],
           isLoading: true,
           error: null,
+          errorCode: null,
           onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
           onCourseSelected: _onCourseSelected,
           emptyMessage: "Chưa có khóa học miễn phí nào",
@@ -280,6 +213,7 @@ class _CourseViewState extends State<CourseView>
           courses: const [],
           isLoading: true,
           error: null,
+          errorCode: null,
           onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
           onCourseSelected: _onCourseSelected,
           emptyMessage: "Chưa có khóa học premium nào",
@@ -288,14 +222,15 @@ class _CourseViewState extends State<CourseView>
     );
   }
 
-  Widget _buildErrorTabView(String error) {
+  Widget _buildErrorTabView(CourseError state) {
     return TabBarView(
       controller: _tabController,
       children: [
         CourseGridWidget(
           courses: const [],
           isLoading: false,
-          error: error,
+          error: state.message,
+          errorCode: state.errorCode,
           onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
           onCourseSelected: _onCourseSelected,
           emptyMessage: "Chưa có khóa học nào",
@@ -303,7 +238,8 @@ class _CourseViewState extends State<CourseView>
         CourseGridWidget(
           courses: const [],
           isLoading: false,
-          error: error,
+          error: state.message,
+          errorCode: state.errorCode,
           onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
           onCourseSelected: _onCourseSelected,
           emptyMessage: "Chưa có khóa học miễn phí nào",
@@ -311,7 +247,8 @@ class _CourseViewState extends State<CourseView>
         CourseGridWidget(
           courses: const [],
           isLoading: false,
-          error: error,
+          error: state.message,
+          errorCode: state.errorCode,
           onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
           onCourseSelected: _onCourseSelected,
           emptyMessage: "Chưa có khóa học premium nào",
@@ -328,6 +265,7 @@ class _CourseViewState extends State<CourseView>
           courses: const [],
           isLoading: false,
           error: null,
+          errorCode: null,
           onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
           onCourseSelected: _onCourseSelected,
           emptyMessage: "Chưa có khóa học nào",
@@ -336,6 +274,7 @@ class _CourseViewState extends State<CourseView>
           courses: const [],
           isLoading: false,
           error: null,
+          errorCode: null,
           onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
           onCourseSelected: _onCourseSelected,
           emptyMessage: "Chưa có khóa học miễn phí nào",
@@ -344,11 +283,86 @@ class _CourseViewState extends State<CourseView>
           courses: const [],
           isLoading: false,
           error: null,
+          errorCode: null,
           onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
           onCourseSelected: _onCourseSelected,
           emptyMessage: "Chưa có khóa học premium nào",
         ),
       ],
+    );
+  }
+
+  void _showErrorSnackBar(BuildContext context, CourseError state) {
+    Color backgroundColor = Colors.red;
+    IconData icon = Icons.error;
+    String? actionLabel;
+    VoidCallback? action;
+
+    if (state.errorCode != null) {
+      switch (state.errorCode!) {
+        case 'NETWORK_ERROR':
+          backgroundColor = Colors.orange;
+          icon = Icons.wifi_off;
+          actionLabel = 'Thử lại';
+          action = () => context.read<CourseBloc>().add(LoadCourses());
+          break;
+        case 'UNAUTHORIZED':
+          backgroundColor = Colors.purple;
+          icon = Icons.lock;
+          actionLabel = 'Đăng nhập';
+          action = () {
+            // Navigate to login
+          };
+          break;
+        case 'TIMEOUT_ERROR':
+          backgroundColor = Colors.amber;
+          icon = Icons.access_time;
+          actionLabel = 'Thử lại';
+          action = () => context.read<CourseBloc>().add(LoadCourses());
+          break;
+        default:
+          actionLabel = 'Thử lại';
+          action = () => context.read<CourseBloc>().add(LoadCourses());
+      }
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(icon, color: Colors.white, size: 20),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Lỗi tải dữ liệu',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                    ),
+                  ),
+                  Text(
+                    state.message,
+                    style: const TextStyle(fontSize: 12),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: backgroundColor,
+        duration: const Duration(seconds: 4),
+        action: actionLabel != null && action != null
+            ? SnackBarAction(
+          label: actionLabel,
+          textColor: Colors.white,
+          onPressed: action,
+        )
+            : null,
+      ),
     );
   }
 

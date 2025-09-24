@@ -1,4 +1,3 @@
-// result_dto.dart
 class QuizResultResponse {
   final int status;
   final String code;
