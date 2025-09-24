@@ -1,6 +1,6 @@
 import 'package:logi_neko/core/exception/exceptions.dart';
-import 'package:logi_neko/features/quiz/result/api/api.dart';
-import 'package:logi_neko/features/quiz/result/dto/result.dart';
+import 'package:logi_neko/features/video/result/api/api.dart';
+import 'package:logi_neko/features/video/result/dto/result.dart';
 import '../api/api.dart';
 import '../dto/video.dart';
 
@@ -73,7 +73,7 @@ class VideoRepositoryImpl implements VideoRepository {
     } on NotFoundException {
       return null;
     } catch (e) {
-      print('Could not fetch quiz results: $e');
+      print('Could not fetch video results: $e');
       return null;
     }
   }

@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:logi_neko/core/exception/exceptions.dart';
-import 'package:logi_neko/features/quiz/result/dto/result.dart';
+import 'package:logi_neko/features/video/result/dto/result.dart';
 import '../repository/video_repo.dart';
 import '../dto/video.dart';
 

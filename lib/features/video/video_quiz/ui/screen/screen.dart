@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:logi_neko/features/quiz/quizChoice/ui/widgets/answer_button.dart';
-import 'package:logi_neko/features/quiz/quizChoice/ui/widgets/equation_display.dart';
-import 'package:logi_neko/features/quiz/quizChoice/ui/widgets/progress_indicator.dart';
-import 'package:logi_neko/features/quiz/result/ui/screen/result_screen.dart';
+import 'package:logi_neko/features/video/video_quiz//ui/widgets/answer_button.dart';
+import 'package:logi_neko/features/video/video_quiz/ui/widgets/equation_display.dart';
+import 'package:logi_neko/features/video/video_quiz/ui/widgets/progress_indicator.dart';
+import 'package:logi_neko/features/video/result/ui/screen/result_screen.dart';
 import '../../repository/video_repo.dart';
 import '../../bloc/video_bloc.dart';
 import '../../dto/video.dart';
