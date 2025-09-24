@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:logi_neko/features/quiz/quizChoice/dto/video.dart';
+import 'package:logi_neko/features/video/video_quiz/dto/video.dart';
 import '../widgets/result_header.dart';
 import '../widgets/result_score.dart';
 import '../widgets/result_buttons.dart';
@@ -80,7 +80,7 @@ class ResultScreen extends StatelessWidget {
   }
 
   void _onRetry(BuildContext context) {
-    // Navigate back to quiz with reset
+    // Navigate back to video with reset
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 

@@ -18,7 +18,7 @@ class QuizResultApi {
 
   static Future<ApiResponse<QuizResultData>> getQuizResults(int lessonId) async {
     return await ApiService.getObject<QuizResultData>(
-      '/quiz/results/$lessonId',
+      '/video/results/$lessonId',
       fromJson: QuizResultData.fromJson,
     );
   }

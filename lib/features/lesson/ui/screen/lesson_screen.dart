@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:logi_neko/features/quiz/quizChoice/ui/screen/screen.dart';
+import 'package:logi_neko/features/video/video_quiz/ui/screen/screen.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
 import '../../dto/lesson.dart';
 import '../../bloc/lesson_bloc.dart';
