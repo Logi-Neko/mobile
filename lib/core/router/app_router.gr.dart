@@ -39,6 +39,12 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const ForgotPasswordScreen(),
       );
     },
+    HomeRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const HomeScreen(),
+      );
+    },
     LoginRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -71,6 +77,12 @@ abstract class _$AppRouter extends RootStackRouter {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
         child: const StartScreen(),
+      );
+    },
+    SubscriptionRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const SubscriptionScreen(),
       );
     },
   };
@@ -128,6 +140,20 @@ class ForgotPasswordRoute extends PageRouteInfo<void> {
         );
 
   static const String name = 'ForgotPasswordRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [HomeScreen]
+class HomeRoute extends PageRouteInfo<void> {
+  const HomeRoute({List<PageRouteInfo>? children})
+      : super(
+          HomeRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'HomeRoute';
 
   static const PageInfo<void> page = PageInfo<void>(name);
 }
@@ -217,6 +243,20 @@ class StartRoute extends PageRouteInfo<void> {
         );
 
   static const String name = 'StartRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [SubscriptionScreen]
+class SubscriptionRoute extends PageRouteInfo<void> {
+  const SubscriptionRoute({List<PageRouteInfo>? children})
+      : super(
+          SubscriptionRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'SubscriptionRoute';
 
   static const PageInfo<void> page = PageInfo<void>(name);
 }

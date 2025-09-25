@@ -1,10 +1,12 @@
 import 'package:flutter/cupertino.dart';
 import 'package:logi_neko/features/auth/screens/auth_selection.dart';
+import 'package:logi_neko/features/home/ui/screen/home_screen.dart';
 import 'package:logi_neko/features/login/screen/login_screen.dart';
 import 'package:logi_neko/features/login/screen/start_screen.dart';
 import 'package:logi_neko/features/login/screen/customer_auth_screen.dart';
 
 import 'package:auto_route/auto_route.dart';
+import 'package:logi_neko/features/subcription/screen/subcription.dart';
 
 import '../../features/course/ui/screen/course_main_screen.dart';
 import '../../features/login/screen/forgot_password_screen.dart';
@@ -25,6 +27,9 @@ class AppRouter extends _$AppRouter {
     AutoRoute(page: SignUpStepOneRoute.page,path: '/register/step-one'),
     AutoRoute(page: SignUpStepTwoRoute.page, path: '/register/step-two/:username/:email'),
     AutoRoute(page: CourseRoute.page, path: '/course'),
+    AutoRoute(page: HomeRoute.page, path: '/'),
+    AutoRoute(page: SubscriptionRoute.page, path: '/subscription'),
+
     // Sau này thêm các màn khác ở đây
   ];
 }

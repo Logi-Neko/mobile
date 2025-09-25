@@ -1,6 +1,9 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:logi_neko/core/router/app_router.dart';
 import '../widgets/subcription_card.dart';
 
+@RoutePage()
 class SubscriptionScreen extends StatelessWidget {
   const SubscriptionScreen({Key? key}) : super(key: key);
 
@@ -25,36 +28,23 @@ class SubscriptionScreen extends StatelessWidget {
             child: Row(
               children: [
                 Expanded(
-                  flex: 1,
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        children: [
-                          Container(
-                            decoration: BoxDecoration(
-                              color: Colors.black.withOpacity(0.1),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: IconButton(
-                              icon: const Icon(
-                                Icons.arrow_back_ios,
-                                color: Colors.white,
-                                size: 18,
-                              ),
-                              onPressed: () => Navigator.pop(context),
-                            ),
+                      TextButton.icon(
+                        style: TextButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(30),
+                            side: const BorderSide(color: Colors.black),
                           ),
-                          const SizedBox(width: 12),
-                          const Text(
-                            'Quay lại',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ],
+                        ),
+                        onPressed: () => context.router.pushAndPopUntil(
+                          const HomeRoute(),
+                          predicate: (route) => false,
+                        ),
+                        icon: const Icon(Icons.arrow_back, color: Colors.black),
+                        label: const Text("Quay lại", style: TextStyle(color: Colors.black)),
                       ),
                       const SizedBox(height: 20),
 
