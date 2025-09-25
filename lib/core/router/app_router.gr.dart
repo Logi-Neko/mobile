@@ -21,6 +21,12 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const AuthSelectionScreen(),
       );
     },
+    CountdownRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const CountdownScreen(),
+      );
+    },
     CourseRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -43,6 +49,24 @@ abstract class _$AppRouter extends RootStackRouter {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
         child: const LoginScreen(),
+      );
+    },
+    QuizResultRoute.name: (routeData) {
+      final args = routeData.argsAs<QuizResultRouteArgs>();
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: QuizResultScreen(
+          key: args.key,
+          questions: args.questions,
+          answers: args.answers,
+          score: args.score,
+        ),
+      );
+    },
+    RoomQuizRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const RoomQuizScreen(),
       );
     },
     SignUpStepOneRoute.name: (routeData) {
@@ -73,6 +97,12 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const StartScreen(),
       );
     },
+    WaitingRoomRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const WaitingRoomScreen(),
+      );
+    },
   };
 }
 
@@ -86,6 +116,20 @@ class AuthSelectionRoute extends PageRouteInfo<void> {
         );
 
   static const String name = 'AuthSelectionRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [CountdownScreen]
+class CountdownRoute extends PageRouteInfo<void> {
+  const CountdownRoute({List<PageRouteInfo>? children})
+      : super(
+          CountdownRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'CountdownRoute';
 
   static const PageInfo<void> page = PageInfo<void>(name);
 }
@@ -142,6 +186,68 @@ class LoginRoute extends PageRouteInfo<void> {
         );
 
   static const String name = 'LoginRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [QuizResultScreen]
+class QuizResultRoute extends PageRouteInfo<QuizResultRouteArgs> {
+  QuizResultRoute({
+    Key? key,
+    required List<Question> questions,
+    required Map<int, String> answers,
+    required int score,
+    List<PageRouteInfo>? children,
+  }) : super(
+          QuizResultRoute.name,
+          args: QuizResultRouteArgs(
+            key: key,
+            questions: questions,
+            answers: answers,
+            score: score,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'QuizResultRoute';
+
+  static const PageInfo<QuizResultRouteArgs> page =
+      PageInfo<QuizResultRouteArgs>(name);
+}
+
+class QuizResultRouteArgs {
+  const QuizResultRouteArgs({
+    this.key,
+    required this.questions,
+    required this.answers,
+    required this.score,
+  });
+
+  final Key? key;
+
+  final List<Question> questions;
+
+  final Map<int, String> answers;
+
+  final int score;
+
+  @override
+  String toString() {
+    return 'QuizResultRouteArgs{key: $key, questions: $questions, answers: $answers, score: $score}';
+  }
+}
+
+/// generated route for
+/// [RoomQuizScreen]
+class RoomQuizRoute extends PageRouteInfo<void> {
+  const RoomQuizRoute({List<PageRouteInfo>? children})
+      : super(
+          RoomQuizRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'RoomQuizRoute';
 
   static const PageInfo<void> page = PageInfo<void>(name);
 }
@@ -217,6 +323,20 @@ class StartRoute extends PageRouteInfo<void> {
         );
 
   static const String name = 'StartRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [WaitingRoomScreen]
+class WaitingRoomRoute extends PageRouteInfo<void> {
+  const WaitingRoomRoute({List<PageRouteInfo>? children})
+      : super(
+          WaitingRoomRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'WaitingRoomRoute';
 
   static const PageInfo<void> page = PageInfo<void>(name);
 }

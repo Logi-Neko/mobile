@@ -19,8 +19,8 @@ class AuthApiService {
       : _dio = dio ??
             Dio(BaseOptions(
               baseUrl:  "http://10.0.2.2:8081/api",
-              connectTimeout: const Duration(seconds: 10),
-              receiveTimeout: const Duration(seconds: 10),
+              connectTimeout: const Duration(seconds: 15),
+              receiveTimeout: const Duration(seconds: 15),
             )) {
     // Khởi tạo interceptors
     _authInterceptor = AuthInterceptor();
