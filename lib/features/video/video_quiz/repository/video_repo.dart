@@ -8,7 +8,6 @@ abstract class VideoRepository {
   Future<List<VideoData>> getVideosByLessonId(int lessonId);
   Future<VideoData> getVideoById(int id);
   Future<bool> submitVideoAnswer(int videoId, String answer);
-  Future<QuizResultData?> getQuizResults(int lessonId);
 }
 
 class VideoRepositoryImpl implements VideoRepository {
@@ -59,22 +58,5 @@ class VideoRepositoryImpl implements VideoRepository {
       errorCode: response.code ?? 'SUBMIT_ANSWER_ERROR',
       details: 'Video ID: $videoId, Answer: $answer',
     );
-  }
-
-  @override
-  Future<QuizResultData?> getQuizResults(int lessonId) async {
-    try {
-      final response = await QuizResultApi.getQuizResults(lessonId);
-
-      if (response.isSuccess && response.hasData) {
-        return response.data;
-      }
-      return null;
-    } on NotFoundException {
-      return null;
-    } catch (e) {
-      print('Could not fetch video results: $e');
-      return null;
-    }
   }
 }

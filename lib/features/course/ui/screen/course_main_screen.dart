@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:logi_neko/core/router/app_router.dart';
 import 'package:logi_neko/features/lesson/ui/screen/lesson_screen.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
 import '../../bloc/course_bloc.dart';
@@ -80,7 +81,10 @@ class _CourseViewState extends State<CourseView>
                 side: const BorderSide(color: Colors.black),
               ),
             ),
-            onPressed: () => Navigator.pop(context),
+            onPressed: () => context.router.pushAndPopUntil(
+              const HomeRoute(),
+              predicate: (route) => false,
+            ),
             icon: const Icon(Icons.arrow_back, color: Colors.black),
             label: const Text("Quay lại", style: TextStyle(color: Colors.black)),
           ),
