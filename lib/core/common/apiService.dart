@@ -13,9 +13,11 @@ class ApiService {
 
   static late Dio _dio;
   static late TokenStorage _tokenStorage;
+  static late AuthInterceptor _authInterceptor;
 
   static Future<void> initialize() async  {
     _tokenStorage = TokenStorage.instance;
+    _authInterceptor = AuthInterceptor();
 
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
@@ -32,9 +34,7 @@ class ApiService {
   }
 
   static void _setupInterceptors() {
-    _dio.interceptors.add(DioErrorInterceptor(dio: _dio));
-
-    // _dio.interceptors.add(AuthInterceptor());
+    _dio.interceptors.add(_authInterceptor);
 
     if (kDebugMode) {
       _dio.interceptors.add(LogInterceptor(
@@ -43,7 +43,10 @@ class ApiService {
         logPrint: (obj) => logger.d(obj),
       ));
     }
+
+    _dio.interceptors.add(DioErrorInterceptor(dio: _dio));
   }
+
 
   static Dio get dio {
     try {
