@@ -24,8 +24,8 @@ part 'app_router.gr.dart';
 class AppRouter extends _$AppRouter {
   @override
   List<AutoRoute> get routes => [
-    AutoRoute(page: WaitingRoomRoute.page, initial: true), // Thay đổi tạm thời để test
-    AutoRoute(page: StartRoute.page, path: '/start'),
+    AutoRoute(page: StartRoute.page, initial: true), // Thay đổi tạm thời để testStartRoute
+    AutoRoute(page: WaitingRoomRoute.page, path: '/waiting-room'),
     AutoRoute(page: CustomerAuthRoute.page, path: '/customer-auth'),
     AutoRoute(page: AuthSelectionRoute.page, path: '/auth-selection'),
     AutoRoute(page: LoginRoute.page, path: '/login'),

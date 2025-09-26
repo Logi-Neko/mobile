@@ -6,6 +6,7 @@ class LearningCardWidget extends StatelessWidget {
   final Color color;
   final Color bgColor;
   final String? badge;
+  final String? imagePath; // Thêm thuộc tính imagePath
   final VoidCallback? onTap;
 
   const LearningCardWidget({
@@ -15,6 +16,7 @@ class LearningCardWidget extends StatelessWidget {
     required this.color,
     required this.bgColor,
     this.badge,
+    this.imagePath, // Thêm vào constructor
     this.onTap,
   }) : super(key: key);
 
@@ -22,60 +24,130 @@ class LearningCardWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(16),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
-          color: bgColor,
-          borderRadius: BorderRadius.circular(16),
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              bgColor,
+              bgColor.withOpacity(0.8),
+              Colors.white.withOpacity(0.9),
+            ],
+            stops: const [0.0, 0.6, 1.0],
+          ),
+          borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.2),
+              color: color.withOpacity(0.3),
+              blurRadius: 15,
+              offset: const Offset(0, 8),
+              spreadRadius: 2,
+            ),
+            BoxShadow(
+              color: Colors.white.withOpacity(0.8),
               blurRadius: 8,
-              offset: const Offset(0, 4),
+              offset: const Offset(-2, -2),
             ),
           ],
+          border: Border.all(
+            color: Colors.white.withOpacity(0.4),
+            width: 1.5,
+          ),
         ),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            // Container cho hình ảnh hoặc icon
             Container(
-              padding: const EdgeInsets.all(12),
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
-                color: color,
-                borderRadius: BorderRadius.circular(12),
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    color,
+                    color.withOpacity(0.8),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: color.withOpacity(0.4),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 28,
-              ),
+              child: imagePath != null
+                  ? ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: Image.asset(
+                        imagePath!,
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          // Fallback to icon if image fails to load
+                          return Icon(
+                            icon,
+                            color: Colors.white,
+                            size: 40,
+                          );
+                        },
+                      ),
+                    )
+                  : Icon(
+                      icon,
+                      color: Colors.white,
+                      size: 40,
+                    ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
+            // Title với style đẹp hơn
             Text(
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 14,
+                fontSize: 16,
                 fontWeight: FontWeight.bold,
                 color: color,
+                height: 1.2,
+                shadows: [
+                  Shadow(
+                    color: Colors.white.withOpacity(0.8),
+                    offset: const Offset(1, 1),
+                    blurRadius: 2,
+                  ),
+                ],
               ),
             ),
             if (badge != null) ...[
-              const SizedBox(height: 4),
+              const SizedBox(height: 8),
               Container(
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 2,
+                  horizontal: 12,
+                  vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: color,
-                  borderRadius: BorderRadius.circular(10),
+                  gradient: LinearGradient(
+                    colors: [color, color.withOpacity(0.8)],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                      color: color.withOpacity(0.3),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
                 child: Text(
                   badge!,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 10,
+                    fontSize: 11,
                     fontWeight: FontWeight.bold,
                   ),
                 ),

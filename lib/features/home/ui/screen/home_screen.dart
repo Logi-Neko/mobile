@@ -26,18 +26,21 @@ class _HomeScreenState extends State<HomeScreen> {
       'icon': Icons.psychology,
       'color': Color(0xFF9C5AB8),
       'bgColor': Color(0xFFE1BEF0),
+      'imagePath': 'lib/shared/assets/images/hoctap.jpg',
     },
     {
-      'title': 'Phòng thi đấu',
+      'title': 'Cuộc thi cho bé',
       'icon': Icons.sports_esports,
       'color': Color(0xFFFF8C42),
       'bgColor': Color(0xFFFFE0CC),
+      'imagePath': 'lib/shared/assets/images/cuocthi.png',
     },
     {
-      'title': 'Cửa hàng',
+      'title': 'Cửa hàng nhân vật',
       'icon': Icons.store,
       'color': Color(0xFF4CAF50),
       'bgColor': Color(0xFFDCF2DD),
+      'imagePath': 'lib/shared/assets/images/cuahang.jpg',
     },
   ];
 
@@ -72,11 +75,11 @@ class _HomeScreenState extends State<HomeScreen> {
               },
               builder: (context, state) {
                 return Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
                   child: Column(
                     children: [
                       _buildHeader(state),
-                      const SizedBox(height: 5),
+                      const SizedBox(height: 24),
                       _buildContent(context, state),
                     ],
                   ),
@@ -142,6 +145,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   icon: learningTopics[0]['icon'],
                   color: learningTopics[0]['color'],
                   bgColor: learningTopics[0]['bgColor'],
+                  imagePath: learningTopics[0]['imagePath'],
                   onTap: () {
                     context.router.pushAndPopUntil(
                       const CourseRoute(),
@@ -149,25 +153,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     );                  },
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: LearningCardWidget(
                   title: learningTopics[1]['title'],
                   icon: learningTopics[1]['icon'],
                   color: learningTopics[1]['color'],
                   bgColor: learningTopics[1]['bgColor'],
+                  imagePath: learningTopics[1]['imagePath'],
                   onTap: () {
                     print('Room');
                   },
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
                 child: LearningCardWidget(
                   title: learningTopics[2]['title'],
                   icon: learningTopics[2]['icon'],
                   color: learningTopics[2]['color'],
                   bgColor: learningTopics[2]['bgColor'],
+                  imagePath: learningTopics[2]['imagePath'],
                   onTap: () {
                     print('Tapped on Cửa hàng');
                   },
