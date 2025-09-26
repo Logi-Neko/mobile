@@ -464,8 +464,7 @@ class LessonCard extends StatelessWidget {
   }
 
   Widget _buildStatusIndicator() {
-    // TODO: Get actual completion status from user progress
-    final isCompleted = false;
+    final isCompleted = lesson.star > 0;
     final isInProgress = false;
 
     if (isCompleted) {
