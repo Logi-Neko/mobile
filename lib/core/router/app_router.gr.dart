@@ -21,6 +21,12 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const AuthSelectionScreen(),
       );
     },
+    CharacterRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const CharacterScreen(),
+      );
+    },
     CountdownRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -128,6 +134,20 @@ class AuthSelectionRoute extends PageRouteInfo<void> {
         );
 
   static const String name = 'AuthSelectionRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [CharacterScreen]
+class CharacterRoute extends PageRouteInfo<void> {
+  const CharacterRoute({List<PageRouteInfo>? children})
+      : super(
+          CharacterRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'CharacterRoute';
 
   static const PageInfo<void> page = PageInfo<void>(name);
 }

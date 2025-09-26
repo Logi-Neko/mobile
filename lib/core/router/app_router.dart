@@ -9,6 +9,7 @@ import 'package:logi_neko/features/room/screen/countdown_screen.dart';
 import 'package:logi_neko/features/room/screen/room_quiz_screen.dart';
 import 'package:logi_neko/features/room/screen/quiz_result_screen.dart';
 import 'package:logi_neko/features/room/dto/question.dart';
+import 'package:logi_neko/features/character/ui/screen/character_screen.dart';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:logi_neko/features/subcription/screen/subcription.dart';
@@ -38,6 +39,7 @@ class AppRouter extends _$AppRouter {
     AutoRoute(page: SubscriptionRoute.page, path: '/subscription'),
     AutoRoute(page: CountdownRoute.page, path: '/countdown'),
     AutoRoute(page: RoomQuizRoute.page, path: '/room-quiz'),
-    AutoRoute(page: QuizResultRoute.page, path: '/quiz-result')
+    AutoRoute(page: QuizResultRoute.page, path: '/quiz-result'),
+    AutoRoute(page: CharacterRoute.page, path: '/character'),
   ];
 }

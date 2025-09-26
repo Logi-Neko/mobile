@@ -161,9 +161,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: learningTopics[1]['color'],
                   bgColor: learningTopics[1]['bgColor'],
                   imagePath: learningTopics[1]['imagePath'],
-                  onTap: () {
-                    print('Room');
-                  },
+                 onTap: () {
+                    context.router.pushAndPopUntil(
+                      const WaitingRoomRoute(),
+                      predicate: (route) => false,
+                    );                  },
                 ),
               ),
               const SizedBox(width: 16),
@@ -175,8 +177,10 @@ class _HomeScreenState extends State<HomeScreen> {
                   bgColor: learningTopics[2]['bgColor'],
                   imagePath: learningTopics[2]['imagePath'],
                   onTap: () {
-                    print('Tapped on Cửa hàng');
-                  },
+                    context.router.pushAndPopUntil(
+                      const CharacterRoute(),
+                      predicate: (route) => false,
+                    );                  },
                 ),
               ),
             ],
