@@ -79,10 +79,15 @@ class HeaderWidget extends StatelessWidget {
                       offset: const Offset(0, 2),
                     ),
                   ],
-                  image: const DecorationImage(
-                    image: AssetImage("lib/shared/assets/images/LOGO.jpg"),
-                    fit: BoxFit.cover,
-                  ),
+                  image: user?.avatarUrl != null 
+                      ? DecorationImage(
+                          image: NetworkImage(user!.avatarUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : const DecorationImage(
+                          image: AssetImage("lib/shared/assets/images/LOGO.jpg"),
+                          fit: BoxFit.cover,
+                        ),
                 ),
               ),
             const SizedBox(width: 12),
