@@ -89,7 +89,7 @@ class _LessonViewState extends State<LessonView>
                       child: Column(
                         children: [
                           _buildHeader(state),
-                          const SizedBox(height: 16),
+                          const SizedBox(height: 8),
                         ],
                       ),
                     ),
@@ -106,12 +106,12 @@ class _LessonViewState extends State<LessonView>
 
   Widget _buildHeader(LessonState state) {
     int totalLessons = 0;
-    int completedLessons = 0; // TODO: Get from user progress
+    int completedLessons = 0;
 
     if (state is LessonsLoaded) {
       final activeLessons = state.lessons.where((lesson) => lesson.isActive).toList();
       totalLessons = activeLessons.length;
-      completedLessons = activeLessons.where((lesson) => lesson.star > 0).length;
+      completedLessons = activeLessons.where((lesson) => lesson.isCompleted).length;
     }
 
     return LessonHeaderWidget(
@@ -125,17 +125,10 @@ class _LessonViewState extends State<LessonView>
 
   Widget _buildTabView(LessonState state) {
     List<Lesson> allLessons = [];
-    List<Lesson> freeLessons = [];
-    List<Lesson> premiumLessons = [];
-    List<Lesson> completedLessons = [];
 
     if (state is LessonsLoaded) {
       allLessons = state.lessons.where((lesson) => lesson.isActive).toList();
       allLessons.sort((a, b) => a.order.compareTo(b.order));
-
-      freeLessons = allLessons.where((lesson) => !lesson.isPremium).toList();
-      premiumLessons = allLessons.where((lesson) => lesson.isPremium).toList();
-      completedLessons = []; // TODO: Filter completed lessons from user progress
     }
 
     return TabBarView(
@@ -153,48 +146,6 @@ class _LessonViewState extends State<LessonView>
             onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
             onLessonSelected: _onLessonSelected,
             emptyMessage: "Chưa có bài học nào",
-          ),
-        ),
-        RefreshIndicator(
-          onRefresh: () async {
-            context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
-          },
-          child: LessonGridWidget(
-            lessons: freeLessons,
-            isLoading: state is LessonLoading,
-            error: state is LessonError ? state.message : null,
-            errorCode: state is LessonError ? state.errorCode : null,
-            onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
-            onLessonSelected: _onLessonSelected,
-            emptyMessage: "Chưa có bài học miễn phí nào",
-          ),
-        ),
-        RefreshIndicator(
-          onRefresh: () async {
-            context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
-          },
-          child: LessonGridWidget(
-            lessons: premiumLessons,
-            isLoading: state is LessonLoading,
-            error: state is LessonError ? state.message : null,
-            errorCode: state is LessonError ? state.errorCode : null,
-            onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
-            onLessonSelected: _onLessonSelected,
-            emptyMessage: "Chưa có bài học premium nào",
-          ),
-        ),
-        RefreshIndicator(
-          onRefresh: () async {
-            context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
-          },
-          child: LessonGridWidget(
-            lessons: completedLessons,
-            isLoading: state is LessonLoading,
-            error: state is LessonError ? state.message : null,
-            errorCode: state is LessonError ? state.errorCode : null,
-            onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
-            onLessonSelected: _onLessonSelected,
-            emptyMessage: "Chưa hoàn thành bài học nào",
           ),
         ),
       ],
@@ -260,11 +211,16 @@ class _LessonViewState extends State<LessonView>
       return;
     }
 
-    showModalBottomSheet(
+    showDialog(
       context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (context) => _buildLessonDetailSheet(lesson),
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          child: _buildLessonDetailSheet(lesson),
+        );
+      },
     );
   }
 
@@ -309,7 +265,7 @@ class _LessonViewState extends State<LessonView>
   Widget _buildLessonDetailSheet(Lesson lesson) {
     return Container(
       width: MediaQuery.of(context).size.width * 0.8,
-      height: MediaQuery.of(context).size.height * 0.8,
+      height: MediaQuery.of(context).size.height * 0.9,
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
@@ -327,7 +283,7 @@ class _LessonViewState extends State<LessonView>
           ),
           Expanded(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(15),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -370,7 +326,7 @@ class _LessonViewState extends State<LessonView>
                         ),
                     ],
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 8),
                   Text(
                     lesson.description,
                     style: const TextStyle(
@@ -379,7 +335,16 @@ class _LessonViewState extends State<LessonView>
                       height: 1.5,
                     ),
                   ),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 8),
+                  if (lesson.hasProgress)
+                    Column(
+                      children: [
+                        _buildProgressSection(lesson),
+                        const SizedBox(height: 10),
+                      ],
+                    )
+                  else
+                    const SizedBox(height: 40),
                   Row(
                     children: [
                       _buildInfoCard(
@@ -404,7 +369,7 @@ class _LessonViewState extends State<LessonView>
                       ),
                     ],
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 10),
                   SizedBox(
                     width: double.infinity,
                     child: ElevatedButton(
@@ -413,17 +378,17 @@ class _LessonViewState extends State<LessonView>
                         _navigateToQuizScreen(lesson);
                       },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
+                        backgroundColor: lesson.isCompleted ? Colors.green : Colors.blue,
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
                         ),
                       ),
-                      child: const Text(
-                        "Bắt đầu học",
-                        style: TextStyle(
-                          fontSize: 16,
+                      child: Text(
+                        lesson.isCompleted ? "Học lại" : "Bắt đầu học",
+                        style: const TextStyle(
+                          fontSize: 12,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -435,6 +400,54 @@ class _LessonViewState extends State<LessonView>
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildProgressSection(Lesson lesson) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            const Text(
+              "Tiến độ học tập",
+              style: TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: lesson.isCompleted ? Colors.green : Colors.blue,
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                lesson.progressText,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(10),
+          child: LinearProgressIndicator(
+            value: lesson.progressPercentage / 100,
+            backgroundColor: Colors.grey[300],
+            valueColor: AlwaysStoppedAnimation<Color>(
+              lesson.isCompleted ? Colors.green : Colors.blue,
+            ),
+            minHeight: 8,
+          ),
+        ),
+
+      ],
     );
   }
 
@@ -467,15 +480,6 @@ class _LessonViewState extends State<LessonView>
         child: Column(
           children: [
             Icon(icon, color: color, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: TextStyle(
-                fontSize: 12,
-                color: color,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
             const SizedBox(height: 4),
             Text(
               value,

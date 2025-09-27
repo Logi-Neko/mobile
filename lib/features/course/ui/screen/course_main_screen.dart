@@ -90,9 +90,9 @@ class _CourseViewState extends State<CourseView>
           ),
           Row(
             children: [
-              _topButton("Phụ huynh", Icons.family_restroom, purple: true),
+              _buildParentContainer(),
               const SizedBox(width: 8),
-              _topButton("Premium", Icons.star, orange: true),
+              _buildPremiumContainer(context),
             ],
           ),
         ],
@@ -140,9 +140,6 @@ class _CourseViewState extends State<CourseView>
 
         if (state is CourseLoaded) {
           final allCourses = state.courses.where((course) => course.isActive).toList();
-          final freeCourses = allCourses.where((course) => !course.isPremium).toList();
-          final premiumCourses = allCourses.where((course) => course.isPremium).toList();
-
           return RefreshIndicator(
             onRefresh: () async {
               context.read<CourseBloc>().add(LoadCourses());
@@ -158,24 +155,6 @@ class _CourseViewState extends State<CourseView>
                   onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
                   onCourseSelected: _onCourseSelected,
                   emptyMessage: "Chưa có khóa học nào",
-                ),
-                CourseGridWidget(
-                  courses: freeCourses,
-                  isLoading: false,
-                  error: null,
-                  errorCode: null,
-                  onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
-                  onCourseSelected: _onCourseSelected,
-                  emptyMessage: "Chưa có khóa học miễn phí nào",
-                ),
-                CourseGridWidget(
-                  courses: premiumCourses,
-                  isLoading: false,
-                  error: null,
-                  errorCode: null,
-                  onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
-                  onCourseSelected: _onCourseSelected,
-                  emptyMessage: "Chưa có khóa học premium nào",
                 ),
               ],
             ),
@@ -239,24 +218,6 @@ class _CourseViewState extends State<CourseView>
           onCourseSelected: _onCourseSelected,
           emptyMessage: "Chưa có khóa học nào",
         ),
-        CourseGridWidget(
-          courses: const [],
-          isLoading: false,
-          error: state.message,
-          errorCode: state.errorCode,
-          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
-          onCourseSelected: _onCourseSelected,
-          emptyMessage: "Chưa có khóa học miễn phí nào",
-        ),
-        CourseGridWidget(
-          courses: const [],
-          isLoading: false,
-          error: state.message,
-          errorCode: state.errorCode,
-          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
-          onCourseSelected: _onCourseSelected,
-          emptyMessage: "Chưa có khóa học premium nào",
-        ),
       ],
     );
   }
@@ -273,24 +234,6 @@ class _CourseViewState extends State<CourseView>
           onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
           onCourseSelected: _onCourseSelected,
           emptyMessage: "Chưa có khóa học nào",
-        ),
-        CourseGridWidget(
-          courses: const [],
-          isLoading: false,
-          error: null,
-          errorCode: null,
-          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
-          onCourseSelected: _onCourseSelected,
-          emptyMessage: "Chưa có khóa học miễn phí nào",
-        ),
-        CourseGridWidget(
-          courses: const [],
-          isLoading: false,
-          error: null,
-          errorCode: null,
-          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
-          onCourseSelected: _onCourseSelected,
-          emptyMessage: "Chưa có khóa học premium nào",
         ),
       ],
     );
@@ -371,220 +314,151 @@ class _CourseViewState extends State<CourseView>
   }
 
   void _onCourseSelected(Course course) {
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: _buildCoursePreview(course),
-        );
-      },
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LessonScreen(
+          courseId: course.id,
+          courseName: course.name,
+          courseDescription: course.description,
+        ),
+      ),
     );
   }
 
-  Widget _buildCoursePreview(Course course) {
+  Widget _buildParentContainer() {
     return Container(
-      width: MediaQuery.of(context).size.width * 0.8,
-      height: MediaQuery.of(context).size.height * 0.8,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
       decoration: BoxDecoration(
-        color: Colors.white,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Colors.white,
+            Colors.white.withOpacity(0.9),
+          ],
+        ),
         borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: const Color(0xFF9575CD), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF9575CD).withOpacity(0.2),
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
-      child: Column(
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.symmetric(vertical: 4),
+            width: 24,
+            height: 24,
             decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
+              gradient: LinearGradient(
+                colors: [const Color(0xFFFF8C42), Colors.deepOrange.shade600],
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFFFF8C42).withOpacity(0.3),
+                  blurRadius: 4,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: const Icon(
+              Icons.people,
+              color: Colors.white,
+              size: 14,
             ),
           ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          course.name,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      if (course.isPremium)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.star, color: Colors.white, size: 16),
-                              SizedBox(width: 4),
-                              Text(
-                                "Premium",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
+          const SizedBox(width: 6),
+          const Text(
+            'Phụ huynh',
+            style: TextStyle(
+              color: Color(0xFF5C6BC0),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPremiumContainer(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        context.router.pushAndPopUntil(
+          const SubscriptionRoute(),
+          predicate: (route) => false,
+        );
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFFFF8C42),
+              Colors.deepOrange.shade600,
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFFFF8C42).withOpacity(0.4),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [const Color(0xFFFFB74D), Colors.amber.shade600],
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.amber.withOpacity(0.4),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
                   ),
-                  const SizedBox(height: 12),
-                  Text(
-                    course.description,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      _buildInfoCard(
-                        icon: Icons.play_circle_outline,
-                        title: "Bài học",
-                        value: "${course.totalLesson}",
-                      ),
-                      const SizedBox(width: 16),
-                      _buildInfoCard(
-                        icon: Icons.access_time,
-                        title: "Thời lượng",
-                        value: "~${course.totalLesson * 10}p",
-                      ),
-                      const SizedBox(width: 16),
-                      _buildInfoCard(
-                        icon: Icons.attach_money,
-                        title: "Giá",
-                        value: course.price > 0
-                            ? "${course.price.toStringAsFixed(0)}đ"
-                            : "Miễn phí",
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 30),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) => LessonScreen(
-                              courseId: course.id,
-                              courseName: course.name,
-                              courseDescription: course.description,
-                            ),
-                          ),
-                        );
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 16),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      child: const Text(
-                        "Bắt đầu học",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ),
+                ],
+              ),
+              child: const Icon(
+                Icons.star,
+                color: Colors.white,
+                size: 14,
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              'Premium',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(
+                    color: Colors.black26,
+                    offset: Offset(1, 1),
+                    blurRadius: 2,
                   ),
                 ],
               ),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildInfoCard({
-    required IconData icon,
-    required String title,
-    required String value,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: Colors.grey[100],
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: Colors.blue, size: 24),
-            const SizedBox(height: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 12,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
           ],
         ),
-      ),
-    );
-  }
-
-  Widget _topButton(String text, IconData icon,
-      {bool purple = false, bool orange = false}) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: purple
-            ? Colors.purple.shade100
-            : orange
-            ? Colors.orange
-            : Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Row(
-        children: [
-          Icon(icon, size: 16, color: orange ? Colors.white : Colors.black),
-          const SizedBox(width: 4),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 13,
-              color: orange ? Colors.white : Colors.black,
-            ),
-          ),
-        ],
       ),
     );
   }
