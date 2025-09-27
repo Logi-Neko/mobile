@@ -109,7 +109,9 @@ class _LessonViewState extends State<LessonView>
     int completedLessons = 0; // TODO: Get from user progress
 
     if (state is LessonsLoaded) {
-      totalLessons = state.lessons.where((lesson) => lesson.isActive).length;
+      final activeLessons = state.lessons.where((lesson) => lesson.isActive).toList();
+      totalLessons = activeLessons.length;
+      completedLessons = activeLessons.where((lesson) => lesson.star > 0).length;
     }
 
     return LessonHeaderWidget(
@@ -147,7 +149,7 @@ class _LessonViewState extends State<LessonView>
             lessons: allLessons,
             isLoading: state is LessonLoading,
             error: state is LessonError ? state.message : null,
-            errorCode: state is LessonError ? state.errorCode : null, // ✅ THÊM errorCode
+            errorCode: state is LessonError ? state.errorCode : null,
             onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
             onLessonSelected: _onLessonSelected,
             emptyMessage: "Chưa có bài học nào",
@@ -161,7 +163,7 @@ class _LessonViewState extends State<LessonView>
             lessons: freeLessons,
             isLoading: state is LessonLoading,
             error: state is LessonError ? state.message : null,
-            errorCode: state is LessonError ? state.errorCode : null, // ✅ THÊM errorCode
+            errorCode: state is LessonError ? state.errorCode : null,
             onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
             onLessonSelected: _onLessonSelected,
             emptyMessage: "Chưa có bài học miễn phí nào",
@@ -175,7 +177,7 @@ class _LessonViewState extends State<LessonView>
             lessons: premiumLessons,
             isLoading: state is LessonLoading,
             error: state is LessonError ? state.message : null,
-            errorCode: state is LessonError ? state.errorCode : null, // ✅ THÊM errorCode
+            errorCode: state is LessonError ? state.errorCode : null,
             onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
             onLessonSelected: _onLessonSelected,
             emptyMessage: "Chưa có bài học premium nào",
@@ -189,7 +191,7 @@ class _LessonViewState extends State<LessonView>
             lessons: completedLessons,
             isLoading: state is LessonLoading,
             error: state is LessonError ? state.message : null,
-            errorCode: state is LessonError ? state.errorCode : null, // ✅ THÊM errorCode
+            errorCode: state is LessonError ? state.errorCode : null,
             onRetry: () => context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId)),
             onLessonSelected: _onLessonSelected,
             emptyMessage: "Chưa hoàn thành bài học nào",

@@ -196,13 +196,11 @@ class CourseGridWidget extends StatelessWidget {
 class CourseCard extends StatelessWidget {
   final Course course;
   final VoidCallback? onTap;
-  final bool showPrice;
 
   const CourseCard({
     super.key,
     required this.course,
     this.onTap,
-    this.showPrice = true,
   });
 
   @override
@@ -272,8 +270,6 @@ class CourseCard extends StatelessWidget {
                       color: Colors.grey,
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  if (showPrice) _buildPriceWidget(),
                 ],
               ),
             ),
@@ -341,28 +337,6 @@ class CourseCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildPriceWidget() {
-    if (course.price > 0) {
-      return Text(
-        "${course.price.toStringAsFixed(0)}đ",
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.bold,
-          color: Colors.orange,
-        ),
-      );
-    }
-
-    return const Text(
-      "Miễn phí",
-      style: TextStyle(
-        fontSize: 14,
-        fontWeight: FontWeight.bold,
-        color: Colors.green,
       ),
     );
   }
