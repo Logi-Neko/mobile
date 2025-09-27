@@ -1,100 +1,85 @@
 import 'package:logi_neko/core/common/ApiResponse.dart';
 import 'package:logi_neko/core/common/apiService.dart';
-import 'character_dto.dart';
+import 'account_character_dto.dart';
 
-class CharacterApi {
-  static const String _getAllCharactersEndpoint = '/api/account-characters';
-  static const String _unlockCharacterEndpoint = '/api/account-characters/unlock';
+class CharacterAccountApi {
+  static const String _baseEndpoint = '/api/account-characters';
 
-  /// Lấy tất cả nhân vật từ API
-  static Future<ApiResponse<List<CharacterDto>>> getAllCharacters() async {
+  /// Tạo nhân vật cho tài khoản
+  /// POST /api/account-characters/unlocked
+  static Future<ApiResponse<AccountCharacterDto>> createAccountCharacter(
+      AccountCharacterCreateDto createDto) async {
     try {
-      final response = await ApiService.get(_getAllCharactersEndpoint);
-      
-      if (response.isSuccess && response.data != null) {
-        final List<dynamic> charactersJson = response.data as List<dynamic>;
-        final List<CharacterDto> characters = charactersJson
-            .map((json) => CharacterDto.fromJson(json as Map<String, dynamic>))
-            .toList();
-        
-        return ApiResponse(
-          status: response.status,
-          code: response.code,
-          message: response.message,
-          data: characters,
-        );
-      } else {
-        return ApiResponse(
-          status: response.status,
-          code: response.code,
-          message: response.message ?? 'Không thể tải danh sách nhân vật',
-        );
-      }
-    } catch (e) {
-      return ApiResponse(
-        status: 500,
-        code: 'CONNECTION_ERROR',
-        message: 'Lỗi kết nối: ${e.toString()}',
+      return await ApiService.postObject<AccountCharacterDto>(
+        '$_baseEndpoint/unlocked',
+        data: createDto.toJson(),
+        fromJson: AccountCharacterDto.fromJson,
       );
+    } catch (e) {
+      rethrow;
     }
   }
 
-  /// Mở khóa nhân vật
-  static Future<ApiResponse<Map<String, dynamic>>> unlockCharacter(int characterId) async {
+  /// Lấy thông tin nhân vật của tài khoản theo ID
+  /// GET /api/account-characters/{id}
+  static Future<ApiResponse<AccountCharacterDto>> getAccountCharacterById(int id) async {
     try {
-      final response = await ApiService.post(
-        _unlockCharacterEndpoint,
-        data: {'characterId': characterId},
+      return await ApiService.getObject<AccountCharacterDto>(
+        '$_baseEndpoint/$id',
+        fromJson: AccountCharacterDto.fromJson,
       );
-      
-      if (response.isSuccess) {
-        return ApiResponse(
-          status: response.status,
-          code: response.code,
-          message: response.message,
-          data: response.data as Map<String, dynamic>? ?? {},
-        );
-      } else {
-        return ApiResponse(
-          status: response.status,
-          code: response.code,
-          message: response.message ?? 'Không thể mở khóa nhân vật',
-        );
-      }
     } catch (e) {
-      return ApiResponse(
-        status: 500,
-        code: 'CONNECTION_ERROR',
-        message: 'Lỗi kết nối: ${e.toString()}',
-      );
+      rethrow;
     }
   }
 
-  /// Kiểm tra nhân vật đã được mở khóa chưa
-  static Future<ApiResponse<bool>> isCharacterUnlocked(int characterId) async {
+  /// Lấy tất cả nhân vật của tài khoản
+  /// GET /api/account-characters
+  static Future<ApiResponse<List<AccountCharacterDto>>> getAllAccountCharacters() async {
     try {
-      final response = await ApiService.get('$_getAllCharactersEndpoint/$characterId/unlock-status');
-      
-      if (response.isSuccess) {
-        return ApiResponse(
-          status: response.status,
-          code: response.code,
-          message: response.message,
-          data: response.data['isUnlocked'] as bool? ?? false,
-        );
-      } else {
-        return ApiResponse(
-          status: response.status,
-          code: response.code,
-          message: response.message ?? 'Không thể kiểm tra trạng thái mở khóa',
-        );
-      }
-    } catch (e) {
-      return ApiResponse(
-        status: 500,
-        code: 'CONNECTION_ERROR',
-        message: 'Lỗi kết nối: ${e.toString()}',
+      return await ApiService.getList<AccountCharacterDto>(
+        '$_baseEndpoint/unlocked/all',
+        fromJson: AccountCharacterDto.fromJson,
       );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  static Future<ApiResponse<List<AccountCharacterDto>>> getAllAccountFavoriteCharacters() async {
+    try {
+      return await ApiService.getList<AccountCharacterDto>(
+        '$_baseEndpoint/favorites',
+        fromJson: AccountCharacterDto.fromJson,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Chọn nhân vật làm nhân vật chính
+  /// POST /api/account-characters/{accountCharacterId}/choose
+  static Future<ApiResponse<void>> chooseCharacter(int accountCharacterId) async {
+    try {
+      return await ApiService.postObject<void>(
+        '$_baseEndpoint/$accountCharacterId/choose',
+        fromJson: (json) => null,
+      );
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  /// Đặt trạng thái yêu thích cho nhân vật
+  /// PATCH /api/account-characters/character/{id}/favorite
+  static Future<ApiResponse<AccountCharacterDto>> setFavoriteCharacter(int characterId, bool isFavorite) async {
+    try {
+      return await ApiService.putObject<AccountCharacterDto>(
+        '$_baseEndpoint/character/$characterId/favorite?isFavorite=$isFavorite',
+        fromJson: AccountCharacterDto.fromJson,
+      );
+    } catch (e) {
+      rethrow;
     }
   }
 }

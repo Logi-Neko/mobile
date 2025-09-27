@@ -63,6 +63,12 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const LoginScreen(),
       );
     },
+    MyCharacterRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const MyCharacterScreen(),
+      );
+    },
     QuizResultRoute.name: (routeData) {
       final args = routeData.argsAs<QuizResultRouteArgs>();
       return AutoRoutePage<dynamic>(
@@ -232,6 +238,20 @@ class LoginRoute extends PageRouteInfo<void> {
         );
 
   static const String name = 'LoginRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [MyCharacterScreen]
+class MyCharacterRoute extends PageRouteInfo<void> {
+  const MyCharacterRoute({List<PageRouteInfo>? children})
+      : super(
+          MyCharacterRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'MyCharacterRoute';
 
   static const PageInfo<void> page = PageInfo<void>(name);
 }

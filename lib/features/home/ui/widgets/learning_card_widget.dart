@@ -26,7 +26,7 @@ class LearningCardWidget extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(20),
+        padding: const EdgeInsets.all(10),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -43,7 +43,7 @@ class LearningCardWidget extends StatelessWidget {
             BoxShadow(
               color: color.withOpacity(0.3),
               blurRadius: 15,
-              offset: const Offset(0, 8),
+              offset: const Offset(0, 3),
               spreadRadius: 2,
             ),
             BoxShadow(
@@ -62,8 +62,8 @@ class LearningCardWidget extends StatelessWidget {
           children: [
             // Container cho hình ảnh hoặc icon
             Container(
-              width: 80,
-              height: 80,
+              width: 100,
+              height: 100,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,

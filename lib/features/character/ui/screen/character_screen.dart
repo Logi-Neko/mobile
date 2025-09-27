@@ -6,6 +6,7 @@ import '../../bloc/character_bloc.dart';
 import '../../repository/character_repository.dart';
 import '../../api/character_dto.dart';
 import '../../api/character_account_api.dart';
+import '../../api/account_character_dto.dart';
 
 @RoutePage()
 class CharacterScreen extends StatelessWidget {
@@ -14,7 +15,7 @@ class CharacterScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => CharacterBloc(CharacterRepositoryImpl())..add(LoadAllCharacters()),
+      create: (context) => CharacterBloc(CharacterRepositoryImpl())..add(LoadAllCharactersLocked()),
       child: const CharacterView(),
     );
   }
@@ -48,14 +49,37 @@ class CharacterView extends StatelessWidget {
               Expanded(
                 child: BlocBuilder<CharacterBloc, CharacterState>(
                   builder: (context, state) {
+                    print('CharacterScreen BlocBuilder state: ${state.runtimeType}');
                     if (state is CharacterLoading) {
                       return _buildLoadingState();
-                    } else if (state is CharactersLoaded) {
+                    } else if (state is CharactersLockedLoaded) {
                       return _buildShopLayout(context, state.characters);
                     } else if (state is CharacterError) {
                       return _buildErrorState(context, state.message);
+                    } else if (state is CharacterInitial) {
+                      // Show loading when in initial state
+                      return _buildLoadingState();
+                    } else if (state is CharacterDetailLoaded) {
+                      // If somehow we get detail loaded state, trigger reload
+                      print('Unexpected CharacterDetailLoaded state, triggering reload');
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        context.read<CharacterBloc>().add(LoadAllCharactersLocked());
+                      });
+                      return _buildLoadingState();
+                    } else if (state is CharactersByRarityLoaded) {
+                      // If somehow we get rarity loaded state, trigger reload
+                      print('Unexpected CharactersByRarityLoaded state, triggering reload');
+                      WidgetsBinding.instance.addPostFrameCallback((_) {
+                        context.read<CharacterBloc>().add(LoadAllCharactersLocked());
+                      });
+                      return _buildLoadingState();
                     }
-                    return _buildEmptyState();
+                    // Fallback: show loading and trigger reload
+                    print('Unknown state: ${state.runtimeType}, triggering reload');
+                    WidgetsBinding.instance.addPostFrameCallback((_) {
+                      context.read<CharacterBloc>().add(LoadAllCharactersLocked());
+                    });
+                    return _buildLoadingState();
                   },
                 ),
               ),
@@ -158,7 +182,7 @@ class CharacterView extends StatelessWidget {
       ),
       child: RefreshIndicator(
         onRefresh: () async {
-          context.read<CharacterBloc>().add(RefreshCharacters());
+          context.read<CharacterBloc>().add(LoadAllCharactersLocked());
         },
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
@@ -588,7 +612,7 @@ class CharacterView extends StatelessWidget {
             
             ElevatedButton(
               onPressed: () {
-                context.read<CharacterBloc>().add(LoadAllCharacters());
+                context.read<CharacterBloc>().add(LoadAllCharactersLocked());
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.orange,
@@ -651,7 +675,10 @@ class CharacterView extends StatelessWidget {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _CharacterDetailModal(character: character),
+      builder: (modalContext) => BlocProvider.value(
+        value: context.read<CharacterBloc>(),
+        child: _CharacterDetailModal(character: character),
+      ),
     );
   }
 
@@ -881,6 +908,7 @@ class _CharacterDetailModal extends StatelessWidget {
 
   void _unlockCharacter(BuildContext context, CharacterDto character) async {
     try {
+      print('Starting unlock process for character: ${character.name}');
       // Show loading dialog
       showDialog(
         context: context,
@@ -890,8 +918,15 @@ class _CharacterDetailModal extends StatelessWidget {
         ),
       );
 
-      // Call unlock API
-      await CharacterApi.unlockCharacter(character.id);
+      // Create AccountCharacterCreateDto for unlock API
+      final createDto = AccountCharacterCreateDto(
+        characterId: character.id,
+      );
+
+      // Call unlock API using CharacterAccountApi
+      print('Calling unlock API for character ID: ${character.id}');
+      await CharacterAccountApi.createAccountCharacter(createDto);
+      print('Unlock API call successful');
 
       // Close loading dialog if mounted
       if (context.mounted) {
@@ -915,9 +950,11 @@ class _CharacterDetailModal extends StatelessWidget {
 
       // Refresh character list if mounted
       if (context.mounted) {
-        context.read<CharacterBloc>().add(LoadAllCharacters());
+        print('Triggering LoadAllCharactersLocked after successful unlock');
+        context.read<CharacterBloc>().add(LoadAllCharactersLocked());
       }
     } catch (e) {
+      print('Error during unlock process: $e');
       // Close loading dialog if mounted
       if (context.mounted) {
         Navigator.of(context).pop();
@@ -927,7 +964,7 @@ class _CharacterDetailModal extends StatelessWidget {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi khi mở khóa nhân vật: $e'),
+            content: Text('$e'),
             backgroundColor: Colors.red,
           ),
         );

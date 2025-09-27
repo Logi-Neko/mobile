@@ -10,6 +10,7 @@ import 'package:logi_neko/features/room/screen/room_quiz_screen.dart';
 import 'package:logi_neko/features/room/screen/quiz_result_screen.dart';
 import 'package:logi_neko/features/room/dto/question.dart';
 import 'package:logi_neko/features/character/ui/screen/character_screen.dart';
+import 'package:logi_neko/features/character/ui/screen/my_character_screen.dart';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:logi_neko/features/subcription/screen/subcription.dart';
@@ -41,5 +42,6 @@ class AppRouter extends _$AppRouter {
     AutoRoute(page: RoomQuizRoute.page, path: '/room-quiz'),
     AutoRoute(page: QuizResultRoute.page, path: '/quiz-result'),
     AutoRoute(page: CharacterRoute.page, path: '/character'),
+    AutoRoute(page: MyCharacterRoute.page, path: '/my-character'),
   ];
 }
