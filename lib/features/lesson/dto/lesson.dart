@@ -86,5 +86,9 @@ class Lesson {
     }
   }
 
-  bool get canAccess => isActive && (!isPremium || true); // TODO: Check user premium status
+  bool get canAccess => isActive && (!isPremium || true);
+  bool get isCompleted => star == 5;
+  double get progressPercentage => star >= 5 ? 100.0 : (star / 5.0 * 100.0);
+  bool get hasProgress => star > 0;
+  String get progressText => star >= 5 ? "Hoàn thành" : "${progressPercentage.toInt()}%";
 }

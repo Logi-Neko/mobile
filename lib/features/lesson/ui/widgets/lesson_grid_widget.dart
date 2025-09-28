@@ -79,13 +79,13 @@ class LessonGridWidget extends StatelessWidget {
           crossAxisCount = 4;
           childAspectRatio = 0.75;
         } else if (constraints.maxWidth > 800) {
-          crossAxisCount = 3;
+          crossAxisCount = 4;
           childAspectRatio = 0.8;
         } else if (constraints.maxWidth > 600) {
-          crossAxisCount = 2;
+          crossAxisCount = 3;
           childAspectRatio = 0.85;
         } else {
-          crossAxisCount = 1;
+          crossAxisCount = 2;
           childAspectRatio = 1.2;
         }
 
@@ -210,11 +210,11 @@ class LessonCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              flex: 3,
+              flex: 2,
               child: _buildThumbnail(),
             ),
             Expanded(
-              flex: 2,
+              flex: 1,
               child: _buildContent(),
             ),
           ],
@@ -370,7 +370,7 @@ class LessonCard extends StatelessWidget {
                     Text(
                       "${lesson.totalVideo}",
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: Colors.grey[600],
                       ),
                     ),
@@ -381,12 +381,12 @@ class LessonCard extends StatelessWidget {
               if (lesson.star > 0)
                 Row(
                   children: [
-                    Icon(Icons.star, size: 14, color: Colors.orange),
+                    Icon(Icons.star, size: 16, color: Colors.orange),
                     const SizedBox(width: 4),
                     Text(
                       "${lesson.star}",
                       style: const TextStyle(
-                        fontSize: 12,
+                        fontSize: 14,
                         color: Colors.orange,
                         fontWeight: FontWeight.w500,
                       ),
@@ -464,20 +464,35 @@ class LessonCard extends StatelessWidget {
   }
 
   Widget _buildStatusIndicator() {
-    final isCompleted = lesson.star > 0;
-    final isInProgress = false;
-
-    if (isCompleted) {
+    if (lesson.isCompleted) {
       return const Icon(
         Icons.check_circle,
         size: 16,
         color: Colors.green,
       );
-    } else if (isInProgress) {
-      return const Icon(
-        Icons.play_circle_filled,
-        size: 16,
-        color: Colors.blue,
+    } else if (lesson.hasProgress) {
+      return Stack(
+        alignment: Alignment.center,
+        children: [
+          SizedBox(
+            width: 16,
+            height: 16,
+            child: CircularProgressIndicator(
+              value: lesson.progressPercentage / 100,
+              strokeWidth: 2,
+              backgroundColor: Colors.grey[300],
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
+            ),
+          ),
+          Text(
+            "${lesson.star}",
+            style: const TextStyle(
+              fontSize: 8,
+              fontWeight: FontWeight.bold,
+              color: Colors.blue,
+            ),
+          ),
+        ],
       );
     } else {
       return Icon(

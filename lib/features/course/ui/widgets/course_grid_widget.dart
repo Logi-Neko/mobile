@@ -223,7 +223,7 @@ class CourseCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             SizedBox(
-              height: 120,
+              height: 140,
               child: Stack(
                 children: [
                   ClipRRect(
@@ -233,7 +233,7 @@ class CourseCard extends StatelessWidget {
                     child: Image.network(
                       course.thumbnailUrl,
                       width: double.infinity,
-                      height: 120,
+                      height: 140,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
                         return const Center(
