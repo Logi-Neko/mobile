@@ -23,7 +23,7 @@ class AuthApiService {
               receiveTimeout: const Duration(seconds: 15),
             )) {
     // Khởi tạo interceptors
-    _authInterceptor = AuthInterceptor();
+    _authInterceptor = AuthInterceptor(_dio);
 
     // Thêm interceptors theo thứ tự ưu tiên
     _dio.interceptors.add(_authInterceptor); // Auth trước

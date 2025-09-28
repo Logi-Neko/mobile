@@ -80,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     children: [
                       _buildHeader(state),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 18),
                       _buildContent(context, state),
                     ],
                   ),

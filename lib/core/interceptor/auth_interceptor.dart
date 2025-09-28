@@ -1,195 +1,291 @@
-// lib/core/interceptor/auth_interceptor.dart
-
 import 'package:dio/dio.dart';
 import '../config/logger.dart';
 import '../storage/token_storage.dart';
 import '../common/ApiResponse.dart';
 import '../navigation/navigation_service.dart';
 import '../../features/auth/dto/login_response.dart';
+import 'dart:async';
 
 class AuthInterceptor extends Interceptor {
   final TokenStorage _tokenStorage = TokenStorage.instance;
+  final Dio _dio;
 
-  // Để tránh infinite loop khi refresh token
   bool _isRefreshing = false;
-  final List<RequestOptions> _failedRequests = [];
+  Completer<void>? _refreshCompleter;
+  final List<_QueuedRequest> _requestQueue = [];
+
+  AuthInterceptor(this._dio);
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     try {
-      // Skip thêm token cho các endpoint auth (login, register, refresh)
-      final isAuthEndpoint = _isAuthEndpoint(options.path);
-
-      if (!isAuthEndpoint) {
-        // Lấy access token từ storage
+      if (!_isAuthEndpoint(options.path)) {
         final accessToken = await _tokenStorage.getAccessToken();
-
         if (accessToken != null) {
-          // Thêm Authorization header
           options.headers['Authorization'] = 'Bearer $accessToken';
-          logger.d('🔑 Authorization header added: Bearer ${accessToken.substring(0, 10)}...');
-        } else {
-          logger.w('⚠️ No access token found for request: ${options.path}');
+          if (!_dio.options.headers.containsKey('Authorization') ||
+              _dio.options.headers['Authorization'] != 'Bearer $accessToken') {
+            _dio.options.headers['Authorization'] = 'Bearer $accessToken';
+          }
         }
       }
-
-      // Thêm Content-Type header nếu chưa có
-      if (options.headers['Content-Type'] == null) {
-        options.headers['Content-Type'] = 'application/json';
-      }
-
-      logger.d('🚀 Request headers: ${options.headers}');
+      options.headers['Content-Type'] ??= 'application/json';
     } catch (e) {
-      logger.e('❌ Error adding auth header: $e');
+      logger.e('Error adding auth header: $e');
     }
-
     super.onRequest(options, handler);
   }
 
   @override
-  void onError(DioException err, ErrorInterceptorHandler handler) async {
-    // Kiểm tra nếu lỗi 401 và không phải endpoint auth
-    if (err.response?.statusCode == 401 && !_isAuthEndpoint(err.requestOptions.path)) {
-      logger.w('🔄 401 Unauthorized - Attempting token refresh...');
+  void onResponse(Response response, ResponseInterceptorHandler handler) async {
+    if (response.statusCode == 200 &&
+        response.data is Map<String, dynamic> &&
+        !_isAuthEndpoint(response.requestOptions.path)) {
 
-      // Nếu đang refresh thì add request vào queue
-      if (_isRefreshing) {
-        _failedRequests.add(err.requestOptions);
+      final data = response.data as Map<String, dynamic>;
+      final isUnauthorized = data['status'] == 401 ||
+          data['code'] == 'ERR_UNAUTHORIZED' ||
+          (data['message']?.toString().contains('xác thực') ?? false);
+
+      if (isUnauthorized) {
+        logger.w('401 detected in response body - attempting refresh');
+
+        final success = await _handleTokenRefreshAndRetry(
+            response.requestOptions,
+            handler,
+            isFromResponse: true,
+            originalResponse: response
+        );
+
+        if (success) return;
+
+        handler.reject(DioException(
+          requestOptions: response.requestOptions,
+          response: response,
+          type: DioExceptionType.badResponse,
+          message: data['message']?.toString() ?? 'Unauthorized',
+        ));
         return;
       }
+    }
 
-      _isRefreshing = true;
+    super.onResponse(response, handler);
+  }
 
-      try {
-        // Lấy refresh token
-        final refreshToken = await _tokenStorage.getRefreshToken();
+  @override
+  void onError(DioException err, ErrorInterceptorHandler handler) async {
+    if (err.response?.statusCode == 401 && !_isAuthEndpoint(err.requestOptions.path)) {
+      logger.w('HTTP 401 detected - attempting refresh');
 
-        if (refreshToken == null) {
-          logger.e('❌ No refresh token available');
-          await _clearTokensAndRedirectToLogin();
-          return super.onError(err, handler);
-        }
+      final success = await _handleTokenRefreshAndRetry(
+        err.requestOptions,
+        handler,
+        isFromResponse: false,
+      );
 
-        // Gọi API refresh token
-        logger.i('🔄 Refreshing token...');
-        final newTokenResponse = await _refreshToken(refreshToken);
-
-        if (newTokenResponse != null && newTokenResponse.data != null) {
-          // Lưu tokens mới
-          await _tokenStorage.saveTokenResponse(newTokenResponse.data!);
-          logger.i('✅ Token refreshed successfully');
-
-          // Retry request ban đầu với token mới
-          final newAccessToken = newTokenResponse.data!.accessToken;
-          err.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
-
-          // Tạo Dio mới để retry request
-          final dio = Dio();
-          dio.options = err.requestOptions as BaseOptions;
-          final retryResponse = await dio.fetch(err.requestOptions);
-
-          // Retry tất cả các requests đang chờ
-          await _retryFailedRequests(newAccessToken);
-
-          return handler.resolve(retryResponse);
-
-        } else {
-          logger.e('❌ Refresh token response is null');
-          await _clearTokensAndRedirectToLogin();
-          return super.onError(err, handler);
-        }
-
-      } catch (refreshError) {
-        logger.e('❌ Refresh token failed: $refreshError');
-        await _clearTokensAndRedirectToLogin();
-        return super.onError(err, handler);
-
-      } finally {
-        _isRefreshing = false;
-        _failedRequests.clear();
-      }
+      if (success) return;
     }
 
     super.onError(err, handler);
   }
 
-  /// Kiểm tra xem có phải endpoint auth không
-  bool _isAuthEndpoint(String path) {
-    final authPaths = [
-      '/login',
-      '/register',
-      '/refresh',
-      '/forgot-password',
-      '/reset-password'
-    ];
+  Future<bool> _handleTokenRefreshAndRetry(
+      RequestOptions requestOptions,
+      dynamic handler, {
+        required bool isFromResponse,
+        Response? originalResponse,
+      }) async {
+    try {
+      _requestQueue.add(_QueuedRequest(requestOptions, handler, isFromResponse));
 
-    return authPaths.any((authPath) => path.contains(authPath));
+      if (_isRefreshing) {
+        await _refreshCompleter?.future;
+      } else {
+        final refreshSuccess = await _performTokenRefresh();
+        if (!refreshSuccess) {
+          _clearQueueAndReject('Token refresh failed');
+          await _clearTokensAndRedirectToLogin();
+          return false;
+        }
+      }
+
+      await _processQueue();
+      return true;
+
+    } catch (e) {
+      logger.e('Error in token refresh process: $e');
+      _clearQueueAndReject('Token refresh error: $e');
+      return false;
+    }
   }
 
-  /// Gọi API refresh token
-  Future<ApiResponse<TokenResponse>?> _refreshToken(String refreshToken) async {
-    try {
-      final dio = Dio();
-      dio.options.baseUrl = 'http://10.0.2.2:8081/api';
+  Future<bool> _performTokenRefresh() async {
+    if (_isRefreshing) return false;
 
-      final response = await dio.post(
-        '/refresh',
-        data: {'refreshToken': refreshToken},
+    _isRefreshing = true;
+    _refreshCompleter = Completer<void>();
+
+    try {
+      final refreshToken = await _tokenStorage.getRefreshToken();
+      if (refreshToken == null) {
+        logger.e('No refresh token available');
+        return false;
+      }
+
+      final refreshDio = Dio(BaseOptions(
+        baseUrl: 'http://10.0.2.2:8081',
+        connectTimeout: const Duration(seconds: 15),
+        receiveTimeout: const Duration(seconds: 15),
+      ));
+
+      final response = await refreshDio.post(
+        '/api/refresh-token',
+        queryParameters: {'refresh_token': refreshToken},
+        options: Options(headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        }),
       );
 
-      if (response.statusCode == 200) {
-        return ApiResponse.fromJson(
-          response.data,
-          (json) => TokenResponse.fromJson(json as Map<String, dynamic>),
+      if (response.statusCode == 200 && response.data != null) {
+        final responseData = response.data as Map<String, dynamic>;
+        final apiResponse = ApiResponse.fromJson(
+          responseData,
+              (json) => TokenResponse.fromJson(json as Map<String, dynamic>),
         );
+
+        if (apiResponse.data != null) {
+          await _tokenStorage.saveTokenResponse(apiResponse.data!);
+
+          final newAccessToken = apiResponse.data!.accessToken;
+          _dio.options.headers['Authorization'] = 'Bearer $newAccessToken';
+
+          logger.i('Token refreshed successfully');
+          return true;
+        }
       }
 
-      return null;
+      logger.e('Invalid refresh response');
+      return false;
+
     } catch (e) {
-      logger.e('❌ Error calling refresh token API: $e');
-      return null;
+      logger.e('Refresh token API error: $e');
+      return false;
+    } finally {
+      _isRefreshing = false;
+      _refreshCompleter?.complete();
+      _refreshCompleter = null;
     }
   }
 
-  /// Retry tất cả các requests đã fail với token mới
-  Future<void> _retryFailedRequests(String newAccessToken) async {
-    final dio = Dio();
+  Future<void> _processQueue() async {
+    if (_requestQueue.isEmpty) return;
 
-    for (final request in _failedRequests) {
+    final newAccessToken = await _tokenStorage.getAccessToken();
+    if (newAccessToken == null) {
+      _clearQueueAndReject('No access token after refresh');
+      return;
+    }
+
+    final requests = List<_QueuedRequest>.from(_requestQueue);
+    _requestQueue.clear();
+
+    for (final queuedRequest in requests) {
       try {
-        request.headers['Authorization'] = 'Bearer $newAccessToken';
-        await dio.fetch(request);
-        logger.d('✅ Retried failed request: ${request.path}');
+        queuedRequest.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
+
+        final retryResponse = await _dio.fetch(queuedRequest.requestOptions);
+
+        if (queuedRequest.isFromResponse) {
+          (queuedRequest.handler as ResponseInterceptorHandler).resolve(retryResponse);
+        } else {
+          (queuedRequest.handler as ErrorInterceptorHandler).resolve(retryResponse);
+        }
+
       } catch (e) {
-        logger.e('❌ Failed to retry request ${request.path}: $e');
+        final error = DioException(
+          requestOptions: queuedRequest.requestOptions,
+          error: e,
+        );
+
+        if (queuedRequest.isFromResponse) {
+          (queuedRequest.handler as ResponseInterceptorHandler).reject(error);
+        } else {
+          (queuedRequest.handler as ErrorInterceptorHandler).reject(error);
+        }
       }
     }
   }
 
-  /// Xóa tokens và chuyển hướng về login
+  void _clearQueueAndReject(String reason) {
+    final requests = List<_QueuedRequest>.from(_requestQueue);
+    _requestQueue.clear();
+
+    for (final queuedRequest in requests) {
+      final error = DioException(
+        requestOptions: queuedRequest.requestOptions,
+        message: reason,
+        type: DioExceptionType.cancel,
+      );
+
+      if (queuedRequest.isFromResponse) {
+        (queuedRequest.handler as ResponseInterceptorHandler).reject(error);
+      } else {
+        (queuedRequest.handler as ErrorInterceptorHandler).reject(error);
+      }
+    }
+  }
+
+  bool _isAuthEndpoint(String path) {
+    final authPaths = [
+      '/auth/login', '/auth/register', '/api/refresh-token',
+      '/auth/forgot-password', '/auth/reset-password',
+      '/login', '/register', '/refresh', '/forgot-password', '/reset-password'
+    ];
+    return authPaths.any((authPath) => path.contains(authPath) || path.endsWith(authPath));
+  }
+
   Future<void> _clearTokensAndRedirectToLogin() async {
     try {
-      // Xóa tất cả tokens trong storage
       await _tokenStorage.clearAll();
-      logger.i('🗑️ All tokens cleared due to refresh failure');
-
-      // Hiển thị dialog thông báo phiên hết hạn và chuyển về login
+      _dio.options.headers.remove('Authorization');
+      _requestQueue.clear();
+      logger.i('All tokens cleared due to authentication failure');
       await NavigationService.instance.showTokenExpiredDialog();
-
     } catch (e) {
-      logger.e('❌ Error clearing tokens: $e');
-      // Fallback: chuyển thẳng về login nếu có lỗi
+      logger.e('Error clearing tokens: $e');
       NavigationService.instance.navigateToLogin();
     }
   }
 
-  /// Cập nhật token trong header (dùng khi refresh token thành công)
-  void updateToken(String newAccessToken) {
-    logger.d('🔄 Token updated in auth interceptor');
+  Future<void> syncTokenFromStorage() async {
+    try {
+      final accessToken = await _tokenStorage.getAccessToken();
+      if (accessToken != null) {
+        _dio.options.headers['Authorization'] = 'Bearer $accessToken';
+        logger.d('Token synced from storage to Dio headers');
+      } else {
+        _dio.options.headers.remove('Authorization');
+      }
+    } catch (e) {
+      logger.e('Error syncing token from storage: $e');
+    }
   }
 
-  /// Xóa token khỏi header (dùng khi logout)
-  void clearToken() {
-    logger.d('🗑️ Token cleared from auth interceptor');
+  void updateToken(String newAccessToken) {
+    _dio.options.headers['Authorization'] = 'Bearer $newAccessToken';
   }
+
+  void clearToken() {
+    _dio.options.headers.remove('Authorization');
+    _requestQueue.clear();
+  }
+}
+
+class _QueuedRequest {
+  final RequestOptions requestOptions;
+  final dynamic handler;
+  final bool isFromResponse;
+
+  _QueuedRequest(this.requestOptions, this.handler, this.isFromResponse);
 }
