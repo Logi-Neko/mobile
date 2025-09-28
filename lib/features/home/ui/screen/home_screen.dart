@@ -7,6 +7,7 @@ import 'package:logi_neko/features/home/repository/home_repo.dart';
 import 'package:logi_neko/features/home/ui/widgets/header_widget.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
 
+import '../../../course/ui/screen/course_main_screen.dart';
 import '../widgets/learning_card_widget.dart';
 
 @RoutePage()
@@ -79,7 +80,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: Column(
                     children: [
                       _buildHeader(state),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 18),
                       _buildContent(context, state),
                     ],
                   ),
@@ -146,11 +147,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   color: learningTopics[0]['color'],
                   bgColor: learningTopics[0]['bgColor'],
                   imagePath: learningTopics[0]['imagePath'],
-                  onTap: () {
-                    context.router.pushAndPopUntil(
-                      const CourseRoute(),
-                      predicate: (route) => false,
-                    );                  },
+                    onTap: () {
+                      final userIsPremium = _homeBloc.currentUser?.isPremium ?? false;
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BlocProvider.value(
+                            value: _homeBloc,
+                            child: CourseScreen(userIsPremium: userIsPremium),
+                          ),
+                        ),
+                      );
+                    }
                 ),
               ),
               const SizedBox(width: 16),

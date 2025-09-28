@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logi_neko/core/router/app_router.dart';
+import 'package:logi_neko/features/home/bloc/home_bloc.dart';
 import 'package:logi_neko/features/lesson/ui/screen/lesson_screen.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
 import '../../bloc/course_bloc.dart';
@@ -11,19 +12,25 @@ import 'package:auto_route/auto_route.dart';
 
 @RoutePage()
 class CourseScreen extends StatelessWidget {
-  const CourseScreen({super.key});
+  final bool userIsPremium;
 
+  const CourseScreen({
+    super.key,
+    this.userIsPremium = false,
+  });
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
       create: (context) => CourseBloc(CourseRepositoryImpl())..add(LoadCourses()),
-      child: const CourseView(),
+      child: CourseView(userIsPremium: userIsPremium),
     );
   }
 }
 
 class CourseView extends StatefulWidget {
-  const CourseView({super.key});
+  final bool userIsPremium;
+
+  const CourseView({super.key, required this.userIsPremium});
 
   @override
   State<CourseView> createState() => _CourseViewState();
@@ -36,7 +43,7 @@ class _CourseViewState extends State<CourseView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 3, vsync: this);
+    _tabController = TabController(length: 1, vsync: this);
   }
 
   @override
@@ -149,6 +156,7 @@ class _CourseViewState extends State<CourseView>
               children: [
                 CourseGridWidget(
                   courses: allCourses,
+                  userIsPremium: widget.userIsPremium,
                   isLoading: false,
                   error: null,
                   errorCode: null,
@@ -176,30 +184,13 @@ class _CourseViewState extends State<CourseView>
       children: [
         CourseGridWidget(
           courses: const [],
+          userIsPremium: widget.userIsPremium,
           isLoading: true,
           error: null,
           errorCode: null,
           onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
           onCourseSelected: _onCourseSelected,
           emptyMessage: "Chưa có khóa học nào",
-        ),
-        CourseGridWidget(
-          courses: const [],
-          isLoading: true,
-          error: null,
-          errorCode: null,
-          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
-          onCourseSelected: _onCourseSelected,
-          emptyMessage: "Chưa có khóa học miễn phí nào",
-        ),
-        CourseGridWidget(
-          courses: const [],
-          isLoading: true,
-          error: null,
-          errorCode: null,
-          onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
-          onCourseSelected: _onCourseSelected,
-          emptyMessage: "Chưa có khóa học premium nào",
         ),
       ],
     );
@@ -211,6 +202,7 @@ class _CourseViewState extends State<CourseView>
       children: [
         CourseGridWidget(
           courses: const [],
+          userIsPremium: widget.userIsPremium,
           isLoading: false,
           error: state.message,
           errorCode: state.errorCode,
@@ -228,6 +220,7 @@ class _CourseViewState extends State<CourseView>
       children: [
         CourseGridWidget(
           courses: const [],
+          userIsPremium: widget.userIsPremium,
           isLoading: false,
           error: null,
           errorCode: null,
@@ -314,6 +307,15 @@ class _CourseViewState extends State<CourseView>
   }
 
   void _onCourseSelected(Course course) {
+    if (course.isPremium && !widget.userIsPremium) {
+      _showCourseAccessDeniedDialog(course);
+      return;
+    }
+
+    if (!course.isActive) {
+      _showCourseInactiveDialog(course);
+      return;
+    }
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -321,7 +323,85 @@ class _CourseViewState extends State<CourseView>
           courseId: course.id,
           courseName: course.name,
           courseDescription: course.description,
+            userIsPremium: widget.userIsPremium,
         ),
+      ),
+    );
+  }
+
+  void _showCourseAccessDeniedDialog(Course course) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.lock, color: Colors.orange, size: 24),
+            SizedBox(width: 8),
+            Text("Khóa học Premium"),
+          ],
+        ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text("Bạn cần nâng cấp lên Premium để truy cập khóa học này."),
+            SizedBox(height: 8),
+            Text(
+              "Với Premium bạn sẽ có:",
+              style: TextStyle(fontWeight: FontWeight.bold),
+            ),
+            Text("• Truy cập tất cả khóa học"),
+            Text("• Không giới hạn thời gian học"),
+            Text("• Hỗ trợ ưu tiên"),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Đóng"),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              context.router.pushAndPopUntil(
+                const SubscriptionRoute(),
+                predicate: (route) => false,
+              );
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.orange,
+              foregroundColor: Colors.white,
+            ),
+            child: Text("Nâng cấp"),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showCourseInactiveDialog(Course course) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.warning, color: Colors.orange, size: 24),
+            SizedBox(width: 8),
+            Text("Khóa học chưa mở"),
+          ],
+        ),
+        content: Text("Khóa học này chưa được kích hoạt."),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text("Đóng"),
+          ),
+        ],
       ),
     );
   }

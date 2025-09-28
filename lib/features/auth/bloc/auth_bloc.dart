@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:logi_neko/core/common/apiService.dart';
 import '../../../core/config/logger.dart';
 import '../../../core/storage/token_storage.dart';
 import '../dto/signup_request.dart';
@@ -50,7 +51,9 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       // Tự động lưu token khi login thành công
       if (response.data != null) {
-        await _tokenStorage.saveTokenResponse(response.data!);
+        // await _tokenStorage.saveTokenResponse(response.data!);
+        await ApiService.setAuthTokenFromLogin(response.data!);
+
         logger.i("🔐 Tokens saved successfully");
       }
 

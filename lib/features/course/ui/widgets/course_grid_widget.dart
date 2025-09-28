@@ -3,6 +3,7 @@ import '../../dto/course.dart';
 
 class CourseGridWidget extends StatelessWidget {
   final List<Course> courses;
+  final bool userIsPremium;
   final bool isLoading;
   final String? error;
   final String? errorCode;
@@ -14,6 +15,7 @@ class CourseGridWidget extends StatelessWidget {
   const CourseGridWidget({
     super.key,
     required this.courses,
+    required this.userIsPremium,
     this.isLoading = false,
     this.error,
     this.errorCode,
@@ -92,6 +94,7 @@ class CourseGridWidget extends StatelessWidget {
               itemBuilder: (context, index) {
                 return CourseCard(
                   course: courses[index],
+                  userIsPremium: userIsPremium,
                   onTap: onCourseSelected != null
                       ? () => onCourseSelected!(courses[index])
                       : null,
@@ -196,10 +199,12 @@ class CourseGridWidget extends StatelessWidget {
 class CourseCard extends StatelessWidget {
   final Course course;
   final VoidCallback? onTap;
+  final bool userIsPremium;
 
   const CourseCard({
     super.key,
     required this.course,
+    required this.userIsPremium,
     this.onTap,
   });
 
@@ -244,6 +249,7 @@ class CourseCard extends StatelessWidget {
                     ),
                   ),
                   if (course.isPremium) _buildPremiumBadge(),
+                  if (course.isPremium && !userIsPremium) _buildLockOverlay(),
                   if (!course.isActive) _buildInactiveBadge(),
                 ],
               ),
@@ -306,6 +312,36 @@ class CourseCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLockOverlay() {
+    return Positioned.fill(
+      child: Container(
+        decoration: BoxDecoration(
+          color: Colors.black.withOpacity(0.6),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(16),
+          ),
+        ),
+        child: const Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(Icons.lock, color: Colors.white, size: 30),
+              SizedBox(height: 4),
+              Text(
+                "Premium",
+                style: TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
