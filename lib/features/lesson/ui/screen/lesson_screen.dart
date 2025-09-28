@@ -1,5 +1,7 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:logi_neko/core/router/app_router.dart';
 import 'package:logi_neko/features/video/video_quiz/ui/screen/screen.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
 import '../../dto/lesson.dart';
@@ -12,12 +14,13 @@ class LessonScreen extends StatelessWidget {
   final int courseId;
   final String courseName;
   final String courseDescription;
-
+  final bool userIsPremium;
   const LessonScreen({
     super.key,
     required this.courseId,
     required this.courseName,
     this.courseDescription = '',
+    required this.userIsPremium,
   });
 
   @override
@@ -29,6 +32,7 @@ class LessonScreen extends StatelessWidget {
         courseId: courseId,
         courseName: courseName,
         courseDescription: courseDescription,
+        userIsPremium: userIsPremium,
       ),
     );
   }
@@ -38,12 +42,15 @@ class LessonView extends StatefulWidget {
   final int courseId;
   final String courseName;
   final String courseDescription;
+  final bool userIsPremium;
+
 
   const LessonView({
     super.key,
     required this.courseId,
     required this.courseName,
     required this.courseDescription,
+    required this.userIsPremium,
   });
 
   @override
@@ -57,7 +64,7 @@ class _LessonViewState extends State<LessonView>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 4, vsync: this);
+    _tabController = TabController(length: 1, vsync: this);
   }
 
   @override
@@ -140,6 +147,7 @@ class _LessonViewState extends State<LessonView>
           },
           child: LessonGridWidget(
             lessons: allLessons,
+            userIsPremium: widget.userIsPremium,
             isLoading: state is LessonLoading,
             error: state is LessonError ? state.message : null,
             errorCode: state is LessonError ? state.errorCode : null,
@@ -211,6 +219,12 @@ class _LessonViewState extends State<LessonView>
       return;
     }
 
+    if (lesson.isPremium && !widget.userIsPremium) {
+      _showAccessDeniedDialog(lesson);
+      return;
+    }
+
+
     showDialog(
       context: context,
       builder: (context) {
@@ -248,8 +262,10 @@ class _LessonViewState extends State<LessonView>
           ),
           ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
-              // TODO: Navigate to premium upgrade screen
+              context.router.pushAndPopUntil(
+                const SubscriptionRoute(),
+                predicate: (route) => false,
+              );
             },
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.orange,

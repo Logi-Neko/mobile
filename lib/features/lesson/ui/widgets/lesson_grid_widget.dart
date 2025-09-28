@@ -9,10 +9,12 @@ class LessonGridWidget extends StatelessWidget {
   final VoidCallback? onRetry;
   final Function(Lesson)? onLessonSelected;
   final String emptyMessage;
+  final bool userIsPremium;
 
   const LessonGridWidget({
     super.key,
     required this.lessons,
+    required this.userIsPremium,
     this.isLoading = false,
     this.error,
     this.errorCode,
@@ -105,6 +107,7 @@ class LessonGridWidget extends StatelessWidget {
               itemBuilder: (context, index) {
                 return LessonCard(
                   lesson: lessons[index],
+                  userIsPremium: userIsPremium,
                   onTap: onLessonSelected != null
                       ? () => onLessonSelected!(lessons[index])
                       : null,
@@ -183,10 +186,12 @@ class LessonGridWidget extends StatelessWidget {
 class LessonCard extends StatelessWidget {
   final Lesson lesson;
   final VoidCallback? onTap;
+  final bool userIsPremium;
 
   const LessonCard({
     super.key,
     required this.lesson,
+    required this.userIsPremium,
     this.onTap,
   });
 
@@ -210,11 +215,11 @@ class LessonCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              flex: 2,
+              flex: 5,
               child: _buildThumbnail(),
             ),
             Expanded(
-              flex: 1,
+              flex: 3,
               child: _buildContent(),
             ),
           ],
@@ -287,7 +292,7 @@ class LessonCard extends StatelessWidget {
 
           if (lesson.isPremium) _buildPremiumBadge(),
 
-          if (!lesson.canAccess) _buildLockOverlay(),
+          if (lesson.isPremium && !userIsPremium) _buildLockOverlay(),
 
           Positioned(
             bottom: 8,

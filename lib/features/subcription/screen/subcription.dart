@@ -29,22 +29,28 @@ class SubscriptionScreen extends StatelessWidget {
               children: [
                 Expanded(
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+                    crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
-                      TextButton.icon(
-                        style: TextButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(30),
-                            side: const BorderSide(color: Colors.black),
+                      Align(
+                        alignment: Alignment.centerLeft,
+                        child: Padding(
+                          padding: const EdgeInsets.only(left: 16),
+                          child: TextButton.icon(
+                            style: TextButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                                side: const BorderSide(color: Colors.black),
+                              ),
+                            ),
+                            onPressed: () => context.router.pushAndPopUntil(
+                              const HomeRoute(),
+                              predicate: (route) => false,
+                            ),
+                            icon: const Icon(Icons.arrow_back, color: Colors.black),
+                            label: const Text("Quay lại", style: TextStyle(color: Colors.black)),
                           ),
                         ),
-                        onPressed: () => context.router.pushAndPopUntil(
-                          const HomeRoute(),
-                          predicate: (route) => false,
-                        ),
-                        icon: const Icon(Icons.arrow_back, color: Colors.black),
-                        label: const Text("Quay lại", style: TextStyle(color: Colors.black)),
                       ),
                       const SizedBox(height: 20),
 
