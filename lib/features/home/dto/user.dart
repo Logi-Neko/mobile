@@ -7,6 +7,7 @@ class User {
   final bool? premium;
   final int totalStar;
   final String? dateOfBirth;
+  final String? avatarUrl;
 
   User({
     required this.id,
@@ -17,6 +18,7 @@ class User {
     this.premium,
     required this.totalStar,
     this.dateOfBirth,
+    this.avatarUrl,
   });
 
   factory User.fromJson(Map<String, dynamic> json) {
@@ -29,6 +31,7 @@ class User {
       premium: json['premium'],
       totalStar: json['totalStar'] ?? 0,
       dateOfBirth: json['dateOfBirth'],
+      avatarUrl: json['avatarUrl'],
     );
   }
 
@@ -42,6 +45,7 @@ class User {
       'premium': premium,
       'totalStar': totalStar,
       'dateOfBirth': dateOfBirth,
+      'avatarUrl': avatarUrl,
     };
   }
 
@@ -54,6 +58,7 @@ class User {
     bool? premium,
     int? totalStar,
     String? dateOfBirth,
+    String? avatarUrl,
   }) {
     return User(
       id: id ?? this.id,
@@ -64,6 +69,7 @@ class User {
       premium: premium ?? this.premium,
       totalStar: totalStar ?? this.totalStar,
       dateOfBirth: dateOfBirth ?? this.dateOfBirth,
+      avatarUrl: avatarUrl ?? this.avatarUrl,
     );
   }
 
@@ -85,7 +91,20 @@ class User {
     return 6; // Mặc định 6 tuổi
   }
 
-  String get displayAge => '$age tuổi';
+  String get displayAge {
+    if (dateOfBirth != null) {
+      final birthDate = DateTime.tryParse(dateOfBirth!);
+      if (birthDate != null) {
+        final now = DateTime.now();
+        int age = now.year - birthDate.year;
+        if (now.month < birthDate.month || (now.month == birthDate.month && now.day < birthDate.day)) {
+          age--;
+        }
+        return '$age tuổi';
+      }
+    }
+    return 'Chưa cập nhật';
+  }
 
   String get starDisplay => totalStar > 999 ? '${(totalStar / 1000).toStringAsFixed(1)}K' : '$totalStar';
 
@@ -105,7 +124,8 @@ class User {
         other.premiumUntil == premiumUntil &&
         other.premium == premium &&
         other.totalStar == totalStar &&
-        other.dateOfBirth == dateOfBirth;
+        other.dateOfBirth == dateOfBirth &&
+        other.avatarUrl == avatarUrl;
   }
 
   @override
@@ -117,6 +137,7 @@ class User {
     premiumUntil.hashCode ^
     premium.hashCode ^
     totalStar.hashCode ^
-    dateOfBirth.hashCode;
+    dateOfBirth.hashCode ^
+    avatarUrl.hashCode;
   }
 }

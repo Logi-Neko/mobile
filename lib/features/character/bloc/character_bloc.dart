@@ -10,7 +10,7 @@ abstract class CharacterEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class LoadAllCharacters extends CharacterEvent {}
+class LoadAllCharactersLocked extends CharacterEvent {}
 
 class LoadCharacterById extends CharacterEvent {
   final int id;
@@ -21,7 +21,14 @@ class LoadCharacterById extends CharacterEvent {
   List<Object?> get props => [id];
 }
 
-class RefreshCharacters extends CharacterEvent {}
+class LoadCharactersByRarity extends CharacterEvent {
+  final CharacterRarity rarity;
+  
+  LoadCharactersByRarity(this.rarity);
+  
+  @override
+  List<Object?> get props => [rarity];
+}
 
 // States
 abstract class CharacterState extends Equatable {
@@ -33,13 +40,23 @@ class CharacterInitial extends CharacterState {}
 
 class CharacterLoading extends CharacterState {}
 
-class CharactersLoaded extends CharacterState {
+class CharactersLockedLoaded extends CharacterState {
   final List<CharacterDto> characters;
   
-  CharactersLoaded(this.characters);
+  CharactersLockedLoaded(this.characters);
   
   @override
   List<Object?> get props => [characters];
+}
+
+class CharactersByRarityLoaded extends CharacterState {
+  final List<CharacterDto> characters;
+  final CharacterRarity rarity;
+  
+  CharactersByRarityLoaded(this.characters, this.rarity);
+  
+  @override
+  List<Object?> get props => [characters, rarity];
 }
 
 class CharacterDetailLoaded extends CharacterState {
@@ -66,18 +83,18 @@ class CharacterBloc extends Bloc<CharacterEvent, CharacterState> {
   final CharacterRepository _characterRepository;
   
   CharacterBloc(this._characterRepository) : super(CharacterInitial()) {
-    on<LoadAllCharacters>(_onLoadAllCharacters);
+    on<LoadAllCharactersLocked>(_onLoadAllCharactersLocked);
     on<LoadCharacterById>(_onLoadCharacterById);
-    on<RefreshCharacters>(_onRefreshCharacters);
+    on<LoadCharactersByRarity>(_onLoadCharactersByRarity);
   }
   
-  Future<void> _onLoadAllCharacters(LoadAllCharacters event, Emitter<CharacterState> emit) async {
+  Future<void> _onLoadAllCharactersLocked(LoadAllCharactersLocked event, Emitter<CharacterState> emit) async {
     emit(CharacterLoading());
     try {
-      final characters = await _characterRepository.getAllCharacters();
-      emit(CharactersLoaded(characters));
+      final characters = await _characterRepository.getAllCharactersLocked();
+      emit(CharactersLockedLoaded(characters));
     } on NotFoundException catch (e) {
-      emit(CharacterError('Không tìm thấy nhân vật nào', errorCode: e.errorCode));
+      emit(CharacterError('Không tìm thấy nhân vật bị khóa nào', errorCode: e.errorCode));
     } on NetworkException catch (e) {
       emit(CharacterError('Không có kết nối mạng', errorCode: e.errorCode));
     } on UnauthorizedException catch (e) {
@@ -85,10 +102,10 @@ class CharacterBloc extends Bloc<CharacterEvent, CharacterState> {
     } on AppException catch (e) {
       emit(CharacterError(e.message, errorCode: e.errorCode));
     } catch (e) {
-      emit(CharacterError('Có lỗi không xác định xảy ra khi tải danh sách nhân vật'));
+      emit(CharacterError('Có lỗi không xác định xảy ra khi tải danh sách nhân vật bị khóa'));
     }
   }
-  
+
   Future<void> _onLoadCharacterById(LoadCharacterById event, Emitter<CharacterState> emit) async {
     emit(CharacterLoading());
     try {
@@ -107,13 +124,13 @@ class CharacterBloc extends Bloc<CharacterEvent, CharacterState> {
     }
   }
   
-  Future<void> _onRefreshCharacters(RefreshCharacters event, Emitter<CharacterState> emit) async {
-    // Không emit loading state để tránh làm gián đoạn UI
+  Future<void> _onLoadCharactersByRarity(LoadCharactersByRarity event, Emitter<CharacterState> emit) async {
+    emit(CharacterLoading());
     try {
-      final characters = await _characterRepository.getAllCharacters();
-      emit(CharactersLoaded(characters));
+      final characters = await _characterRepository.getCharactersByRarity(event.rarity);
+      emit(CharactersByRarityLoaded(characters, event.rarity));
     } on NotFoundException catch (e) {
-      emit(CharacterError('Không tìm thấy nhân vật nào', errorCode: e.errorCode));
+      emit(CharacterError('Không tìm thấy nhân vật nào với độ hiếm ${event.rarity.name}', errorCode: e.errorCode));
     } on NetworkException catch (e) {
       emit(CharacterError('Không có kết nối mạng', errorCode: e.errorCode));
     } on UnauthorizedException catch (e) {
@@ -121,7 +138,7 @@ class CharacterBloc extends Bloc<CharacterEvent, CharacterState> {
     } on AppException catch (e) {
       emit(CharacterError(e.message, errorCode: e.errorCode));
     } catch (e) {
-      emit(CharacterError('Có lỗi không xác định xảy ra khi làm mới danh sách nhân vật'));
+      emit(CharacterError('Có lỗi không xác định xảy ra khi tải danh sách nhân vật theo độ hiếm'));
     }
   }
 }

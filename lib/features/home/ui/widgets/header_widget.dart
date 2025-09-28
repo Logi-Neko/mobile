@@ -79,10 +79,15 @@ class HeaderWidget extends StatelessWidget {
                       offset: const Offset(0, 2),
                     ),
                   ],
-                  image: const DecorationImage(
-                    image: AssetImage("lib/shared/assets/images/LOGO.jpg"),
-                    fit: BoxFit.cover,
-                  ),
+                  image: user?.avatarUrl != null 
+                      ? DecorationImage(
+                          image: NetworkImage(user!.avatarUrl!),
+                          fit: BoxFit.cover,
+                        )
+                      : const DecorationImage(
+                          image: AssetImage("lib/shared/assets/images/LOGO.jpg"),
+                          fit: BoxFit.cover,
+                        ),
                 ),
               ),
             const SizedBox(width: 12),
@@ -151,6 +156,8 @@ class HeaderWidget extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
           _buildStarContainer(),
+          const SizedBox(width: 8),
+          _buildMyCharacter(context),
           const SizedBox(width: 8),
           _buildParentContainer(),
           const SizedBox(width: 8),
@@ -345,6 +352,79 @@ class HeaderWidget extends StatelessWidget {
             const SizedBox(width: 6),
             const Text(
               'Premium',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                shadows: [
+                  Shadow(
+                    color: Colors.black26,
+                    offset: Offset(1, 1),
+                    blurRadius: 2,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMyCharacter(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        context.router.push(const MyCharacterRoute());
+      },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              const Color(0xFF9C27B0),
+              const Color(0xFF7B1FA2),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF9C27B0).withOpacity(0.4),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [const Color(0xFFBA68C8), const Color(0xFF9C27B0)],
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF9C27B0).withOpacity(0.4),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.collections,
+                color: Colors.white,
+                size: 14,
+              ),
+            ),
+            const SizedBox(width: 6),
+            const Text(
+              'Bộ sưu tập',
               style: TextStyle(
                 color: Colors.white,
                 fontSize: 12,

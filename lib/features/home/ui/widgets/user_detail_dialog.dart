@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:auto_route/auto_route.dart';
 import 'package:logi_neko/features/home/dto/user.dart';
 import 'package:logi_neko/features/home/dto/update_age_request.dart';
 import 'package:logi_neko/features/home/api/user_api.dart';
+import 'package:logi_neko/features/auth/bloc/auth_bloc.dart';
+import 'package:logi_neko/core/storage/token_storage.dart';
+import 'package:logi_neko/core/router/app_router.dart';
 
 class UserDetailDialog extends StatelessWidget {
   final User user;
@@ -73,10 +78,15 @@ class UserDetailDialog extends StatelessWidget {
                   offset: const Offset(0, 4),
                 ),
               ],
-              image: const DecorationImage(
-                image: AssetImage("lib/shared/assets/images/LOGO.jpg"),
-                fit: BoxFit.cover,
-              ),
+              image: user.avatarUrl != null 
+                  ? DecorationImage(
+                      image: NetworkImage(user.avatarUrl!),
+                      fit: BoxFit.cover,
+                    )
+                  : const DecorationImage(
+                      image: AssetImage("lib/shared/assets/images/LOGO.jpg"),
+                      fit: BoxFit.cover,
+                    ),
             ),
           ),
           const SizedBox(width: 12),
@@ -450,30 +460,68 @@ class UserDetailDialog extends StatelessWidget {
   Widget _buildActions(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.all(16),
-      child: SizedBox(
-        width: double.infinity,
-        child: ElevatedButton(
-          onPressed: () => Navigator.of(context).pop(),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.white.withOpacity(0.2),
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(25),
-              side: BorderSide(
-                color: Colors.white.withOpacity(0.3),
-                width: 1,
+      child: Column(
+        children: [
+          // Logout Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => _handleLogout(context),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.withOpacity(0.8),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                ),
+                elevation: 2,
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: const [
+                  Icon(Icons.logout, size: 16),
+                  SizedBox(width: 8),
+                  Text(
+                    'Đăng xuất',
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
-          child: const Text(
-            'Đóng',
-            style: TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+          
+          const SizedBox(height: 12),
+          
+          // Close Button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.of(context).pop(),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.white.withOpacity(0.2),
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(25),
+                  side: BorderSide(
+                    color: Colors.white.withOpacity(0.3),
+                    width: 1,
+                  ),
+                ),
+              ),
+              child: const Text(
+                'Đóng',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
@@ -484,6 +532,71 @@ class UserDetailDialog extends StatelessWidget {
       return "${date.day}/${date.month}/${date.year}";
     } catch (e) {
       return dateString;
+    }
+  }
+
+  Future<void> _handleLogout(BuildContext context) async {
+    try {
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(),
+        ),
+      );
+
+      // Get refresh token from storage
+      final tokenStorage = TokenStorage.instance;
+      final refreshToken = await tokenStorage.getRefreshToken();
+      
+      if (refreshToken == null) {
+        // Close loading dialog
+        if (context.mounted) Navigator.of(context).pop();
+        // Close user detail dialog
+        if (context.mounted) Navigator.of(context).pop();
+        // Navigate to login
+        if (context.mounted) {
+          context.router.popUntilRoot();
+          context.router.replace(const LoginRoute());
+        }
+        return;
+      }
+
+      // Call logout API through AuthBloc
+      if (!context.mounted) return;
+      final authBloc = context.read<AuthBloc>();
+      authBloc.add(AuthLogoutSubmitted(refreshToken: refreshToken));
+
+      // Listen for logout result
+      await authBloc.stream.firstWhere((state) => 
+        state is AuthLogoutSuccess || state is AuthFailure
+      );
+
+      // Close loading dialog
+      if (context.mounted) Navigator.of(context).pop();
+      // Close user detail dialog
+      if (context.mounted) Navigator.of(context).pop();
+      
+      // Navigate to login screen
+      if (context.mounted) {
+        context.router.popUntilRoot();
+        context.router.replace(const LoginRoute());
+      }
+      
+    } catch (e) {
+      // Close loading dialog if still open
+      if (context.mounted) Navigator.of(context).pop();
+      
+      // Show error message
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Lỗi đăng xuất: ${e.toString()}'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
