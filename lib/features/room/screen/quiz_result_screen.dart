@@ -334,7 +334,7 @@ class QuizResultScreen extends StatelessWidget {
                           child: ElevatedButton(
                             onPressed: () {
                               context.router.pushAndPopUntil(
-                                const CourseRoute(),
+                                CourseRoute(),
                                 predicate: (route) => false,
                               );
                             },
