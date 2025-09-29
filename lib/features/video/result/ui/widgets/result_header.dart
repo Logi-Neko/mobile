@@ -8,7 +8,7 @@ class ResultHeader extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(16, 30, 16, 10),
+      padding: const EdgeInsets.fromLTRB(12, 30, 16, 10),
       decoration: const BoxDecoration(
         gradient: AppColors.primaryGradient,
       ),
@@ -42,6 +42,7 @@ class ResultHeader extends StatelessWidget {
                 ],
               ),
               const Spacer(),
+              Icon(Icons.lightbulb, color: Colors.amber[600], size: 20),
             ],
           ),
         ],

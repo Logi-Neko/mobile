@@ -26,7 +26,7 @@ class LearningCardWidget extends StatelessWidget {
       onTap: onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.all(10),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
@@ -36,15 +36,15 @@ class LearningCardWidget extends StatelessWidget {
               bgColor.withOpacity(0.8),
               Colors.white.withOpacity(0.9),
             ],
-            stops: const [0.0, 0.6, 1.0],
+            stops: const [0.0, 0.8, 1.0],
           ),
           borderRadius: BorderRadius.circular(24),
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.3),
-              blurRadius: 15,
+              blurRadius: 8,
               offset: const Offset(0, 3),
-              spreadRadius: 2,
+              spreadRadius: 0,
             ),
             BoxShadow(
               color: Colors.white.withOpacity(0.8),
@@ -54,7 +54,7 @@ class LearningCardWidget extends StatelessWidget {
           ],
           border: Border.all(
             color: Colors.white.withOpacity(0.4),
-            width: 1.5,
+            width: 0.5,
           ),
         ),
         child: Column(
@@ -62,8 +62,8 @@ class LearningCardWidget extends StatelessWidget {
           children: [
             // Container cho hình ảnh hoặc icon
             Container(
-              width: 100,
-              height: 100,
+              width: 80,
+              height: 80,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -93,7 +93,7 @@ class LearningCardWidget extends StatelessWidget {
                           return Icon(
                             icon,
                             color: Colors.white,
-                            size: 40,
+                            size: 20,
                           );
                         },
                       ),
@@ -104,7 +104,7 @@ class LearningCardWidget extends StatelessWidget {
                       size: 40,
                     ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 6),
             // Title với style đẹp hơn
             Text(
               title,

@@ -30,18 +30,25 @@ class _HomeScreenState extends State<HomeScreen> {
       'imagePath': 'lib/shared/assets/images/hoctap.jpg',
     },
     {
-      'title': 'Cuộc thi cho bé',
+      'title': 'Cuộc thi',
       'icon': Icons.sports_esports,
       'color': Color(0xFFFF8C42),
       'bgColor': Color(0xFFFFE0CC),
       'imagePath': 'lib/shared/assets/images/cuocthi.png',
     },
     {
-      'title': 'Cửa hàng nhân vật',
+      'title': 'Nhân vật',
       'icon': Icons.store,
       'color': Color(0xFF4CAF50),
       'bgColor': Color(0xFFDCF2DD),
       'imagePath': 'lib/shared/assets/images/cuahang.jpg',
+    },
+    {
+      'title': 'Bảng xếp hạng',
+      'icon': Icons.leaderboard,
+      'color': Color(0xFFE91E63),
+      'bgColor': Color(0xFFFCE4EC),
+      'imagePath': 'lib/shared/assets/images/leaderboard.jpg',
     },
   ];
 
@@ -122,7 +129,7 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             _buildLearningCards(),
-            const SizedBox(height: 40),
+            const SizedBox(height: 20),
             _buildErrorSection(context, state),
           ],
         ),
@@ -135,68 +142,77 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildLearningCards() {
-    return Column(
-      children: [
-        Expanded(
-          child: Row(
-            children: [
-              Expanded(
-                child: LearningCardWidget(
-                  title: learningTopics[0]['title'],
-                  icon: learningTopics[0]['icon'],
-                  color: learningTopics[0]['color'],
-                  bgColor: learningTopics[0]['bgColor'],
-                  imagePath: learningTopics[0]['imagePath'],
-                    onTap: () {
-                      final userIsPremium = _homeBloc.currentUser?.isPremium ?? false;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => BlocProvider.value(
-                            value: _homeBloc,
-                            child: CourseScreen(userIsPremium: userIsPremium),
-                          ),
-                        ),
-                      );
-                    }
-                ),
+  return GridView.count(
+    crossAxisCount: 4,
+    crossAxisSpacing: 16,
+    mainAxisSpacing: 16,
+    childAspectRatio: 0.8, // ⭐ Điều chỉnh tỷ lệ này để card nhỏ hơn
+    children: [
+      // First card
+      LearningCardWidget(
+        title: learningTopics[0]['title'],
+        icon: learningTopics[0]['icon'],
+        color: learningTopics[0]['color'],
+        bgColor: learningTopics[0]['bgColor'],
+        imagePath: learningTopics[0]['imagePath'],
+        onTap: () {
+          final userIsPremium = _homeBloc.currentUser?.isPremium ?? false;
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => BlocProvider.value(
+                value: _homeBloc,
+                child: CourseScreen(userIsPremium: userIsPremium),
               ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: LearningCardWidget(
-                  title: learningTopics[1]['title'],
-                  icon: learningTopics[1]['icon'],
-                  color: learningTopics[1]['color'],
-                  bgColor: learningTopics[1]['bgColor'],
-                  imagePath: learningTopics[1]['imagePath'],
-                 onTap: () {
-                    context.router.pushAndPopUntil(
-                      const WaitingRoomRoute(),
-                      predicate: (route) => false,
-                    );                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: LearningCardWidget(
-                  title: learningTopics[2]['title'],
-                  icon: learningTopics[2]['icon'],
-                  color: learningTopics[2]['color'],
-                  bgColor: learningTopics[2]['bgColor'],
-                  imagePath: learningTopics[2]['imagePath'],
-                  onTap: () {
-                    context.router.pushAndPopUntil(
-                      const CharacterRoute(),
-                      predicate: (route) => false,
-                    );                  },
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
+            ),
+          );
+        }
+      ),
+      // Second card
+      LearningCardWidget(
+        title: learningTopics[1]['title'],
+        icon: learningTopics[1]['icon'],
+        color: learningTopics[1]['color'],
+        bgColor: learningTopics[1]['bgColor'],
+        imagePath: learningTopics[1]['imagePath'],
+        onTap: () {
+          context.router.pushAndPopUntil(
+            const WaitingRoomRoute(),
+            predicate: (route) => false,
+          );
+        },
+      ),
+      // Third card
+      LearningCardWidget(
+        title: learningTopics[2]['title'],
+        icon: learningTopics[2]['icon'],
+        color: learningTopics[2]['color'],
+        bgColor: learningTopics[2]['bgColor'],
+        imagePath: learningTopics[2]['imagePath'],
+        onTap: () {
+          context.router.pushAndPopUntil(
+            const CharacterRoute(),
+            predicate: (route) => false,
+          );
+        },
+      ),
+      // Fourth card
+      LearningCardWidget(
+        title: learningTopics[3]['title'],
+        icon: learningTopics[3]['icon'],
+        color: learningTopics[3]['color'],
+        bgColor: learningTopics[3]['bgColor'],
+        imagePath: learningTopics[3]['imagePath'],
+        onTap: () {
+          context.router.pushAndPopUntil(
+            const LeaderboardRoute(),
+            predicate: (route) => false,
+          );
+        },
+      ),
+    ],
+  );
+}
 
   Widget _buildErrorSection(BuildContext context, HomeError errorState) {
     return Container(

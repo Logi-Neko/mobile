@@ -143,7 +143,7 @@ class SubscriptionScreen extends StatelessWidget {
                       const SizedBox(height: 40),
 
                       const Text(
-                        'Tiết kiệm 25% với gói hàng năm của chúng tôi!',
+                        'Tiết kiệm 20% với gói hàng năm của chúng tôi!',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 14,
@@ -157,10 +157,10 @@ class SubscriptionScreen extends StatelessWidget {
                       // Yearly plan
                       PricingCardWidget(
                         period: '1 năm',
-                        originalPrice: '2.386.000 đ',
-                        finalPrice: '1.790.000 đ',
-                        discount: '25% OFF',
-                        subPrice: "149.000 đ/tháng"
+                        originalPrice: '600.000 đ',
+                        finalPrice: '500.000 đ',
+                        discount: '20% OFF',
+                        subPrice: "42.000 đ/tháng"
                       ),
                       const SizedBox(height: 12),
 
@@ -214,7 +214,7 @@ class SubscriptionScreen extends StatelessWidget {
                       const SizedBox(height: 16),
 
                       const Text(
-                        'Hủy bất cứ lúc nào. Thanh toán định kỳ',
+                        'Truy cập trang web logineko.vn để thanh toán',
                         style: TextStyle(
                           color: Colors.white60,
                           fontSize: 12,
