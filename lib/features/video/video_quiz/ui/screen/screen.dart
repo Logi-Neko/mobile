@@ -340,7 +340,6 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
 
               Row(
                 children: [
-                  // Nút "Xem kết quả" khi đã hoàn thành
                   if (isAllAnswered) ...[
                     Container(
                       margin: EdgeInsets.only(right: 8),
@@ -388,7 +387,7 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
             ],
           ),
 
-          SizedBox(height: 20),
+          SizedBox(height: 10),
 
           Expanded(
             child: Row(
@@ -430,7 +429,7 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
             ),
           ),
 
-          SizedBox(height: 20),
+          SizedBox(height: 10),
 
           GameProgressIndicator(
             current: progress['current']!,
