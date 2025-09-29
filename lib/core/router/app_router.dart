@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:logi_neko/features/auth/screens/auth_selection.dart';
+import 'package:logi_neko/features/dashboard/ui/screen/learning_report_screen.dart';
 import 'package:logi_neko/features/home/ui/screen/home_screen.dart';
 import 'package:logi_neko/features/login/screen/login_screen.dart';
 import 'package:logi_neko/features/login/screen/start_screen.dart';
@@ -39,6 +40,7 @@ class AppRouter extends _$AppRouter {
     AutoRoute(page: SignUpStepTwoRoute.page, path: '/register/step-two/:username/:email'),
     AutoRoute(page: CourseRoute.page, path: '/course'),
     // Sau này thêm các màn khác ở đây
+    AutoRoute(page: LearningReportRoute.page, path: '/report/:accountId'),
     AutoRoute(page: HomeRoute.page, path: '/'),
     AutoRoute(page: SubscriptionRoute.page, path: '/subscription'),
     AutoRoute(page: CountdownRoute.page, path: '/countdown'),

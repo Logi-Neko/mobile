@@ -68,6 +68,17 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const LeaderboardScreen(),
       );
     },
+    LearningReportRoute.name: (routeData) {
+      final args = routeData.argsAs<LearningReportRouteArgs>(
+          orElse: () => const LearningReportRouteArgs());
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: LearningReportPage(
+          key: args.key,
+          accountId: args.accountId,
+        ),
+      );
+    },
     LoginRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -280,6 +291,44 @@ class LeaderboardRoute extends PageRouteInfo<void> {
   static const String name = 'LeaderboardRoute';
 
   static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [LearningReportPage]
+class LearningReportRoute extends PageRouteInfo<LearningReportRouteArgs> {
+  LearningReportRoute({
+    Key? key,
+    int? accountId,
+    List<PageRouteInfo>? children,
+  }) : super(
+          LearningReportRoute.name,
+          args: LearningReportRouteArgs(
+            key: key,
+            accountId: accountId,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'LearningReportRoute';
+
+  static const PageInfo<LearningReportRouteArgs> page =
+      PageInfo<LearningReportRouteArgs>(name);
+}
+
+class LearningReportRouteArgs {
+  const LearningReportRouteArgs({
+    this.key,
+    this.accountId,
+  });
+
+  final Key? key;
+
+  final int? accountId;
+
+  @override
+  String toString() {
+    return 'LearningReportRouteArgs{key: $key, accountId: $accountId}';
+  }
 }
 
 /// generated route for
