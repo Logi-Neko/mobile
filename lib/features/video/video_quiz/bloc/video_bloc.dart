@@ -1,3 +1,4 @@
+// Enhanced video_bloc.dart
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:logi_neko/core/exception/exceptions.dart';
@@ -5,6 +6,25 @@ import 'package:logi_neko/features/video/result/dto/result.dart';
 import '../repository/video_repo.dart';
 import '../dto/video.dart';
 
+// Thêm class để track answered questions
+class AnsweredQuestion extends Equatable {
+  final int videoId;
+  final int selectedAnswerIndex;
+  final bool isCorrect;
+  final String submittedAnswer;
+
+  const AnsweredQuestion({
+    required this.videoId,
+    required this.selectedAnswerIndex,
+    required this.isCorrect,
+    required this.submittedAnswer,
+  });
+
+  @override
+  List<Object?> get props => [videoId, selectedAnswerIndex, isCorrect, submittedAnswer];
+}
+
+// Events remain the same...
 abstract class VideoEvent extends Equatable {
   @override
   List<Object?> get props => [];
@@ -27,7 +47,6 @@ class LoadVideoById extends VideoEvent {
 }
 
 class NextVideo extends VideoEvent {}
-
 class PreviousVideo extends VideoEvent {}
 
 class GoToVideo extends VideoEvent {
@@ -48,13 +67,13 @@ class AnswerQuestion extends VideoEvent {
   List<Object?> get props => [selectedAnswerIndex];
 }
 
+// Enhanced states
 abstract class VideoState extends Equatable {
   @override
   List<Object?> get props => [];
 }
 
 class VideoInitial extends VideoState {}
-
 class VideoLoading extends VideoState {}
 
 class VideosLoaded extends VideoState {
@@ -62,14 +81,16 @@ class VideosLoaded extends VideoState {
   final int currentIndex;
   final VideoData currentVideo;
   final Map<String, int> progress;
-  final Map<int, String> submittedAnswers;
+  final Map<int, AnsweredQuestion> answeredQuestions;
+  final bool isAllAnswered;
 
   VideosLoaded({
     required this.videos,
     required this.currentIndex,
     required this.currentVideo,
     required this.progress,
-    this.submittedAnswers = const {},
+    this.answeredQuestions = const {},
+    this.isAllAnswered = false,
   });
 
   VideosLoaded copyWith({
@@ -77,19 +98,25 @@ class VideosLoaded extends VideoState {
     int? currentIndex,
     VideoData? currentVideo,
     Map<String, int>? progress,
-    Map<int, String>? submittedAnswers,
+    Map<int, AnsweredQuestion>? answeredQuestions,
+    bool? isAllAnswered,
   }) {
     return VideosLoaded(
       videos: videos ?? this.videos,
       currentIndex: currentIndex ?? this.currentIndex,
       currentVideo: currentVideo ?? this.currentVideo,
       progress: progress ?? this.progress,
-      submittedAnswers: submittedAnswers ?? this.submittedAnswers,
+      answeredQuestions: answeredQuestions ?? this.answeredQuestions,
+      isAllAnswered: isAllAnswered ?? this.isAllAnswered,
     );
   }
 
+  Map<int, String> get submittedAnswers {
+    return answeredQuestions.map((key, value) => MapEntry(key, value.submittedAnswer));
+  }
+
   @override
-  List<Object?> get props => [videos, currentIndex, currentVideo, progress, submittedAnswers];
+  List<Object?> get props => [videos, currentIndex, currentVideo, progress, answeredQuestions, isAllAnswered];
 }
 
 class VideoDetailLoaded extends VideoState {
@@ -107,7 +134,8 @@ class QuestionAnswered extends VideoState {
   final List<VideoData> videos;
   final int currentIndex;
   final Map<String, int> progress;
-  final Map<int, String> submittedAnswers;
+  final Map<int, AnsweredQuestion> answeredQuestions;
+  final bool isAllAnswered;
 
   QuestionAnswered({
     required this.currentVideo,
@@ -116,11 +144,16 @@ class QuestionAnswered extends VideoState {
     required this.videos,
     required this.currentIndex,
     required this.progress,
-    required this.submittedAnswers,
+    required this.answeredQuestions,
+    this.isAllAnswered = false,
   });
 
+  Map<int, String> get submittedAnswers {
+    return answeredQuestions.map((key, value) => MapEntry(key, value.submittedAnswer));
+  }
+
   @override
-  List<Object?> get props => [currentVideo, selectedAnswerIndex, isCorrect, videos, currentIndex, progress, submittedAnswers];
+  List<Object?> get props => [currentVideo, selectedAnswerIndex, isCorrect, videos, currentIndex, progress, answeredQuestions, isAllAnswered];
 }
 
 class QuizCompleted extends VideoState {
@@ -156,7 +189,7 @@ class QuizCompleted extends VideoState {
       'totalQuestions': totalQuestions,
       'correctAnswers': correctAnswers,
       'percentage': percentage,
-      'passed': percentage >= 60, // Assuming 60% is passing
+      'passed': percentage >= 60,
       'completedAt': DateTime.now().toIso8601String(),
     };
   }
@@ -175,6 +208,7 @@ class VideoError extends VideoState {
   List<Object?> get props => [message, errorCode];
 }
 
+// Enhanced VideoBloc
 class VideoBloc extends Bloc<VideoEvent, VideoState> {
   final VideoRepository _videoRepository;
 
@@ -201,7 +235,7 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
           currentIndex: 0,
           currentVideo: currentVideo,
           progress: progress,
-          submittedAnswers: {},
+          answeredQuestions: {},
         ));
       } else {
         emit(VideoError('No videos found for this lesson'));
@@ -241,44 +275,59 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
 
   void _onNextVideo(NextVideo event, Emitter<VideoState> emit) {
     final currentState = state;
-    if (currentState is VideosLoaded) {
-      final nextIndex = currentState.currentIndex + 1;
 
-      if (nextIndex < currentState.videos.length) {
-        final nextVideo = currentState.videos[nextIndex];
-        final progress = _calculateProgress(nextIndex, currentState.videos.length);
+    if (currentState is VideosLoaded || currentState is QuestionAnswered) {
+      List<VideoData> videos;
+      int currentIndex;
+      Map<int, AnsweredQuestion> answeredQuestions;
 
-        emit(currentState.copyWith(
-          currentIndex: nextIndex,
-          currentVideo: nextVideo,
-          progress: progress,
-        ));
+      if (currentState is VideosLoaded) {
+        videos = currentState.videos;
+        currentIndex = currentState.currentIndex;
+        answeredQuestions = currentState.answeredQuestions;
       } else {
-        // Quiz completed - emit completion state
-        emit(QuizCompleted(
-          videos: currentState.videos,
-          submittedAnswers: currentState.submittedAnswers,
-        ));
+        final answeredState = currentState as QuestionAnswered;
+        videos = answeredState.videos;
+        currentIndex = answeredState.currentIndex;
+        answeredQuestions = answeredState.answeredQuestions;
       }
-    } else if (currentState is QuestionAnswered) {
-      final nextIndex = currentState.currentIndex + 1;
 
-      if (nextIndex < currentState.videos.length) {
-        final nextVideo = currentState.videos[nextIndex];
-        final progress = _calculateProgress(nextIndex, currentState.videos.length);
+      final nextIndex = currentIndex + 1;
 
-        emit(VideosLoaded(
-          videos: currentState.videos,
-          currentIndex: nextIndex,
-          currentVideo: nextVideo,
-          progress: progress,
-          submittedAnswers: currentState.submittedAnswers,
-        ));
+      if (nextIndex < videos.length) {
+        final nextVideo = videos[nextIndex];
+        final progress = _calculateProgress(nextIndex, videos.length);
+        final isAllAnswered = _checkAllAnswered(videos, answeredQuestions);
+
+        // Check if next question was already answered
+        final answeredQuestion = answeredQuestions[nextVideo.id];
+        if (answeredQuestion != null) {
+          emit(QuestionAnswered(
+            currentVideo: nextVideo,
+            selectedAnswerIndex: answeredQuestion.selectedAnswerIndex,
+            isCorrect: answeredQuestion.isCorrect,
+            videos: videos,
+            currentIndex: nextIndex,
+            progress: progress,
+            answeredQuestions: answeredQuestions,
+            isAllAnswered: isAllAnswered,
+          ));
+        } else {
+          emit(VideosLoaded(
+            videos: videos,
+            currentIndex: nextIndex,
+            currentVideo: nextVideo,
+            progress: progress,
+            answeredQuestions: answeredQuestions,
+            isAllAnswered: isAllAnswered,
+          ));
+        }
       } else {
         // Quiz completed
+        final submittedAnswers = answeredQuestions.map((key, value) => MapEntry(key, value.submittedAnswer));
         emit(QuizCompleted(
-          videos: currentState.videos,
-          submittedAnswers: currentState.submittedAnswers,
+          videos: videos,
+          submittedAnswers: submittedAnswers,
         ));
       }
     }
@@ -286,28 +335,53 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
 
   void _onPreviousVideo(PreviousVideo event, Emitter<VideoState> emit) {
     final currentState = state;
-    if (currentState is VideosLoaded && currentState.currentIndex > 0) {
-      final previousIndex = currentState.currentIndex - 1;
-      final previousVideo = currentState.videos[previousIndex];
-      final progress = _calculateProgress(previousIndex, currentState.videos.length);
 
-      emit(currentState.copyWith(
-        currentIndex: previousIndex,
-        currentVideo: previousVideo,
-        progress: progress,
-      ));
-    } else if (currentState is QuestionAnswered && currentState.currentIndex > 0) {
-      final previousIndex = currentState.currentIndex - 1;
-      final previousVideo = currentState.videos[previousIndex];
-      final progress = _calculateProgress(previousIndex, currentState.videos.length);
+    if (currentState is VideosLoaded || currentState is QuestionAnswered) {
+      List<VideoData> videos;
+      int currentIndex;
+      Map<int, AnsweredQuestion> answeredQuestions;
 
-      emit(VideosLoaded(
-        videos: currentState.videos,
-        currentIndex: previousIndex,
-        currentVideo: previousVideo,
-        progress: progress,
-        submittedAnswers: currentState.submittedAnswers,
-      ));
+      if (currentState is VideosLoaded) {
+        videos = currentState.videos;
+        currentIndex = currentState.currentIndex;
+        answeredQuestions = currentState.answeredQuestions;
+      } else {
+        final answeredState = currentState as QuestionAnswered;
+        videos = answeredState.videos;
+        currentIndex = answeredState.currentIndex;
+        answeredQuestions = answeredState.answeredQuestions;
+      }
+
+      if (currentIndex > 0) {
+        final previousIndex = currentIndex - 1;
+        final previousVideo = videos[previousIndex];
+        final progress = _calculateProgress(previousIndex, videos.length);
+        final isAllAnswered = _checkAllAnswered(videos, answeredQuestions);
+
+        // Check if previous question was already answered
+        final answeredQuestion = answeredQuestions[previousVideo.id];
+        if (answeredQuestion != null) {
+          emit(QuestionAnswered(
+            currentVideo: previousVideo,
+            selectedAnswerIndex: answeredQuestion.selectedAnswerIndex,
+            isCorrect: answeredQuestion.isCorrect,
+            videos: videos,
+            currentIndex: previousIndex,
+            progress: progress,
+            answeredQuestions: answeredQuestions,
+            isAllAnswered: isAllAnswered,
+          ));
+        } else {
+          emit(VideosLoaded(
+            videos: videos,
+            currentIndex: previousIndex,
+            currentVideo: previousVideo,
+            progress: progress,
+            answeredQuestions: answeredQuestions,
+            isAllAnswered: isAllAnswered,
+          ));
+        }
+      }
     }
   }
 
@@ -338,7 +412,7 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         currentIndex: 0,
         currentVideo: firstVideo,
         progress: progress,
-        submittedAnswers: {},
+        answeredQuestions: {},
       ));
     } else if (currentState is QuizCompleted) {
       final firstVideo = currentState.videos.first;
@@ -349,7 +423,7 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         currentIndex: 0,
         currentVideo: firstVideo,
         progress: progress,
-        submittedAnswers: {},
+        answeredQuestions: {},
       ));
     }
   }
@@ -369,9 +443,16 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         print('Failed to submit answer: $e');
       }
 
-      // Update local tracking
-      final updatedAnswers = Map<int, String>.from(currentState.submittedAnswers);
-      updatedAnswers[currentState.currentVideo.id] = selectedAnswerLetter;
+      // Update answered questions
+      final updatedAnsweredQuestions = Map<int, AnsweredQuestion>.from(currentState.answeredQuestions);
+      updatedAnsweredQuestions[currentState.currentVideo.id] = AnsweredQuestion(
+        videoId: currentState.currentVideo.id,
+        selectedAnswerIndex: event.selectedAnswerIndex,
+        isCorrect: isCorrect,
+        submittedAnswer: selectedAnswerLetter,
+      );
+
+      final isAllAnswered = _checkAllAnswered(currentState.videos, updatedAnsweredQuestions);
 
       emit(QuestionAnswered(
         currentVideo: currentState.currentVideo,
@@ -380,9 +461,14 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         videos: currentState.videos,
         currentIndex: currentState.currentIndex,
         progress: currentState.progress,
-        submittedAnswers: updatedAnswers,
+        answeredQuestions: updatedAnsweredQuestions,
+        isAllAnswered: isAllAnswered,
       ));
     }
+  }
+
+  bool _checkAllAnswered(List<VideoData> videos, Map<int, AnsweredQuestion> answeredQuestions) {
+    return videos.every((video) => answeredQuestions.containsKey(video.id));
   }
 
   Map<String, int> _calculateProgress(int currentIndex, int totalVideos) {
