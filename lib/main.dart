@@ -16,10 +16,10 @@ void main() async {
   await dotenv.load(fileName: ".env");
 
   // Force landscape orientation
-  // await SystemChrome.setPreferredOrientations([
-  //   DeviceOrientation.landscapeLeft,
-  //   DeviceOrientation.landscapeRight,
-  // ]);
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ]);
 
   // Initialize services
   ApiService.initialize();

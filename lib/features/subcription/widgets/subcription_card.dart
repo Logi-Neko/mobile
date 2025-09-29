@@ -143,7 +143,7 @@ class MonthlyPricingCard extends StatelessWidget {
             ),
           ),
           Text(
-            '199.000 đ/tháng',
+            '50.000 đ/tháng',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,

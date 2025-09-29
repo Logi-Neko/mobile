@@ -28,6 +28,8 @@ class ResultScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final validScore = score.clamp(0, total);
+    final validTotal = total > 0 ? total : 1;
     return Scaffold(
       body: Column(
         children: [
@@ -40,7 +42,7 @@ class ResultScreen extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
                   const SizedBox(height: 10),
-                  ResultScore(score: score, total: total),
+                  ResultScore(score: validScore, total: validTotal),
                   const SizedBox(height: 10),
                   ResultButtons(
                     onRetry: () => _onRetry(context),
@@ -80,12 +82,10 @@ class ResultScreen extends StatelessWidget {
   }
 
   void _onRetry(BuildContext context) {
-    // Navigate back to video with reset
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    Navigator.of(context).pop(true);
   }
 
   void _onHome(BuildContext context) {
-    // Navigate to home screen
     Navigator.of(context).popUntil((route) => route.isFirst);
   }
 }
