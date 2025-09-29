@@ -34,9 +34,14 @@ abstract class _$AppRouter extends RootStackRouter {
       );
     },
     CourseRoute.name: (routeData) {
+      final args = routeData.argsAs<CourseRouteArgs>(
+          orElse: () => const CourseRouteArgs());
       return AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const CourseScreen(),
+        child: CourseScreen(
+          key: args.key,
+          userIsPremium: args.userIsPremium,
+        ),
       );
     },
     CustomerAuthRoute.name: (routeData) {
@@ -109,6 +114,12 @@ abstract class _$AppRouter extends RootStackRouter {
         ),
       );
     },
+    SplashRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const SplashScreen(),
+      );
+    },
     StartRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -174,16 +185,39 @@ class CountdownRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [CourseScreen]
-class CourseRoute extends PageRouteInfo<void> {
-  const CourseRoute({List<PageRouteInfo>? children})
-      : super(
+class CourseRoute extends PageRouteInfo<CourseRouteArgs> {
+  CourseRoute({
+    Key? key,
+    bool userIsPremium = false,
+    List<PageRouteInfo>? children,
+  }) : super(
           CourseRoute.name,
+          args: CourseRouteArgs(
+            key: key,
+            userIsPremium: userIsPremium,
+          ),
           initialChildren: children,
         );
 
   static const String name = 'CourseRoute';
 
-  static const PageInfo<void> page = PageInfo<void>(name);
+  static const PageInfo<CourseRouteArgs> page = PageInfo<CourseRouteArgs>(name);
+}
+
+class CourseRouteArgs {
+  const CourseRouteArgs({
+    this.key,
+    this.userIsPremium = false,
+  });
+
+  final Key? key;
+
+  final bool userIsPremium;
+
+  @override
+  String toString() {
+    return 'CourseRouteArgs{key: $key, userIsPremium: $userIsPremium}';
+  }
 }
 
 /// generated route for
@@ -377,6 +411,20 @@ class SignUpStepTwoRouteArgs {
   String toString() {
     return 'SignUpStepTwoRouteArgs{key: $key, username: $username, email: $email}';
   }
+}
+
+/// generated route for
+/// [SplashScreen]
+class SplashRoute extends PageRouteInfo<void> {
+  const SplashRoute({List<PageRouteInfo>? children})
+      : super(
+          SplashRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'SplashRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
 }
 
 /// generated route for

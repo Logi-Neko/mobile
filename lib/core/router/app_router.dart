@@ -11,6 +11,7 @@ import 'package:logi_neko/features/room/screen/quiz_result_screen.dart';
 import 'package:logi_neko/features/room/dto/question.dart';
 import 'package:logi_neko/features/character/ui/screen/character_screen.dart';
 import 'package:logi_neko/features/character/ui/screen/my_character_screen.dart';
+import 'package:logi_neko/features/splash/screen/splash_screen.dart';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:logi_neko/features/subcription/screen/subcription.dart';
@@ -26,7 +27,8 @@ part 'app_router.gr.dart';
 class AppRouter extends _$AppRouter {
   @override
   List<AutoRoute> get routes => [
-    AutoRoute(page: StartRoute.page, initial: true), // Thay đổi tạm thời để testStartRoute
+    AutoRoute(page: SplashRoute.page, initial: true), // Splash screen as initial route
+    AutoRoute(page: StartRoute.page, path: '/start'),
     AutoRoute(page: WaitingRoomRoute.page, path: '/waiting-room'),
     AutoRoute(page: CustomerAuthRoute.page, path: '/customer-auth'),
     AutoRoute(page: AuthSelectionRoute.page, path: '/auth-selection'),
