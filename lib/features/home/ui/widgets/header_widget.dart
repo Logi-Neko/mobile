@@ -159,7 +159,7 @@ class HeaderWidget extends StatelessWidget {
           const SizedBox(width: 8),
           _buildMyCharacter(context),
           const SizedBox(width: 8),
-          _buildParentContainer(),
+          _buildParentContainer(context),
           const SizedBox(width: 8),
           _buildPremiumContainer(context),
         ],
@@ -234,64 +234,75 @@ class HeaderWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildParentContainer() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            Colors.white.withOpacity(0.9),
+  Widget _buildParentContainer(BuildContext context) {
+    return GestureDetector(
+        onTap: () {
+          if (user?.id != null) {
+            context.router.pushAndPopUntil(
+              LearningReportRoute(accountId: user!.id),
+              predicate: (route) => false,
+            );
+          }
+        },
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Colors.white,
+              Colors.white.withOpacity(0.9),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(color: const Color(0xFF9575CD), width: 1.5),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF9575CD).withOpacity(0.2),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF9575CD), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF9575CD).withOpacity(0.2),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [const Color(0xFFFF8C42), Colors.deepOrange.shade600],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFFF8C42).withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [const Color(0xFFFF8C42), Colors.deepOrange.shade600],
                 ),
-              ],
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFFF8C42).withOpacity(0.3),
+                    blurRadius: 4,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.people,
+                color: Colors.white,
+                size: 14,
+              ),
             ),
-            child: const Icon(
-              Icons.people,
-              color: Colors.white,
-              size: 14,
+            const SizedBox(width: 6),
+            const Text(
+              'Phụ huynh',
+              style: TextStyle(
+                color: Color(0xFF5C6BC0),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
             ),
-          ),
-          const SizedBox(width: 6),
-          const Text(
-            'Phụ huynh',
-            style: TextStyle(
-              color: Color(0xFF5C6BC0),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
+          ],
+        ),
+      )
     );
   }
 
