@@ -27,6 +27,12 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const CharacterScreen(),
       );
     },
+    ContestListRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const ContestListScreen(),
+      );
+    },
     CountdownRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -34,9 +40,14 @@ abstract class _$AppRouter extends RootStackRouter {
       );
     },
     CourseRoute.name: (routeData) {
+      final args = routeData.argsAs<CourseRouteArgs>(
+          orElse: () => const CourseRouteArgs());
       return AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const CourseScreen(),
+        child: CourseScreen(
+          key: args.key,
+          userIsPremium: args.userIsPremium,
+        ),
       );
     },
     CustomerAuthRoute.name: (routeData) {
@@ -122,9 +133,13 @@ abstract class _$AppRouter extends RootStackRouter {
       );
     },
     WaitingRoomRoute.name: (routeData) {
+      final args = routeData.argsAs<WaitingRoomRouteArgs>();
       return AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const WaitingRoomScreen(),
+        child: WaitingRoomScreen(
+          key: args.key,
+          contestId: args.contestId,
+        ),
       );
     },
   };
@@ -159,6 +174,20 @@ class CharacterRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [ContestListScreen]
+class ContestListRoute extends PageRouteInfo<void> {
+  const ContestListRoute({List<PageRouteInfo>? children})
+      : super(
+          ContestListRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'ContestListRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
 /// [CountdownScreen]
 class CountdownRoute extends PageRouteInfo<void> {
   const CountdownRoute({List<PageRouteInfo>? children})
@@ -174,16 +203,39 @@ class CountdownRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [CourseScreen]
-class CourseRoute extends PageRouteInfo<void> {
-  const CourseRoute({List<PageRouteInfo>? children})
-      : super(
+class CourseRoute extends PageRouteInfo<CourseRouteArgs> {
+  CourseRoute({
+    Key? key,
+    bool userIsPremium = false,
+    List<PageRouteInfo>? children,
+  }) : super(
           CourseRoute.name,
+          args: CourseRouteArgs(
+            key: key,
+            userIsPremium: userIsPremium,
+          ),
           initialChildren: children,
         );
 
   static const String name = 'CourseRoute';
 
-  static const PageInfo<void> page = PageInfo<void>(name);
+  static const PageInfo<CourseRouteArgs> page = PageInfo<CourseRouteArgs>(name);
+}
+
+class CourseRouteArgs {
+  const CourseRouteArgs({
+    this.key,
+    this.userIsPremium = false,
+  });
+
+  final Key? key;
+
+  final bool userIsPremium;
+
+  @override
+  String toString() {
+    return 'CourseRouteArgs{key: $key, userIsPremium: $userIsPremium}';
+  }
 }
 
 /// generated route for
@@ -409,14 +461,38 @@ class SubscriptionRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [WaitingRoomScreen]
-class WaitingRoomRoute extends PageRouteInfo<void> {
-  const WaitingRoomRoute({List<PageRouteInfo>? children})
-      : super(
+class WaitingRoomRoute extends PageRouteInfo<WaitingRoomRouteArgs> {
+  WaitingRoomRoute({
+    Key? key,
+    required int contestId,
+    List<PageRouteInfo>? children,
+  }) : super(
           WaitingRoomRoute.name,
+          args: WaitingRoomRouteArgs(
+            key: key,
+            contestId: contestId,
+          ),
           initialChildren: children,
         );
 
   static const String name = 'WaitingRoomRoute';
 
-  static const PageInfo<void> page = PageInfo<void>(name);
+  static const PageInfo<WaitingRoomRouteArgs> page =
+      PageInfo<WaitingRoomRouteArgs>(name);
+}
+
+class WaitingRoomRouteArgs {
+  const WaitingRoomRouteArgs({
+    this.key,
+    required this.contestId,
+  });
+
+  final Key? key;
+
+  final int contestId;
+
+  @override
+  String toString() {
+    return 'WaitingRoomRouteArgs{key: $key, contestId: $contestId}';
+  }
 }

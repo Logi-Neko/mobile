@@ -135,11 +135,8 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildLearningCards() {
-    return Column(
-      children: [
-        Expanded(
-          child: Row(
-            children: [
+    return
+      Row(children: [
               Expanded(
                 child: LearningCardWidget(
                   title: learningTopics[0]['title'],
@@ -171,7 +168,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   imagePath: learningTopics[1]['imagePath'],
                  onTap: () {
                     context.router.pushAndPopUntil(
-                      const WaitingRoomRoute(),
+                      const ContestListRoute(),
                       predicate: (route) => false,
                     );                  },
                 ),
@@ -192,10 +189,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ),
             ],
-          ),
-        ),
-      ],
-    );
+          );
+
   }
 
   Widget _buildErrorSection(BuildContext context, HomeError errorState) {

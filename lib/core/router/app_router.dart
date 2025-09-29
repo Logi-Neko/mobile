@@ -4,6 +4,7 @@ import 'package:logi_neko/features/home/ui/screen/home_screen.dart';
 import 'package:logi_neko/features/login/screen/login_screen.dart';
 import 'package:logi_neko/features/login/screen/start_screen.dart';
 import 'package:logi_neko/features/login/screen/customer_auth_screen.dart';
+import 'package:logi_neko/features/room/screen/contest_list.dart';
 import 'package:logi_neko/features/room/screen/waiting_room_screen.dart';
 import 'package:logi_neko/features/room/screen/countdown_screen.dart';
 import 'package:logi_neko/features/room/screen/room_quiz_screen.dart';
@@ -19,7 +20,7 @@ import '../../features/course/ui/screen/course_main_screen.dart';
 import '../../features/login/screen/forgot_password_screen.dart';
 import '../../features/auth/screens/signup_step_one_screen.dart';
 import '../../features/auth/screens/signup_step_two_screen.dart';
-
+import '../../features/room/screen/contest_list.dart';
 part 'app_router.gr.dart';
 
 @AutoRouterConfig()
@@ -43,5 +44,6 @@ class AppRouter extends _$AppRouter {
     AutoRoute(page: QuizResultRoute.page, path: '/quiz-result'),
     AutoRoute(page: CharacterRoute.page, path: '/character'),
     AutoRoute(page: MyCharacterRoute.page, path: '/my-character'),
+    AutoRoute(page: ContestListRoute.page, path: '/contest-list'),
   ];
 }
