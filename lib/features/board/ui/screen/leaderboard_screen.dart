@@ -90,25 +90,31 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       child: Row(
         children: [
           // Back button with fun design
-          Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.accent, AppColors.primaryPink],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: AppColors.accent.withOpacity(0.3),
-                  blurRadius: 8,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+          GestureDetector(
+            onTap: () => context.router.pushAndPopUntil(
+              const HomeRoute(),
+              predicate: (route) => false,
             ),
-            child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 20),
-              onPressed: () => context.router.pushAndPopUntil(
-                const HomeRoute(),
-                predicate: (route) => false,
+            child: Container(
+              width: 45,
+              height: 45,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                gradient: const LinearGradient(
+                  colors: [AppColors.accent, AppColors.primaryPink],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.accent.withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.arrow_back_ios_new,
+                color: Colors.white,
+                size: 24,
               ),
             ),
           ),
@@ -143,7 +149,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   Icon(
                     Icons.stars,
                     color: AppColors.warning,
-                    size: 28,
+                    size: 24,
                   ),
                 ],
               ),
@@ -192,7 +198,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
   Widget _buildTabBar() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
       decoration: BoxDecoration(
         gradient: LinearGradient(
           colors: [AppColors.cardBackground.withOpacity(0.4), AppColors.cardBackground.withOpacity(0.2)],
@@ -739,13 +745,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     child: const Icon(
                       Icons.people_outline,
                       color: Colors.white,
-                      size: 80,
+                      size: 40,
                     ),
                   ),
                 );
               },
             ),
-            const SizedBox(height: 30),
+            const SizedBox(height: 20),
             const Text(
               '🎈 Chưa có bạn bè nào! 🎈',
               style: TextStyle(

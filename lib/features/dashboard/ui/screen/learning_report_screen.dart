@@ -6,6 +6,7 @@ import '../../bloc/report_bloc.dart';
 import '../../dto/report.dart';
 import '../widgets/report_widget.dart';
 import '../../repository/report_repo.dart';
+import 'package:logi_neko/shared/color/app_color.dart';
 
 @RoutePage()
 class LearningReportPage extends StatelessWidget {
@@ -178,19 +179,8 @@ class _LearningReportPageContentState extends State<_LearningReportPageContent>
       animation: _backgroundAnimation,
       builder: (context, child) {
         return Container(
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                Color.lerp(const Color(0xFF667EEA), const Color(0xFF764BA2),
-                    _backgroundAnimation.value * 0.2)!,
-                Color.lerp(const Color(0xFF764BA2), const Color(0xFFF093FB),
-                    _backgroundAnimation.value * 0.2)!,
-                Color.lerp(const Color(0xFFF093FB), const Color(0xFFF5576C),
-                    _backgroundAnimation.value * 0.2)!,
-              ],
-            ),
+          decoration: const BoxDecoration(
+            gradient: AppColors.primaryGradient,
           ),
           child: Stack(
             children: [

@@ -2,11 +2,11 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logi_neko/core/router/app_router.dart';
+import 'package:logi_neko/features/character/ui/screen/character_screen.dart';
 import 'package:logi_neko/features/home/bloc/home_bloc.dart';
 import 'package:logi_neko/features/home/repository/home_repo.dart';
 import 'package:logi_neko/features/home/ui/widgets/header_widget.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
-
 import '../../../course/ui/screen/course_main_screen.dart';
 import '../widgets/learning_card_widget.dart';
 
@@ -190,9 +190,11 @@ class _HomeScreenState extends State<HomeScreen> {
         bgColor: learningTopics[2]['bgColor'],
         imagePath: learningTopics[2]['imagePath'],
         onTap: () {
-          context.router.pushAndPopUntil(
-            const CharacterRoute(),
-            predicate: (route) => false,
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => CharacterScreen(user: _homeBloc.currentUser),
+            ),
           );
         },
       ),
