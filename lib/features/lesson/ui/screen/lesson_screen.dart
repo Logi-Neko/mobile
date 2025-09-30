@@ -96,7 +96,6 @@ class _LessonViewState extends State<LessonView>
                       child: Column(
                         children: [
                           _buildHeader(state),
-                          const SizedBox(height: 8),
                         ],
                       ),
                     ),

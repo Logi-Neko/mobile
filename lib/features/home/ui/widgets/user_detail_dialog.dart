@@ -24,7 +24,7 @@ class UserDetailDialog extends StatelessWidget {
         width: MediaQuery.of(context).size.width * 0.85,
         constraints: BoxConstraints(
           maxHeight: MediaQuery.of(context).size.height * 0.8,
-          maxWidth: 400,
+          maxWidth: 600,
         ),
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -38,8 +38,8 @@ class UserDetailDialog extends StatelessWidget {
           borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.3),
-              blurRadius: 20,
+              color: Colors.black.withOpacity(0.15),
+              blurRadius: 25,
               offset: const Offset(0, 10),
             ),
           ],
@@ -64,29 +64,29 @@ class UserDetailDialog extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 50,
-            height: 50,
+            width: 45,
+            height: 45,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: LinearGradient(
-                colors: [Colors.orange, Colors.orange.shade700],
+                colors: [Colors.orange.shade300, Colors.orange.shade500],
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.orange.withOpacity(0.4),
-                  blurRadius: 8,
+                  color: Colors.orange.withOpacity(0.3),
+                  blurRadius: 12,
                   offset: const Offset(0, 4),
                 ),
               ],
-              image: user.avatarUrl != null 
+              image: user.avatarUrl != null
                   ? DecorationImage(
-                      image: NetworkImage(user.avatarUrl!),
-                      fit: BoxFit.cover,
-                    )
+                image: NetworkImage(user.avatarUrl!),
+                fit: BoxFit.cover,
+              )
                   : const DecorationImage(
-                      image: AssetImage("lib/shared/assets/images/LOGO.jpg"),
-                      fit: BoxFit.cover,
-                    ),
+                image: AssetImage("lib/shared/assets/images/LOGO.jpg"),
+                fit: BoxFit.cover,
+              ),
             ),
           ),
           const SizedBox(width: 12),
@@ -100,26 +100,32 @@ class UserDetailDialog extends StatelessWidget {
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
+                    letterSpacing: 0.5,
                   ),
                 ),
-                const SizedBox(height: 2),
                 Text(
-                  user.fullName,
-                  style: const TextStyle(
-                    color: Colors.white70,
-                    fontSize: 14,
+                  'Hồ sơ cá nhân',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.8),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w400,
                   ),
-                  overflow: TextOverflow.ellipsis,
                 ),
               ],
             ),
           ),
-          IconButton(
-            onPressed: () => Navigator.of(context).pop(),
-            icon: const Icon(
-              Icons.close,
-              color: Colors.white,
-              size: 20,
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(50),
+            ),
+            child: IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(
+                Icons.close,
+                color: Colors.white,
+                size: 28,
+              ),
             ),
           ),
         ],
@@ -130,73 +136,58 @@ class UserDetailDialog extends StatelessWidget {
   Widget _buildUserInfo(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.2),
-          width: 1,
-        ),
+        color: Colors.white.withOpacity(0.95),
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Column(
         children: [
-          // Hàng 1: Tên đầy đủ và Tên đăng nhập
+          // Hàng 1: Tên đầy đủ và Email
           Row(
             children: [
               Expanded(
-                child: _buildInfoColumn(
-                  icon: Icons.person,
-                  label: 'Tên đầy đủ',
+                child: _buildInfoRow(
+                  icon: Icons.person_outline,
                   value: user.fullName,
+                  iconColor: Colors.blue.shade400,
+                  bgColor: Colors.blue.shade50,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
-                child: _buildInfoColumn(
-                  icon: Icons.account_circle,
-                  label: 'Tên đăng nhập',
-                  value: user.username,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          // Hàng 2: Email và Tuổi
-          Row(
-            children: [
-              Expanded(
-                child: _buildInfoColumn(
-                  icon: Icons.email,
-                  label: 'Email',
+                child: _buildInfoRow(
+                  icon: Icons.email_outlined,
                   value: user.email,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _buildInfoColumn(
-                  icon: Icons.cake,
-                  label: 'Tuổi',
-                  value: user.displayAge,
+                  iconColor: Colors.green.shade400,
+                  bgColor: Colors.green.shade50,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 12),
-          // Hàng 3: Tổng số sao và Ngày sinh với button
+
+          // Hàng 2: Tuổi và Ngày sinh
           Row(
             children: [
               Expanded(
-                child: _buildInfoColumn(
-                  icon: Icons.star,
-                  label: 'Tổng số sao',
-                  value: user.starDisplay,
-                  valueColor: Colors.amber,
+                child: _buildInfoRow(
+                  icon: Icons.cake_outlined,
+                  value: user.displayAge,
+                  iconColor: Colors.pink.shade400,
+                  bgColor: Colors.pink.shade50,
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 16),
               Expanded(
-                child: _buildBirthdayColumn(context),
+                child: _buildBirthdayRow(context),
               ),
             ],
           ),
@@ -207,231 +198,143 @@ class UserDetailDialog extends StatelessWidget {
     );
   }
 
-  Widget _buildInfoColumn({
+  Widget _buildInfoRow({
     required IconData icon,
-    required String label,
     required String value,
+    required Color iconColor,
+    required Color bgColor,
     Color? valueColor,
   }) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 12,
-              ),
-            ),
-            const SizedBox(width: 6),
-            Expanded(
-              child: Text(
-                label,
-                style: const TextStyle(
-                  color: Colors.white70,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Padding(
-          padding: const EdgeInsets.only(left: 30),
-          child: Text(
-            value,
-            style: TextStyle(
-              color: valueColor ?? Colors.white,
-              fontSize: 11,
-              fontWeight: FontWeight.w600,
-            ),
-            overflow: TextOverflow.ellipsis,
-            maxLines: 2,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildBirthdayColumn(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          children: [
-            Container(
-              width: 24,
-              height: 24,
-              decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
-                borderRadius: BorderRadius.circular(6),
-              ),
-              child: const Icon(
-                Icons.calendar_today,
-                color: Colors.white,
-                size: 12,
-              ),
-            ),
-            const SizedBox(width: 6),
-            const Expanded(
-              child: Text(
-                'Ngày sinh',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 10,
-                  fontWeight: FontWeight.w500,
-                ),
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 4),
-        Padding(
-          padding: const EdgeInsets.only(left: 30),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  user.dateOfBirth != null 
-                      ? _formatDate(user.dateOfBirth!)
-                      : 'Chưa cập nhật',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-              const SizedBox(width: 4),
-              GestureDetector(
-                onTap: () => _showDatePicker(context),
-                child: Container(
-                  padding: const EdgeInsets.all(3),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(4),
-                  ),
-                  child: const Icon(
-                    Icons.edit,
-                    color: Colors.white,
-                    size: 10,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Future<void> _showDatePicker(BuildContext context) async {
-    final DateTime? selectedDate = await showDatePicker(
-      context: context,
-      initialDate: user.dateOfBirth != null 
-          ? DateTime.tryParse(user.dateOfBirth!) ?? DateTime.now()
-          : DateTime.now(),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: ColorScheme.light(
-              primary: const Color(0xFF667eea),
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: Colors.black,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-
-    if (selectedDate != null) {
-      await _updateBirthday(context, selectedDate);
-    }
-  }
-
-  Future<void> _updateBirthday(BuildContext context, DateTime newDate) async {
-    // Show loading
-    showDialog(
-      context: context,
-      barrierDismissible: false,
-      builder: (context) => const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: iconColor.withOpacity(0.2),
+          width: 1,
         ),
       ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              icon,
+              color: iconColor,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+            ),
+          ),
+        ],
+      ),
     );
+  }
 
-    try {
-      final request = UpdateAgeRequest(
-        dateOfBirth: "${newDate.year}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}",
-      );
-
-      final response = await UserApi.updateUserAge(request);
-
-      // Hide loading
-      Navigator.of(context).pop();
-
-      if (response.isSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Cập nhật ngày sinh thành công!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-        // Close dialog to refresh data
-        Navigator.of(context).pop();
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Lỗi: ${response.message}'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      // Hide loading
-      Navigator.of(context).pop();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Có lỗi xảy ra: $e'),
-          backgroundColor: Colors.red,
+  Widget _buildBirthdayRow(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: Colors.orange.shade50,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.orange.shade200,
+          width: 1,
         ),
-      );
-    }
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Container(
+            width: 36,
+            height: 36,
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.15),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Icon(
+              Icons.calendar_today_outlined,
+              color: Colors.orange.shade500,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              user.dateOfBirth != null
+                  ? _formatDate(user.dateOfBirth!)
+                  : 'Chưa cập nhật',
+              style: TextStyle(
+                color: user.dateOfBirth != null
+                    ? Colors.grey.shade700
+                    : Colors.grey.shade500,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                height: 1.3,
+              ),
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+            ),
+          ),
+          const SizedBox(width: 8),
+          GestureDetector(
+            onTap: () => _showDatePicker(context),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.orange.shade100,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: Colors.orange.shade200,
+                  width: 1,
+                ),
+              ),
+              child: Icon(
+                Icons.edit_outlined,
+                color: Colors.orange.shade600,
+                size: 14,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
   }
 
   Widget _buildPremiumStatus() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: user.isPremium 
-              ? [Colors.amber, Colors.orange]
-              : [Colors.grey.shade600, Colors.grey.shade700],
+          colors: user.isPremium
+              ? [Colors.amber.shade300, Colors.orange.shade400]
+              : [Colors.grey.shade300, Colors.grey.shade400],
         ),
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: (user.isPremium ? Colors.amber : Colors.grey).withOpacity(0.3),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
+            color: (user.isPremium ? Colors.amber.shade200 : Colors.grey.shade300).withOpacity(0.5),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
@@ -439,17 +342,18 @@ class UserDetailDialog extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(
-            user.isPremium ? Icons.star : Icons.star_border,
+            user.isPremium ? Icons.stars : Icons.star_border,
             color: Colors.white,
-            size: 16,
+            size: 18,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 8),
           Text(
-            user.isPremium ? 'Premium' : 'Free',
+            user.isPremium ? 'Thành viên Premium ⭐' : 'Thành viên Free',
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 12,
+              fontSize: 13,
               fontWeight: FontWeight.bold,
+              letterSpacing: 0.3,
             ),
           ),
         ],
@@ -468,55 +372,60 @@ class UserDetailDialog extends StatelessWidget {
             child: ElevatedButton(
               onPressed: () => _handleLogout(context),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.withOpacity(0.8),
+                backgroundColor: Colors.red.shade400,
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(25),
                 ),
-                elevation: 2,
+                elevation: 3,
+                shadowColor: Colors.red.shade200,
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
-                  Icon(Icons.logout, size: 16),
+                  Icon(Icons.logout, size: 18),
                   SizedBox(width: 8),
                   Text(
                     'Đăng xuất',
                     style: TextStyle(
-                      fontSize: 14,
+                      fontSize: 15,
                       fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          
+
           const SizedBox(height: 12),
-          
+
           // Close Button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
               onPressed: () => Navigator.of(context).pop(),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.white.withOpacity(0.2),
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
+                backgroundColor: Colors.white.withOpacity(0.9),
+                foregroundColor: Colors.blue.shade600,
+                padding: const EdgeInsets.symmetric(vertical: 14),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(25),
                   side: BorderSide(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1,
+                    color: Colors.blue.shade200,
+                    width: 1.5,
                   ),
                 ),
+                elevation: 1,
               ),
-              child: const Text(
+              child: Text(
                 'Đóng',
                 style: TextStyle(
-                  fontSize: 14,
+                  fontSize: 15,
                   fontWeight: FontWeight.w600,
+                  letterSpacing: 0.3,
+                  color: Colors.blue.shade600,
                 ),
               ),
             ),
@@ -524,6 +433,123 @@ class UserDetailDialog extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _showDatePicker(BuildContext context) async {
+    final DateTime? selectedDate = await showDatePicker(
+      context: context,
+      initialDate: user.dateOfBirth != null
+          ? DateTime.tryParse(user.dateOfBirth!) ?? DateTime.now()
+          : DateTime.now(),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(
+              primary: Colors.blue.shade400,
+              onPrimary: Colors.white,
+              surface: Colors.white,
+              onSurface: Colors.grey.shade700,
+            ),
+          ),
+          child: child!,
+        );
+      },
+    );
+
+    if (selectedDate != null) {
+      await _updateBirthday(context, selectedDate);
+    }
+  }
+
+  Future<void> _updateBirthday(BuildContext context, DateTime newDate) async {
+    // Show loading
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => Center(
+        child: Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(15),
+          ),
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.blue.shade400),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      final request = UpdateAgeRequest(
+        dateOfBirth: "${newDate.year}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}",
+      );
+
+      final response = await UserApi.updateUserAge(request);
+
+      // Hide loading
+      Navigator.of(context).pop();
+
+      if (response.isSuccess) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: const Row(
+              children: [
+                Icon(Icons.check_circle, color: Colors.white, size: 20),
+                SizedBox(width: 8),
+                Text('Cập nhật ngày sinh thành công! 🎉'),
+              ],
+            ),
+            backgroundColor: Colors.green.shade400,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+        // Close dialog to refresh data
+        Navigator.of(context).pop();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Lỗi: ${response.message}')),
+              ],
+            ),
+            backgroundColor: Colors.red.shade400,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
+          ),
+        );
+      }
+    } catch (e) {
+      // Hide loading
+      Navigator.of(context).pop();
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.warning, color: Colors.white, size: 20),
+              const SizedBox(width: 8),
+              Expanded(child: Text('Có lỗi xảy ra: $e')),
+            ],
+          ),
+          backgroundColor: Colors.orange.shade500,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+        ),
+      );
+    }
   }
 
   String _formatDate(String dateString) {
@@ -541,15 +567,24 @@ class UserDetailDialog extends StatelessWidget {
       showDialog(
         context: context,
         barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(),
+        builder: (context) => Center(
+          child: Container(
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(15),
+            ),
+            child: CircularProgressIndicator(
+              valueColor: AlwaysStoppedAnimation<Color>(Colors.red.shade400),
+            ),
+          ),
         ),
       );
 
       // Get refresh token from storage
       final tokenStorage = TokenStorage.instance;
       final refreshToken = await tokenStorage.getRefreshToken();
-      
+
       if (refreshToken == null) {
         // Close loading dialog
         if (context.mounted) Navigator.of(context).pop();
@@ -569,31 +604,41 @@ class UserDetailDialog extends StatelessWidget {
       authBloc.add(AuthLogoutSubmitted(refreshToken: refreshToken));
 
       // Listen for logout result
-      await authBloc.stream.firstWhere((state) => 
-        state is AuthLogoutSuccess || state is AuthFailure
+      await authBloc.stream.firstWhere((state) =>
+      state is AuthLogoutSuccess || state is AuthFailure
       );
 
       // Close loading dialog
       if (context.mounted) Navigator.of(context).pop();
       // Close user detail dialog
       if (context.mounted) Navigator.of(context).pop();
-      
+
       // Navigate to login screen
       if (context.mounted) {
         context.router.popUntilRoot();
         context.router.replace(const LoginRoute());
       }
-      
+
     } catch (e) {
       // Close loading dialog if still open
       if (context.mounted) Navigator.of(context).pop();
-      
+
       // Show error message
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi đăng xuất: ${e.toString()}'),
-            backgroundColor: Colors.red,
+            content: Row(
+              children: [
+                const Icon(Icons.error, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Expanded(child: Text('Lỗi đăng xuất: ${e.toString()}')),
+              ],
+            ),
+            backgroundColor: Colors.red.shade400,
+            behavior: SnackBarBehavior.floating,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10),
+            ),
           ),
         );
       }

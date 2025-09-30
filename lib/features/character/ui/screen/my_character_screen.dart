@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:auto_route/auto_route.dart';
 import '../../../../core/router/app_router.dart';
+import '../../../../shared/color/app_color.dart';
 import '../../api/character_account_api.dart';
 import '../../api/account_character_dto.dart';
 import '../../api/character_dto.dart';
@@ -103,18 +104,10 @@ class _MyCharacterViewState extends State<MyCharacterView> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              const Color(0xFF9C27B0), // Purple gradient
-              const Color(0xFF7B1FA2),
-              const Color(0xFF6A1B9A),
-            ],
-          ),
-        ),
+        decoration: const BoxDecoration(gradient: AppColors.primaryGradient),
         child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 10),
           child: Column(
             children: [
               _buildHeader(context),
@@ -122,6 +115,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
                 child: _buildContent(),
               ),
             ],
+          ),
           ),
         ),
       ),
@@ -170,20 +164,28 @@ class _MyCharacterViewState extends State<MyCharacterView> {
 
   Widget _buildHeader(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.symmetric(vertical: 8),
       child: Row(
         children: [
           // Back button
           GestureDetector(
-            onTap: () => context.router.pop(),
+            onTap: () => context.router.pushAndPopUntil(
+              const HomeRoute(),
+              predicate: (route) => false,
+            ),
             child: Container(
-              padding: const EdgeInsets.all(8),
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.3),
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
+                color: Colors.white.withOpacity(0.2),
+                border: Border.all(
+                  color: Colors.white.withOpacity(0.3),
+                  width: 1,
+                ),
               ),
               child: const Icon(
-                Icons.arrow_back_ios,
+                Icons.arrow_back_ios_new,
                 color: Colors.white,
                 size: 18,
               ),
@@ -395,12 +397,9 @@ class _MyCharacterViewState extends State<MyCharacterView> {
     final legendaryCharacters = _filteredCharacters!.where((c) => c.character.rarity == CharacterRarity.legendary).toList();
 
     return Container(
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         color: Color(0xFFFFF8DC), // Cream background
-        borderRadius: BorderRadius.only(
-          topLeft: Radius.circular(25),
-          topRight: Radius.circular(25),
-        ),
+        borderRadius: BorderRadius.circular(12)
       ),
       child: RefreshIndicator(
         onRefresh: _loadMyCharacters,

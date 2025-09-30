@@ -202,7 +202,7 @@ class LessonCard extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(12),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.1),
@@ -235,7 +235,7 @@ class LessonCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(16),
+              top: Radius.circular(12),
             ),
             child: lesson.thumbnailUrl != null && lesson.thumbnailUrl!.isNotEmpty
                 ? Image.network(
@@ -256,7 +256,7 @@ class LessonCard extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.black.withOpacity(0.3),
                 borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(16),
+                  top: Radius.circular(12),
                 ),
               ),
               child: const Center(
