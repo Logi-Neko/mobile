@@ -48,8 +48,8 @@ class _SignUpStepOneFormState extends State<SignUpStepOneForm> {
   Widget build(BuildContext context) {
     return Center(
       child: Container(
-        padding: const EdgeInsets.all(32.0),
-        constraints: const BoxConstraints(maxWidth: 450, maxHeight: 650),
+        padding: const EdgeInsets.all(28.0),
+        constraints: const BoxConstraints(maxWidth: 450, maxHeight: 600),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(24),
@@ -69,13 +69,13 @@ class _SignUpStepOneFormState extends State<SignUpStepOneForm> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               _buildProgressBar(),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
               const Text(
                 'Tạo tài khoản',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: AppColors.textPrimary,
-                  fontSize: 28,
+                  fontSize: 24,
                   fontWeight: FontWeight.bold,
                 ),
               ),
@@ -101,7 +101,7 @@ class _SignUpStepOneFormState extends State<SignUpStepOneForm> {
                   return null; // Hợp lệ
                 },
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
 
               // Trường Email
               TextFormField(
@@ -129,7 +129,7 @@ class _SignUpStepOneFormState extends State<SignUpStepOneForm> {
                   return null; // Hợp lệ
                 },
               ),
-              const SizedBox(height: 30),
+              const SizedBox(height: 20),
 
               // Các nút bấm
               _buildActionButtons(context),
@@ -150,6 +150,7 @@ class _SignUpStepOneFormState extends State<SignUpStepOneForm> {
           style: TextStyle(
             color: AppColors.textSecondary,
             fontWeight: FontWeight.w600,
+            fontSize: 16,
           ),
         ),
         const SizedBox(height: 8),
@@ -157,7 +158,7 @@ class _SignUpStepOneFormState extends State<SignUpStepOneForm> {
           borderRadius: BorderRadius.circular(10),
           child: const LinearProgressIndicator(
             value: 0.5,
-            minHeight: 10,
+            minHeight: 5,
             backgroundColor: AppColors.surfaceLight,
             valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
           ),

@@ -31,6 +31,7 @@ class FriendshipApi {
     }
   }
 
+
   /// Từ chối lời mời kết bạn
   /// POST /api/friendship/decline/{friendRequestId}
   static Future<ApiResponse<String>> declineFriendRequest(int friendRequestId) async {

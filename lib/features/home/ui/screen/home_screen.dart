@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logi_neko/core/router/app_router.dart';
+import 'package:logi_neko/features/board/ui/screen/leaderboard_screen.dart';
 import 'package:logi_neko/features/character/ui/screen/character_screen.dart';
 import 'package:logi_neko/features/home/bloc/home_bloc.dart';
 import 'package:logi_neko/features/home/repository/home_repo.dart';
@@ -205,12 +206,17 @@ class _HomeScreenState extends State<HomeScreen> {
         color: learningTopics[3]['color'],
         bgColor: learningTopics[3]['bgColor'],
         imagePath: learningTopics[3]['imagePath'],
-        onTap: () {
-          context.router.pushAndPopUntil(
-            const LeaderboardRoute(),
-            predicate: (route) => false,
-          );
-        },
+          onTap: () {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (context) => BlocProvider.value(
+                  value: _homeBloc,
+                  child: LeaderboardScreen(currentUser: _homeBloc.currentUser),
+                ),
+              ),
+            );
+          }
       ),
     ],
   );
