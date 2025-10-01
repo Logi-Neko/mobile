@@ -102,7 +102,7 @@ class _SignUpStepTwoFormState extends State<SignUpStepTwoForm> {
           return Center(
             child: Container(
               padding: const EdgeInsets.all(32.0),
-              constraints: const BoxConstraints(maxWidth: 450, maxHeight: 650),
+              constraints: const BoxConstraints(maxWidth: 450, maxHeight: 600),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(24),
@@ -122,13 +122,13 @@ class _SignUpStepTwoFormState extends State<SignUpStepTwoForm> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       _buildProgressBar(),
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 18),
                       const Text(
                         'Thông tin cá nhân',
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           color: AppColors.textPrimary,
-                          fontSize: 28,
+                          fontSize: 24,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
@@ -157,7 +157,7 @@ class _SignUpStepTwoFormState extends State<SignUpStepTwoForm> {
                           return null;
                         },
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 10),
 
                       // Trường Mật khẩu
                       TextFormField(
@@ -233,7 +233,7 @@ class _SignUpStepTwoFormState extends State<SignUpStepTwoForm> {
                                 icon: Icon(
                                   Icons.close,
                                   color: Colors.red.shade600,
-                                  size: 16,
+                                  size: 12,
                                 ),
                                 constraints: const BoxConstraints(),
                                 padding: EdgeInsets.zero,
@@ -241,7 +241,7 @@ class _SignUpStepTwoFormState extends State<SignUpStepTwoForm> {
                             ],
                           ),
                         ),
-                        const SizedBox(height: 20),
+                        const SizedBox(height: 10),
                       ],
 
                       _buildActionButtons(context, isLoading),
@@ -260,13 +260,20 @@ class _SignUpStepTwoFormState extends State<SignUpStepTwoForm> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text('Bước 2 / 2', style: TextStyle(/* ... */)),
+        const Text(
+          'Bước 2 / 2',
+          style: TextStyle(
+            color: AppColors.textSecondary,
+            fontWeight: FontWeight.w600,
+            fontSize: 16,
+          ),
+        ),
         const SizedBox(height: 8),
         ClipRRect(
           borderRadius: BorderRadius.circular(10),
           child: const LinearProgressIndicator(
             value: 1.0, // 100%
-            minHeight: 10,
+            minHeight: 5,
             backgroundColor: AppColors.surfaceLight,
             valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryPurple),
           ),

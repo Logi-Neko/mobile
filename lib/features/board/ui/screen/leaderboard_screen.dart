@@ -3,14 +3,18 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:auto_route/auto_route.dart';
 import 'package:logi_neko/core/router/app_router.dart';
 import 'package:logi_neko/features/home/dto/show_user.dart';
+import 'package:logi_neko/features/home/dto/user.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
 import '../../bloc/leaderboard_bloc.dart';
 import '../../dto/friendship_dto.dart';
 import '../widgets/friend_request_dialog.dart';
+import '../widgets/sendfriend_request_dialog.dart';
 
 @RoutePage()
 class LeaderboardScreen extends StatefulWidget {
-  const LeaderboardScreen({Key? key}) : super(key: key);
+  final User? currentUser;
+
+  const LeaderboardScreen({Key? key, this.currentUser}) : super(key: key);
 
   @override
   State<LeaderboardScreen> createState() => _LeaderboardScreenState();
@@ -28,20 +32,24 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
     _leaderboardBloc = LeaderboardBloc();
-    
+
     // Animation controllers for fun effects
     _starController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
     )..repeat();
-    
+
     _bounceController = AnimationController(
       duration: const Duration(milliseconds: 1200),
       vsync: this,
     )..repeat(reverse: true);
-    
+
     // Load initial data
     _leaderboardBloc.add(LoadGlobalLeaderboard());
+  }
+
+  bool _isCurrentUser(AccountShowResponse user) {
+    return widget.currentUser?.id == user.id;
   }
 
   @override
@@ -155,7 +163,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               ),
             ),
           ),
-          // Add friend button with animation
           AnimatedBuilder(
             animation: _bounceController,
             builder: (context, child) {
@@ -176,13 +183,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     ],
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.person_add, color: Colors.white, size: 20),
+                    icon: const Icon(Icons.mail, color: Colors.white, size: 20),
                     onPressed: () {
                       showDialog(
                         context: context,
                         builder: (context) => BlocProvider.value(
                           value: _leaderboardBloc,
-                          child: const FriendRequestDialog(),
+                          child: FriendRequestDialog(),
                         ),
                       );
                     },
@@ -279,10 +286,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 return Transform.rotate(
                   angle: _starController.value * 2 * 3.14159,
                   child: const Icon(
-                          Icons.stars,
-                          color: AppColors.warning,
-                          size: 80,
-                        ),
+                    Icons.stars,
+                    color: AppColors.warning,
+                    size: 80,
+                  ),
                 );
               },
             ),
@@ -300,21 +307,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       );
     }
 
-    // Sort leaderboard by totalStar in descending order
     final sortedLeaderboard = List<AccountShowResponse>.from(leaderboard)
       ..sort((a, b) => b.totalStar.compareTo(a.totalStar));
-    
+
     return SingleChildScrollView(
       padding: const EdgeInsets.all(20),
       child: Column(
         children: [
-          
           // Leaderboard list
           ...sortedLeaderboard.asMap().entries.map((entry) {
             final index = entry.key;
             final user = entry.value;
             final rank = index + 1;
-            
+
             return _buildUserCard(user, rank);
           }).toList(),
         ],
@@ -323,262 +328,414 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   }
 
   Widget _buildUserCard(AccountShowResponse user, int rank) {
-    // Get rank colors and icons
-    List<Color> getRankColors() {
-      switch (rank) {
-        case 1:
-          return [AppColors.warning, const Color(0xFFFFD700)]; // Gold
-        case 2:
-          return [const Color(0xFFC0C0C0), const Color(0xFFE8E8E8)]; // Silver
-        case 3:
-          return [const Color(0xFFCD7F32), const Color(0xFFDEB887)]; // Bronze
-        default:
-          return [AppColors.primaryBlue, AppColors.accent];
-      }
-    }
+    return BlocBuilder<LeaderboardBloc, LeaderboardState>(
+      builder: (context, state) {
+        final isCurrentUser = _isCurrentUser(user);
+        final isFriend = _leaderboardBloc.isFriend(user.id);
+        final hasPending = _leaderboardBloc.hasPendingRequest(user.id);
 
-    Widget getRankIcon() {
-      switch (rank) {
-        case 1:
-          return Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: getRankColors()),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.looks_one, color: Colors.white, size: 24),
-          );
-        case 2:
-          return Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: getRankColors()),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.looks_two, color: Colors.white, size: 24),
-          );
-        case 3:
-          return Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: getRankColors()),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(Icons.looks_3, color: Colors.white, size: 24),
-          );
-        default:
-          return Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(colors: getRankColors()),
-              shape: BoxShape.circle,
-            ),
-            child: Text(
-              '$rank',
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
-              ),
-            ),
-          );
-      }
-    }
+        // Get rank colors and icons
+        List<Color> getRankColors() {
+          switch (rank) {
+            case 1:
+              return [AppColors.warning, const Color(0xFFFFD700)]; // Gold
+            case 2:
+              return [const Color(0xFFC0C0C0), const Color(0xFFE8E8E8)]; // Silver
+            case 3:
+              return [const Color(0xFFCD7F32), const Color(0xFFDEB887)]; // Bronze
+            default:
+              return [AppColors.primaryBlue, AppColors.accent];
+          }
+        }
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      child: AnimatedBuilder(
-        animation: _bounceController,
-        builder: (context, child) {
-          return Transform.scale(
-            scale: rank <= 3 ? 1.0 + (_bounceController.value * 0.02) : 1.0,
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                gradient: rank <= 3 
-                  ? LinearGradient(
-                      colors: [
-                        getRankColors().first.withOpacity(0.3),
-                        getRankColors().last.withOpacity(0.1),
-                      ],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
-                  : LinearGradient(
-                      colors: [
-                        AppColors.cardBackground.withOpacity(0.3),
-                        AppColors.cardBackground.withOpacity(0.1),
-                      ],
-                    ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: rank <= 3 ? getRankColors().first.withOpacity(0.5) : Colors.white.withOpacity(0.2),
-                  width: 2,
+        Widget getRankIcon() {
+          switch (rank) {
+            case 1:
+              return Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: getRankColors()),
+                  shape: BoxShape.circle,
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: rank <= 3 
-                      ? getRankColors().first.withOpacity(0.2)
-                      : Colors.black.withOpacity(0.1),
-                    blurRadius: 15,
-                    offset: const Offset(0, 6),
+                child: const Icon(Icons.looks_one, color: Colors.white, size: 24),
+              );
+            case 2:
+              return Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: getRankColors()),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.looks_two, color: Colors.white, size: 24),
+              );
+            case 3:
+              return Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: getRankColors()),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.looks_3, color: Colors.white, size: 24),
+              );
+            default:
+              return Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(colors: getRankColors()),
+                  shape: BoxShape.circle,
+                ),
+                child: Text(
+                  '$rank',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
                   ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  // Rank icon
-                  getRankIcon(),
-                  const SizedBox(width: 16),
-                  
-                  // Avatar with decorative border
-                  Container(
+                ),
+              );
+          }
+        }
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 16),
+          child: AnimatedBuilder(
+            animation: _bounceController,
+            builder: (context, child) {
+              return Transform.scale(
+                scale: rank <= 3 ? 1.0 + (_bounceController.value * 0.02) : 1.0,
+                child: GestureDetector(
+                  onTap: isCurrentUser ? null : () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => BlocProvider.value(
+                        value: _leaderboardBloc,
+                        child: SendFriendRequestDialog(
+                          user: user,
+                          onSuccess: () {
+                            _leaderboardBloc.add(LoadGlobalLeaderboard());
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      shape: BoxShape.circle,
+                      gradient: isCurrentUser
+                          ? LinearGradient(
+                        colors: [
+                          AppColors.accent.withOpacity(0.4),
+                          AppColors.primaryPink.withOpacity(0.2),
+                        ],
+                      )
+                          : rank <= 3
+                          ? LinearGradient(
+                        colors: [
+                          getRankColors().first.withOpacity(0.3),
+                          getRankColors().last.withOpacity(0.1),
+                        ],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      )
+                          : LinearGradient(
+                        colors: [
+                          AppColors.cardBackground.withOpacity(0.3),
+                          AppColors.cardBackground.withOpacity(0.1),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(20),
                       border: Border.all(
-                        color: rank <= 3 ? getRankColors().first : AppColors.primaryBlue,
-                        width: 3,
+                        color: isCurrentUser ? AppColors.accent.withOpacity(0.8) :
+                        isFriend ? AppColors.success.withOpacity(0.8) :
+                        hasPending ? AppColors.warning.withOpacity(0.8) :
+                        rank <= 3 ? getRankColors().first.withOpacity(0.5) :
+                        Colors.white.withOpacity(0.2),
+                        width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: (rank <= 3 ? getRankColors().first : AppColors.primaryBlue).withOpacity(0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
+                          color: isCurrentUser ? AppColors.accent.withOpacity(0.2) :
+                          isFriend ? AppColors.success.withOpacity(0.2) :
+                          hasPending ? AppColors.warning.withOpacity(0.2) :
+                          rank <= 3
+                              ? getRankColors().first.withOpacity(0.2)
+                              : Colors.black.withOpacity(0.1),
+                          blurRadius: 15,
+                          offset: const Offset(0, 6),
                         ),
                       ],
                     ),
-                    child: CircleAvatar(
-                      radius: 30,
-                      backgroundColor: AppColors.cardBackground.withOpacity(0.2),
-                      backgroundImage: user.avatarUrl != null 
-                        ? NetworkImage(user.avatarUrl!)
-                        : null,
-                      child: user.avatarUrl == null
-                        ? Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [AppColors.primaryBlue.withOpacity(0.8), AppColors.accent.withOpacity(0.6)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                            ),
-                            child: Center(
-                              child: ClipOval(
-                                child: Image.asset(
-                                  "lib/shared/assets/images/LOGO.jpg",
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          )
-                        : null,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  
-                  // User info
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
+                    child: Row(
                       children: [
-                        Text(
-                          user.fullName,
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                            shadows: [
-                              Shadow(
-                                offset: const Offset(1, 1),
-                                blurRadius: 2,
-                                color: Colors.black.withOpacity(0.3),
+                        // Rank icon
+                        getRankIcon(),
+                        const SizedBox(width: 16),
+
+                        // Avatar with decorative border
+                        Container(
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: isCurrentUser ? AppColors.accent :
+                              isFriend ? AppColors.success :
+                              hasPending ? AppColors.warning :
+                              rank <= 3 ? getRankColors().first : AppColors.primaryBlue,
+                              width: 3,
+                            ),
+                            boxShadow: [
+                              BoxShadow(
+                                color: (isCurrentUser ? AppColors.accent :
+                                isFriend ? AppColors.success :
+                                hasPending ? AppColors.warning :
+                                rank <= 3 ? getRankColors().first : AppColors.primaryBlue).withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 2),
                               ),
                             ],
                           ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          child: CircleAvatar(
+                            radius: 30,
+                            backgroundColor: AppColors.cardBackground.withOpacity(0.2),
+                            backgroundImage: user.avatarUrl != null
+                                ? NetworkImage(user.avatarUrl!)
+                                : null,
+                            child: user.avatarUrl == null
+                                ? Container(
                               decoration: BoxDecoration(
+                                shape: BoxShape.circle,
                                 gradient: LinearGradient(
-                                  colors: [AppColors.warning.withOpacity(0.3), AppColors.accent.withOpacity(0.2)],
+                                  colors: [AppColors.primaryBlue.withOpacity(0.8), AppColors.accent.withOpacity(0.6)],
+                                  begin: Alignment.topLeft,
+                                  end: Alignment.bottomRight,
                                 ),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: AppColors.warning.withOpacity(0.5)),
                               ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  Icon(
-                                    Icons.star,
-                                    color:Color.fromARGB(255, 252, 244, 243),
-                                    size: 16,
+                              child: Center(
+                                child: ClipOval(
+                                  child: Image.asset(
+                                    "lib/shared/assets/images/LOGO.jpg",
+                                    width: 50,
+                                    height: 50,
+                                    fit: BoxFit.cover,
                                   ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${user.totalStar}', //qưeqweqwe
-                                    style: TextStyle(
-                                      color: Color.fromARGB(255, 241, 223, 218),
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                            )
+                                : null,
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+
+                        // User info
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Name with status indicator
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      user.fullName,
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 18,
+                                        fontWeight: FontWeight.w800,
+                                        shadows: [
+                                          Shadow(
+                                            offset: const Offset(1, 1),
+                                            blurRadius: 2,
+                                            color: Colors.black.withOpacity(0.3),
+                                          ),
+                                        ],
+                                      ),
+                                      overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
+                                  if (isCurrentUser) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [AppColors.accent, AppColors.primaryPink],
+                                        ),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.person, color: Colors.white, size: 12),
+                                          SizedBox(width: 2),
+                                          Text(
+                                            'BẠN',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ] else if (isFriend) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [AppColors.success, AppColors.buttonPrimary],
+                                        ),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.check_circle, color: Colors.white, size: 12),
+                                          SizedBox(width: 2),
+                                          Text(
+                                            'BẠN BÈ',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ] else if (hasPending) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [AppColors.warning, AppColors.accent],
+                                        ),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(Icons.hourglass_empty, color: Colors.white, size: 12),
+                                          SizedBox(width: 2),
+                                          Text(
+                                            'CHỜ',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 8,
+                                              fontWeight: FontWeight.w800,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                  ],
                                 ],
                               ),
-                            ),
-                            if (user.premium == true) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [AppColors.primaryPink, AppColors.accent],
+                              const SizedBox(height: 8),
+                              Row(
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      gradient: LinearGradient(
+                                        colors: [AppColors.warning.withOpacity(0.3), AppColors.accent.withOpacity(0.2)],
+                                      ),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(color: AppColors.warning.withOpacity(0.5)),
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Icon(
+                                          Icons.star,
+                                          color: Color.fromARGB(255, 252, 244, 243),
+                                          size: 16,
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          '${user.totalStar}',
+                                          style: TextStyle(
+                                            color: Color.fromARGB(255, 241, 223, 218),
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.w900,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
                                   ),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: const Text(
-                                  'PREMIUM',
-                                  style: TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
+                                  if (user.premium == true && !isCurrentUser && !isFriend && !hasPending) ...[
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        gradient: LinearGradient(
+                                          colors: [AppColors.primaryPink, AppColors.accent],
+                                        ),
+                                        borderRadius: BorderRadius.circular(8),
+                                      ),
+                                      child: const Text(
+                                        'PREMIUM',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 10,
+                                          fontWeight: FontWeight.w800,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ],
                               ),
                             ],
+                          ),
+                        ),
+
+                        // Trophy for top 3 + Status icon
+                        Column(
+                          children: [
+                            if (rank <= 3)
+                              AnimatedBuilder(
+                                animation: _starController,
+                                builder: (context, child) {
+                                  return Transform.rotate(
+                                    angle: _starController.value * 0.1,
+                                    child: Icon(
+                                      Icons.emoji_events,
+                                      color: getRankColors().first,
+                                      size: 32,
+                                    ),
+                                  );
+                                },
+                              ),
+                            const SizedBox(height: 8),
+                            // THAY ĐỔI: Icon khác nhau dựa trên relationship
+                            Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: BoxDecoration(
+                                color: (isCurrentUser ? AppColors.accent :
+                                isFriend ? AppColors.success :
+                                hasPending ? AppColors.warning : AppColors.primaryPink).withOpacity(0.2),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: Icon(
+                                isCurrentUser ? Icons.person :
+                                isFriend ? Icons.people :
+                                hasPending ? Icons.hourglass_empty : Icons.person_add,
+                                color: Colors.white.withOpacity(0.8),
+                                size: 16,
+                              ),
+                            ),
                           ],
                         ),
                       ],
                     ),
                   ),
-                  
-                  // Trophy for top 3
-                  if (rank <= 3)
-                    AnimatedBuilder(
-                      animation: _starController,
-                      builder: (context, child) {
-                        return Transform.rotate(
-                          angle: _starController.value * 0.1,
-                          child: Icon(
-                            Icons.emoji_events,
-                            color: getRankColors().first,
-                            size: 32,
-                          ),
-                        );
-                      },
-                    ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
+                ),
+              );
+            },
+          ),
+        );
+      },
     );
   }
 
@@ -638,7 +795,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             _leaderboardBloc.add(LoadGlobalLeaderboard());
           });
         }
-        
+
         return const Center(
           child: Text(
             'Chưa có dữ liệu',
@@ -650,69 +807,96 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   }
 
   Widget _buildFriendsLeaderboard() {
-    return BlocBuilder<LeaderboardBloc, LeaderboardState>(
-      builder: (context, state) {
-        if (state is LeaderboardLoading) {
-          return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                AnimatedBuilder(
-                  animation: _bounceController,
-                  builder: (context, child) {
-                    return Transform.scale(
-                      scale: 1.0 + (_bounceController.value * 0.2),
-                      child: Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF66BB6A), Color(0xFF42A5F5)],
-                          ),
-                          shape: BoxShape.circle,
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.blue.withOpacity(0.3),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
-                            ),
-                          ],
-                        ),
-                        child: const Icon(
-                          Icons.group,
-                          color: Colors.white,
-                          size: 40,
-                        ),
-                      ),
-                    );
-                  },
+    return BlocListener<LeaderboardBloc, LeaderboardState>(
+      listener: (context, state) {
+        // Handle FriendRemoved state
+        if (state is FriendRemoved) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                state.message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w600,
                 ),
-                const SizedBox(height: 20),
-                const Text(
-                  'Đang tải bạn bè...',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ],
+              ),
+              backgroundColor: AppColors.success,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+              duration: const Duration(seconds: 2),
             ),
           );
-        } else if (state is FriendsLeaderboardLoaded) {
-          return _buildFriendsContent(state.friends);
-        } else if (state is LeaderboardError) {
-          return _buildErrorWidget(state.message, () {
-            _leaderboardBloc.add(LoadFriendsLeaderboard());
-          });
+
+          // Reload friends list after successful removal
+          _leaderboardBloc.add(LoadFriendsLeaderboard());
         }
-        
-        return const Center(
-          child: Text(
-            'Chưa có dữ liệu',
-            style: TextStyle(color: Colors.white, fontSize: 16),
-          ),
-        );
       },
+      child: BlocBuilder<LeaderboardBloc, LeaderboardState>(
+        builder: (context, state) {
+          if (state is LeaderboardLoading) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  AnimatedBuilder(
+                    animation: _bounceController,
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: 1.0 + (_bounceController.value * 0.2),
+                        child: Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            gradient: const LinearGradient(
+                              colors: [Color(0xFF66BB6A), Color(0xFF42A5F5)],
+                            ),
+                            shape: BoxShape.circle,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.blue.withOpacity(0.3),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Icon(
+                            Icons.group,
+                            color: Colors.white,
+                            size: 40,
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Đang tải bạn bè...',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          } else if (state is FriendsLeaderboardLoaded) {
+            return _buildFriendsContent(state.friends);
+          } else if (state is LeaderboardError) {
+            return _buildErrorWidget(state.message, () {
+              _leaderboardBloc.add(LoadFriendsLeaderboard());
+            });
+          }
+
+          return const Center(
+            child: Text(
+              'Chưa có dữ liệu',
+              style: TextStyle(color: Colors.white, fontSize: 16),
+            ),
+          );
+        },
+      ),
     );
   }
 
@@ -800,7 +984,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
 
     Widget getRankIcon() {
       final colors = getRankColors();
-      
+
       return Container(
         width: 55,
         height: 55,
@@ -815,22 +999,22 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             ),
           ],
         ),
-        child: rank == 1 
-          ? const Icon(Icons.emoji_events, color: Colors.white, size: 28)
-          : rank == 2
+        child: rank == 1
+            ? const Icon(Icons.emoji_events, color: Colors.white, size: 28)
+            : rank == 2
             ? const Icon(Icons.military_tech, color: Colors.white, size: 28)
             : rank == 3
-              ? const Icon(Icons.workspace_premium, color: Colors.white, size: 28)
-              : Center(
-                  child: Text(
-                    '$rank',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
+            ? const Icon(Icons.workspace_premium, color: Colors.white, size: 28)
+            : Center(
+          child: Text(
+            '$rank',
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 20,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+        ),
       );
     }
 
@@ -843,6 +1027,59 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       }
     }
 
+    void _showRemoveFriendDialog(BuildContext context) {
+      showDialog(
+        context: context,
+        builder: (BuildContext dialogContext) => AlertDialog(
+          backgroundColor: Colors.white,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          title: const Text(
+            'Xóa bạn bè?',
+            style: TextStyle(
+              color: Colors.black87,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          content: Text(
+            'Xóa ${friend.friendAccount.fullName} khỏi danh sách bạn bè?',
+            style: const TextStyle(
+              color: Colors.black54,
+              fontSize: 16,
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text(
+                'Hủy',
+                style: TextStyle(
+                  color: Colors.grey,
+                  fontSize: 16,
+                ),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.of(dialogContext).pop();
+                context.read<LeaderboardBloc>().add(RemoveFriend(friend.id));
+              },
+              child: const Text(
+                'XÓA BẠN',
+                style: TextStyle(
+                  color: Colors.red,
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       child: AnimatedBuilder(
@@ -853,31 +1090,31 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             child: Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
-                gradient: rank <= 3 
-                  ? LinearGradient(
-                      colors: [
-                        getRankColors().first.withOpacity(0.3),
-                        Colors.white.withOpacity(0.1),
-                      ],
-                    )
-                  : const LinearGradient(
-                      colors: [
-                        Color(0x30FFFFFF),
-                        Color(0x15FFFFFF),
-                      ],
-                    ),
+                gradient: rank <= 3
+                    ? LinearGradient(
+                  colors: [
+                    getRankColors().first.withOpacity(0.3),
+                    Colors.white.withOpacity(0.1),
+                  ],
+                )
+                    : const LinearGradient(
+                  colors: [
+                    Color(0x30FFFFFF),
+                    Color(0x15FFFFFF),
+                  ],
+                ),
                 borderRadius: BorderRadius.circular(25),
                 border: Border.all(
-                  color: rank <= 3 
-                    ? getRankColors().first.withOpacity(0.6)
-                    : Colors.white.withOpacity(0.3), 
-                  width: 2
+                    color: rank <= 3
+                        ? getRankColors().first.withOpacity(0.6)
+                        : Colors.white.withOpacity(0.3),
+                    width: 2
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: rank <= 3 
-                      ? getRankColors().first.withOpacity(0.2)
-                      : Colors.black.withOpacity(0.1),
+                    color: rank <= 3
+                        ? getRankColors().first.withOpacity(0.2)
+                        : Colors.black.withOpacity(0.1),
                     blurRadius: 15,
                     offset: const Offset(0, 6),
                   ),
@@ -887,7 +1124,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 children: [
                   getRankIcon(),
                   const SizedBox(width: 16),
-                  
+
                   // Avatar with decorative border
                   Container(
                     decoration: BoxDecoration(
@@ -907,35 +1144,35 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     child: CircleAvatar(
                       radius: 30,
                       backgroundColor: AppColors.cardBackground.withOpacity(0.2),
-                      backgroundImage: friend.friendAccount.avatarUrl != null 
-                        ? NetworkImage(friend.friendAccount.avatarUrl!)
-                        : null,
+                      backgroundImage: friend.friendAccount.avatarUrl != null
+                          ? NetworkImage(friend.friendAccount.avatarUrl!)
+                          : null,
                       child: friend.friendAccount.avatarUrl == null
-                        ? Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [AppColors.primaryPink.withOpacity(0.8), AppColors.accent.withOpacity(0.6)],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
+                          ? Container(
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          gradient: LinearGradient(
+                            colors: [AppColors.primaryPink.withOpacity(0.8), AppColors.accent.withOpacity(0.6)],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                        child: Center(
+                          child: ClipOval(
+                            child: Image.asset(
+                              "lib/shared/assets/images/LOGO.jpg",
+                              width: 50,
+                              height: 50,
+                              fit: BoxFit.cover,
                             ),
-                            child: Center(
-                              child: ClipOval(
-                                child: Image.asset(
-                                  "lib/shared/assets/images/LOGO.jpg",
-                                  width: 50,
-                                  height: 50,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          )
-                        : null,
+                          ),
+                        ),
+                      )
+                          : null,
                     ),
                   ),
                   const SizedBox(width: 16),
-                  
+
                   // Friend Info
                   Expanded(
                     child: Column(
@@ -984,36 +1221,86 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                       ],
                     ),
                   ),
-                  
-                  // Gift icon with fun animation
-                  AnimatedBuilder(
-                    animation: _starController,
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: 1.0 + (_starController.value * 0.1).abs(),
-                        child: Container(
-                          padding: const EdgeInsets.all(10),
-                          decoration: BoxDecoration(
-                            gradient: const LinearGradient(
-                              colors: [Color(0xFFFF6B9D), Color(0xFFFF8A65)],
-                            ),
-                            borderRadius: BorderRadius.circular(15),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.pink.withOpacity(0.3),
-                                blurRadius: 6,
-                                offset: const Offset(0, 2),
+
+                  // Action buttons column
+                  Column(
+                    children: [
+                      // Gift icon with fun animation
+                      AnimatedBuilder(
+                        animation: _starController,
+                        builder: (context, child) {
+                          return Transform.scale(
+                            scale: 1.0 + (_starController.value * 0.1).abs(),
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                gradient: const LinearGradient(
+                                  colors: [Color(0xFFFF6B9D), Color(0xFFFF8A65)],
+                                ),
+                                borderRadius: BorderRadius.circular(15),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.pink.withOpacity(0.3),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
                               ),
-                            ],
-                          ),
-                          child: const Icon(
-                            Icons.card_giftcard,
-                            color: Colors.white,
-                            size: 24,
-                          ),
-                        ),
-                      );
-                    },
+                              child: const Icon(
+                                Icons.card_giftcard,
+                                color: Colors.white,
+                                size: 24,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                      const SizedBox(height: 12),
+
+                      // Remove friend button
+                      BlocBuilder<LeaderboardBloc, LeaderboardState>(
+                        builder: (context, state) {
+                          final isLoading = state is LeaderboardOperationLoading;
+
+                          return GestureDetector(
+                            onTap: isLoading ? null : () => _showRemoveFriendDialog(context),
+                            child: Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                gradient: LinearGradient(
+                                  colors: [
+                                    AppColors.error.withOpacity(0.8),
+                                    AppColors.error.withOpacity(0.6),
+                                  ],
+                                ),
+                                borderRadius: BorderRadius.circular(12),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: AppColors.error.withOpacity(0.3),
+                                    blurRadius: 6,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: isLoading
+                                  ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                ),
+                              )
+                                  : const Icon(
+                                Icons.person_remove,
+                                color: Colors.white,
+                                size: 20,
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ],
                   ),
                 ],
               ),
