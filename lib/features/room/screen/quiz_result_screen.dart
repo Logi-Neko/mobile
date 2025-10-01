@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
-import 'package:logi_neko/shared/color/app_color.dart';
 import 'package:logi_neko/core/router/app_router.dart';
 import '../dto/question.dart';
 

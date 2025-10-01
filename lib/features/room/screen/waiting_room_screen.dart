@@ -4,6 +4,8 @@ import 'dart:async';
 import 'package:logi_neko/features/room/api/contest_api.dart';
 import 'package:logi_neko/features/room/dto/contest.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:logi_neko/core/router/app_router.dart';
 
 @RoutePage()
 class WaitingRoomScreen extends StatefulWidget {
@@ -24,6 +26,7 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> with SingleTicker
   Contest? _contest;
   bool _isLoading = true;
   String _errorMessage = '';
+  int? _participantId;
 
   Timer? _countdownTimer;
   Timer? _refreshTimer;
@@ -37,8 +40,19 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> with SingleTicker
   void initState() {
     super.initState();
     _setupAnimations();
+    _loadParticipantId();
     _loadRoomData();
-    _startRefreshTimer();
+   // _startRefreshTimer();
+  }
+
+  Future<void> _loadParticipantId() async {
+    final prefs = await SharedPreferences.getInstance();
+    _participantId = prefs.getInt('participantId_${widget.contestId}');
+    print('🔍 [WaitingRoom] Loaded participantId: $_participantId for contest: ${widget.contestId}');
+    
+    if (_participantId == null) {
+      print('⚠️ [WaitingRoom] No participantId found! User may not have joined this contest.');
+    }
   }
 
   void _setupAnimations() {
@@ -52,13 +66,6 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> with SingleTicker
     );
   }
 
-  void _startRefreshTimer() {
-    _refreshTimer = Timer.periodic(const Duration(seconds: 5), (timer) {
-      if (!_hasStarted) {
-        _loadParticipants();
-      }
-    });
-  }
 
   Future<void> _loadRoomData() async {
     setState(() {
@@ -92,16 +99,6 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> with SingleTicker
     }
   }
 
-  Future<void> _loadParticipants() async {
-    try {
-      final participants = await _contestService.getAllParticipantsInContest(widget.contestId);
-      if (mounted) {
-        setState(() => _participants = participants);
-      }
-    } catch (e) {
-      debugPrint('Error refreshing participants: $e');
-    }
-  }
 
   void _startCountdown() {
     if (_contest == null) return;
@@ -139,6 +136,17 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> with SingleTicker
     setState(() => _hasStarted = true);
 
     try {
+      // Ensure we have participantId
+      if (_participantId == null) {
+        await _loadParticipantId();
+      }
+      
+      if (_participantId == null) {
+        throw Exception('Không tìm thấy participant ID. Vui lòng tham gia contest lại.');
+      }
+
+      print('🚀 [WaitingRoom] Starting contest ${widget.contestId} with participantId: $_participantId');
+      
       await _contestService.startContest(widget.contestId);
 
       if (mounted) {
@@ -148,10 +156,18 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> with SingleTicker
             backgroundColor: AppColors.success,
           ),
         );
-        // TODO: Navigate to game screen
-        // context.router.pushNamed('/game/${widget.contestId}');
+
+        // Navigate to countdown screen with contestId and participantId
+        print('🧭 [WaitingRoom] Navigating to countdown with contestId: ${widget.contestId}, participantId: $_participantId');
+        context.router.push(
+          CountdownRoute(
+            contestId: widget.contestId,
+            participantId: _participantId!,
+          ),
+        );
       }
     } catch (e) {
+      print('❌ [WaitingRoom] Error starting contest: $e');
       if (mounted) {
         setState(() => _hasStarted = false);
         ScaffoldMessenger.of(context).showSnackBar(
@@ -288,7 +304,6 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> with SingleTicker
   Widget _buildMainContent() {
     return LayoutBuilder(
       builder: (context, constraints) {
-        // Responsive layout: chuyển sang vertical layout cho màn hình nhỏ
         final isSmallScreen = constraints.maxWidth < 600;
 
         return Column(

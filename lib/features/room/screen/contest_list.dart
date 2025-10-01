@@ -6,7 +6,7 @@ import 'package:logi_neko/core/router/app_router.dart';
 import 'package:logi_neko/features/room/api/contest_api.dart';
 import 'package:logi_neko/features/room/dto/contest.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
-import 'dart:io' show Platform;
+import 'package:shared_preferences/shared_preferences.dart';
 
 @RoutePage()
 class ContestListScreen extends StatefulWidget {
@@ -56,13 +56,51 @@ class _ContestListScreenState extends State<ContestListScreen> {
   }
 
   Future<void> _joinContest(int contestId) async {
-    final int accountId = 1; // TODO: Get from state management
     setState(() => _isLoading = true);
     try {
+      // Get current logged-in user ID from SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      final accountId = prefs.getInt('currentUserId');
+      
+      if (accountId == null) {
+        _showErrorDialog('Vui lòng đăng nhập để tham gia contest');
+        return;
+      }
+      
+      print('🔑 [ContestList] Joining contest $contestId with accountId: $accountId');
+      
       await _contestService.joinContest(contestId, accountId);
+      
+      // Get the participant ID after joining
+      final participants = await _contestService.getAllParticipantsInContest(contestId);
+      print('📋 [ContestList] All participants: $participants');
+      
+      // Find the participant that was just created (usually the last one)
+      // or find by accountName if available
+      Participant? participant;
+      if (participants.isNotEmpty) {
+        // Try to find by accountName first, then fallback to last participant
+        participant = participants.firstWhere(
+          (p) => p.accountName?.toLowerCase().contains('user') == true || 
+                 p.accountName?.toLowerCase().contains('minh') == true,
+          orElse: () => participants.last,
+        );
+      }
+      
+      if (participant != null) {
+        // Save participant ID for later use
+        await prefs.setInt('participantId_$contestId', participant.id);
+        print('💾 [ContestList] Saved participantId: ${participant.id} for contest: $contestId');
+      } else {
+        print('❌ [ContestList] Could not find participant after joining');
+        _showErrorDialog('Không thể lấy thông tin participant');
+        return;
+      }
+      
       _showSuccessSnackBar('Đã tham gia contest thành công!');
       context.router.push(WaitingRoomRoute(contestId: contestId));
     } catch (e) {
+      print('❌ [ContestList] Error joining contest: $e');
       _showErrorDialog('Không thể tham gia contest: $e');
     } finally {
       setState(() => _isLoading = false);
@@ -132,52 +170,41 @@ class _ContestListScreenState extends State<ContestListScreen> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
       child: Row(
         children: [
-          Container(
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              gradient: AppColors.primaryGradient,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: const [
-                BoxShadow(
-                  color: Color(0x33C084FC),
-                  blurRadius: 20,
-                  offset: Offset(0, 8),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.emoji_events_rounded,
-              color: Colors.white,
-              size: 28,
-            ),
+          // Nút back
+          IconButton(
+            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
+            onPressed: () => context.router.back(),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 const Text(
                   'Quản lý Contest',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 20, // nhỏ lại
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
                   ),
+                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 2),
                 Text(
-                  'Tổng cộng $_totalElements cuộc thi',
+                  '$_totalElements cuộc thi',
                   style: const TextStyle(
-                    fontSize: 13,
+                    fontSize: 12,
                     color: AppColors.textSecondary,
                   ),
+                  textAlign: TextAlign.center,
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 48), // để cân bằng với icon back bên trái
         ],
       ),
     );

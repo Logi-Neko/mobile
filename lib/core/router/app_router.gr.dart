@@ -34,9 +34,14 @@ abstract class _$AppRouter extends RootStackRouter {
       );
     },
     CountdownRoute.name: (routeData) {
+      final args = routeData.argsAs<CountdownRouteArgs>();
       return AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const CountdownScreen(),
+        child: CountdownScreen(
+          key: args.key,
+          contestId: args.contestId,
+          participantId: args.participantId,
+        ),
       );
     },
     CourseRoute.name: (routeData) {
@@ -93,9 +98,14 @@ abstract class _$AppRouter extends RootStackRouter {
       );
     },
     RoomQuizRoute.name: (routeData) {
+      final args = routeData.argsAs<RoomQuizRouteArgs>();
       return AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const RoomQuizScreen(),
+        child: RoomQuizScreen(
+          key: args.key,
+          contestId: args.contestId,
+          participantId: args.participantId,
+        ),
       );
     },
     SignUpStepOneRoute.name: (routeData) {
@@ -189,16 +199,45 @@ class ContestListRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [CountdownScreen]
-class CountdownRoute extends PageRouteInfo<void> {
-  const CountdownRoute({List<PageRouteInfo>? children})
-      : super(
+class CountdownRoute extends PageRouteInfo<CountdownRouteArgs> {
+  CountdownRoute({
+    Key? key,
+    required int contestId,
+    required int participantId,
+    List<PageRouteInfo>? children,
+  }) : super(
           CountdownRoute.name,
+          args: CountdownRouteArgs(
+            key: key,
+            contestId: contestId,
+            participantId: participantId,
+          ),
           initialChildren: children,
         );
 
   static const String name = 'CountdownRoute';
 
-  static const PageInfo<void> page = PageInfo<void>(name);
+  static const PageInfo<CountdownRouteArgs> page =
+      PageInfo<CountdownRouteArgs>(name);
+}
+
+class CountdownRouteArgs {
+  const CountdownRouteArgs({
+    this.key,
+    required this.contestId,
+    required this.participantId,
+  });
+
+  final Key? key;
+
+  final int contestId;
+
+  final int participantId;
+
+  @override
+  String toString() {
+    return 'CountdownRouteArgs{key: $key, contestId: $contestId, participantId: $participantId}';
+  }
 }
 
 /// generated route for
@@ -358,16 +397,45 @@ class QuizResultRouteArgs {
 
 /// generated route for
 /// [RoomQuizScreen]
-class RoomQuizRoute extends PageRouteInfo<void> {
-  const RoomQuizRoute({List<PageRouteInfo>? children})
-      : super(
+class RoomQuizRoute extends PageRouteInfo<RoomQuizRouteArgs> {
+  RoomQuizRoute({
+    Key? key,
+    required int contestId,
+    required int participantId,
+    List<PageRouteInfo>? children,
+  }) : super(
           RoomQuizRoute.name,
+          args: RoomQuizRouteArgs(
+            key: key,
+            contestId: contestId,
+            participantId: participantId,
+          ),
           initialChildren: children,
         );
 
   static const String name = 'RoomQuizRoute';
 
-  static const PageInfo<void> page = PageInfo<void>(name);
+  static const PageInfo<RoomQuizRouteArgs> page =
+      PageInfo<RoomQuizRouteArgs>(name);
+}
+
+class RoomQuizRouteArgs {
+  const RoomQuizRouteArgs({
+    this.key,
+    required this.contestId,
+    required this.participantId,
+  });
+
+  final Key? key;
+
+  final int contestId;
+
+  final int participantId;
+
+  @override
+  String toString() {
+    return 'RoomQuizRouteArgs{key: $key, contestId: $contestId, participantId: $participantId}';
+  }
 }
 
 /// generated route for

@@ -10,7 +10,7 @@ class ContestService {
   // Your machine's local IP address (e.g., '192.168.1.5') for physical devices
   final String baseUrl = Platform.isAndroid
       ? 'http://10.0.2.2:8081'
-      : 'http://localhost:8081'; // Adjust for physical device testing
+      : 'http://192.168.1.12:8081'; // Adjust for physical device testing
 
   Future<PaginatedResponse> getAllContests({
     String? keyword,
@@ -65,9 +65,15 @@ class ContestService {
     final uri = Uri.parse('$baseUrl/api/game/$contestId/join')
         .replace(queryParameters: {'accountId': accountId.toString()});
 
+    print('🔑 [ContestAPI] Joining contest $contestId with accountId: $accountId');
+    print('🔑 [ContestAPI] Request URL: $uri');
+
     final response = await http.post(uri);
 
-    if (response.body == null) {
+    print('🔑 [ContestAPI] Join contest response status: ${response.statusCode}');
+    print('🔑 [ContestAPI] Join contest response body: ${response.body}');
+
+    if (response.statusCode != 200) {
       throw Exception('Failed to join contest: ${response.body}');
     }
   }
@@ -81,9 +87,14 @@ class ContestService {
     if (response.statusCode == 200) {
       final jsonData = json.decode(response.body);
       final List<dynamic> participantData = jsonData['data'];
+      
+      print('📋 [ContestAPI] Raw participants data: $participantData');
 
       return participantData
-          .map((json) => Participant.fromJson(json as Map<String, dynamic>))
+          .map((json) {
+            print('👤 [ContestAPI] Processing participant: $json');
+            return Participant.fromJson(json as Map<String, dynamic>);
+          })
           .toList();
     } else {
       throw Exception('Failed to load participants: ${response.body}');
@@ -96,6 +107,69 @@ class ContestService {
 
     if (response.statusCode != 200) {
       throw Exception('Failed to start contest: ${response.body}');
+    }
+  }
+
+  Future<void> submitAnswer({
+    required int contestId,
+    required int participantId,
+    required int contestQuestionId,
+    required String answer,
+  }) async {
+    final uri = Uri.parse('$baseUrl/api/game/$contestId/submit/$participantId/$contestQuestionId')
+        .replace(queryParameters: {'answer': answer});
+
+    final response = await http.post(uri);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to submit answer: ${response.body}');
+    }
+  }
+
+  // This endpoint is likely called by a host/admin, but included for completeness
+  Future<void> revealQuestion(int contestQuestionId) async {
+    final uri = Uri.parse('$baseUrl/api/game/reveal/$contestQuestionId');
+    final response = await http.post(uri);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to reveal question');
+    }
+  }
+
+  Future<void> endContest(int contestId) async {
+    final uri = Uri.parse('$baseUrl/api/game/$contestId/end');
+    final response = await http.post(uri);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to end contest: ${response.body}');
+    }
+  }
+
+  Future<void> refreshLeaderboard(int contestId) async {
+    final uri = Uri.parse('$baseUrl/api/game/$contestId/leaderboard/refresh');
+    final response = await http.post(uri);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to refresh leaderboard: ${response.body}');
+    }
+  }
+
+  Future<List<ContestQuestionResponse>> getContestQuestions(int contestId) async {
+    final response = await http.get(Uri.parse("$baseUrl/api/contest-questions/contest/$contestId"));
+    if (response.statusCode == 200) {
+      final List<dynamic> data = jsonDecode(response.body)["data"];
+      return data.map((e) => ContestQuestionResponse.fromJson(e)).toList();
+    } else {
+      throw Exception("Failed to load contest questions");
+    }
+  }
+
+  Future<QuestionResponse> getQuestionById(int id) async {
+    final response = await http.get(Uri.parse("$baseUrl/api/questions/$id"));
+    if (response.statusCode == 200) {
+      final json = jsonDecode(response.body);
+      return QuestionResponse.fromJson(json["data"]);
+    } else {
+      throw Exception("Failed to load question");
     }
   }
 }
