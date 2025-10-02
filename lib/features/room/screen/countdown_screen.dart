@@ -5,6 +5,7 @@ import 'dart:async';
 import 'package:logi_neko/shared/color/app_color.dart';
 import 'package:logi_neko/features/room/service/stomp_websocket_service.dart';
 import 'package:logi_neko/features/room/service/contest_polling_service.dart';
+import 'package:logi_neko/features/room/api/contest_api.dart';
 
 @RoutePage()
 class CountdownScreen extends StatefulWidget {
@@ -31,6 +32,7 @@ class _CountdownScreenState extends State<CountdownScreen> {
   StreamSubscription? _pollingSubscription;
   bool _isWaitingForContestStart = false;
   String _statusMessage = 'Chuẩn bị bắt đầu!';
+  final ContestService _contestService = ContestService();
 
   @override
   void initState() {
@@ -76,6 +78,9 @@ class _CountdownScreenState extends State<CountdownScreen> {
       },
     );
 
+    // Try to start the contest automatically
+    _tryStartContest();
+
     // Always start polling fallback after 2 seconds regardless of WebSocket status
     _timeoutTimer = Timer(const Duration(seconds: 2), () {
       if (_isWaitingForContestStart && _pollingService == null) {
@@ -109,6 +114,47 @@ class _CountdownScreenState extends State<CountdownScreen> {
         });
       },
     );
+  }
+
+  Future<void> _tryStartContest() async {
+    try {
+      print('🎯 [CountdownScreen] Attempting to start contest ${widget.contestId}');
+      setState(() {
+        _statusMessage = 'Đang khởi động contest...';
+      });
+      
+      await _contestService.startContest(widget.contestId);
+      print('✅ [CountdownScreen] Contest started successfully');
+      
+      setState(() {
+        _statusMessage = 'Contest đã bắt đầu! Đang chờ câu hỏi...';
+      });
+    } catch (e) {
+      final errorMessage = e.toString();
+      print('⚠️ [CountdownScreen] Failed to start contest: $e');
+      
+      // Check if contest is already running
+      if (errorMessage.contains('RUNNING') || errorMessage.contains('already')) {
+        print('ℹ️ [CountdownScreen] Contest is already running, proceeding...');
+        setState(() {
+          _statusMessage = 'Contest đã bắt đầu! Đang chờ câu hỏi...';
+        });
+      } else {
+        print('❌ [CountdownScreen] Unexpected error starting contest: $e');
+        setState(() {
+          _statusMessage = 'Lỗi khởi động contest. Đang thử lại...';
+        });
+        
+        // Try again after 2 seconds
+        Timer(const Duration(seconds: 2), () {
+          if (mounted) {
+            setState(() {
+              _statusMessage = 'Đang chờ contest bắt đầu...';
+            });
+          }
+        });
+      }
+    }
   }
 
   void _navigateToQuiz() {

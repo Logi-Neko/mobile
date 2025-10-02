@@ -1,6 +1,5 @@
 import 'package:equatable/equatable.dart';
 import 'package:logi_neko/features/room/dto/gameEvent.dart';
-import 'package:logi_neko/features/room/dto/leaderboard_entry.dart';
 
 abstract class RoomState extends Equatable {
   const RoomState();
@@ -23,15 +22,19 @@ class QuestionInProgress extends RoomState {
   final QuestionRevealedEvent questionEvent;
   final int countdown;
   final String? selectedAnswer;
+  final int initialTime; // Initial time for this question
+  final bool isSubmitted; // Whether answer has been submitted
 
   const QuestionInProgress({
     required this.questionEvent,
     required this.countdown,
     this.selectedAnswer,
+    required this.initialTime,
+    this.isSubmitted = false,
   });
 
   @override
-  List<Object?> get props => [questionEvent, countdown, selectedAnswer ?? ''];
+  List<Object?> get props => [questionEvent, countdown, selectedAnswer ?? '', initialTime, isSubmitted];
 }
 
 // Showing the leaderboard between questions

@@ -23,13 +23,14 @@ class RoomQuizScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) => RoomBloc()
         ..add(StartQuizEvent(contestId: contestId, participantId: participantId)),
-      child: const RoomQuizView(),
+        child: RoomQuizView(contestId: contestId),
     );
   }
 }
 
 class RoomQuizView extends StatelessWidget {
-  const RoomQuizView({Key? key}) : super(key: key);
+  final int contestId;
+  const RoomQuizView({Key? key, required this.contestId}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -52,6 +53,8 @@ class RoomQuizView extends StatelessWidget {
             listener: (context, state) {
               if (state is QuizFinished) {
                 _navigateToResult(context);
+              } else if (state is ShowLeaderboard) {
+                _showLeaderboardModal(context, state);
               }
             },
             builder: (context, state) {
@@ -152,9 +155,40 @@ class RoomQuizView extends StatelessWidget {
           child: LinearProgressIndicator(
             value: progress,
             backgroundColor: Colors.white24,
-            valueColor: const AlwaysStoppedAnimation<Color>(Colors.orange),
+            valueColor: AlwaysStoppedAnimation<Color>(
+              state.isSubmitted ? Colors.green : Colors.orange
+            ),
           ),
         ),
+
+        // Submitted status
+        if (state.isSubmitted) ...[
+          const SizedBox(height: 16),
+          Container(
+            margin: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.green.withOpacity(0.2),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(color: Colors.green.withOpacity(0.5)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                const SizedBox(width: 8),
+                Text(
+                  'Đã nộp bài! Chờ câu hỏi tiếp theo...',
+                  style: TextStyle(
+                    color: Colors.green.shade200,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
 
         const SizedBox(height: 32),
 
@@ -189,27 +223,46 @@ class RoomQuizView extends StatelessWidget {
                 return Container(
                   margin: const EdgeInsets.only(bottom: 12),
                   child: GestureDetector(
-                    onTap: () => _selectAnswer(context, option),
+                    onTap: state.isSubmitted ? null : () => _selectAnswer(context, option),
                 child: Container(
                       width: double.infinity,
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                        color: isSelected ? Colors.orange : Colors.white24,
+                        color: state.isSubmitted 
+                            ? (isSelected ? Colors.orange.withOpacity(0.7) : Colors.white12)
+                            : (isSelected ? Colors.orange : Colors.white24),
                     borderRadius: BorderRadius.circular(12),
                     border: Border.all(
-                          color: isSelected ? Colors.orange : Colors.white54,
+                          color: state.isSubmitted 
+                              ? (isSelected ? Colors.orange.withOpacity(0.7) : Colors.white38)
+                              : (isSelected ? Colors.orange : Colors.white54),
                       width: 2,
                     ),
                   ),
-                    child: Text(
-                      option,
-                      style: TextStyle(
-                          color: isSelected ? Colors.black : Colors.white,
-                        fontSize: 16,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          option,
+                          style: TextStyle(
+                              color: state.isSubmitted 
+                                  ? (isSelected ? Colors.white : Colors.white60)
+                                  : (isSelected ? Colors.black : Colors.white),
+                            fontSize: 16,
+                              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        if (state.isSubmitted && isSelected) ...[
+                          const SizedBox(width: 8),
+                          const Icon(
+                            Icons.check_circle,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ],
+                      ],
+                    ),
                     ),
                   ),
                 );
@@ -404,14 +457,220 @@ class RoomQuizView extends StatelessWidget {
   }
 
   void _navigateToResult(BuildContext context) {
+    // Get data from BLoC
+    final roomBloc = context.read<RoomBloc>();
+    
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
-        builder: (context) => const QuizResultScreen(
-          questions: [],
-          answers: {},
-          score: 0,
-        ),
+        builder: (context) => QuizResultScreen(
+          questions: [], // Will be populated from contest data
+          answers: roomBloc.userAnswers, // User's answers
+          score: roomBloc.totalScore, // Calculated score
+          contestId: roomBloc.contestId,
+          totalTime: const Duration(minutes: 5), // Placeholder - calculate from answerTimes
+        ),  
       ),
     );
+  }
+
+  void _showLeaderboardModal(BuildContext context, ShowLeaderboard state) {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return Dialog(
+              backgroundColor: Colors.transparent,
+              child: Container(
+                width: MediaQuery.of(context).size.width * 0.9,
+                height: MediaQuery.of(context).size.height * 0.7,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.gradientStart,
+                      AppColors.gradientMiddle,
+                      AppColors.gradientEnd,
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.3),
+                      blurRadius: 20,
+                      offset: const Offset(0, 10),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    // Header
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.emoji_events,
+                            color: Colors.orange,
+                            size: 32,
+                          ),
+                          const SizedBox(width: 12),
+                          const Expanded(
+                            child: Text(
+                              'Bảng xếp hạng',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 8,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.orange,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              '${state.countdown}s',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    
+                    // Leaderboard List
+                    Expanded(
+                      child: state.leaderboardEvent.leaderboard.isEmpty
+                          ? const Center(
+                              child: Text(
+                                'Chưa có dữ liệu bảng xếp hạng',
+                                style: TextStyle(
+                                  color: Colors.white70,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            )
+                          : ListView.builder(
+                              padding: const EdgeInsets.symmetric(horizontal: 20),
+                              itemCount: state.leaderboardEvent.leaderboard.length,
+                              itemBuilder: (context, index) {
+                                final entry = state.leaderboardEvent.leaderboard[index];
+                                final isTopThree = index < 3;
+                                
+                                return Container(
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: isTopThree 
+                                        ? Colors.orange.withOpacity(0.3)
+                                        : Colors.white.withOpacity(0.1),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: isTopThree 
+                                        ? Border.all(color: Colors.orange, width: 2)
+                                        : Border.all(color: Colors.white.withOpacity(0.2)),
+                                  ),
+                                  child: Row(
+                                    children: [
+                                      // Rank
+                                      Container(
+                                        width: 40,
+                                        height: 40,
+                                        decoration: BoxDecoration(
+                                          color: isTopThree 
+                                              ? Colors.orange 
+                                              : Colors.white.withOpacity(0.3),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            '${index + 1}',
+                                            style: TextStyle(
+                                              color: isTopThree 
+                                                  ? Colors.white 
+                                                  : Colors.white70,
+                                              fontSize: 16,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                      const SizedBox(width: 16),
+                                      
+                                      // Name
+                                      Expanded(
+                                        child: Text(
+                                          entry.name,
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                          ),
+                                        ),
+                                      ),
+                                      
+                                      // Score
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 12,
+                                          vertical: 6,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.orange.withOpacity(0.2),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          '${entry.score} điểm',
+                                          style: const TextStyle(
+                                            color: Colors.orange,
+                                            fontSize: 14,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              },
+                            ),
+                    ),
+                    
+                    // Footer
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Text(
+                        'Câu hỏi tiếp theo sẽ xuất hiện sau ${state.countdown} giây',
+                        style: TextStyle(
+                          color: Colors.white.withOpacity(0.8),
+                          fontSize: 14,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    );
+    
+    // Auto close dialog when countdown reaches 0 or state changes
+    Future.delayed(Duration(seconds: state.countdown), () {
+      if (Navigator.of(context).canPop()) {
+        Navigator.of(context).pop();
+      }
+    });
   }
 }

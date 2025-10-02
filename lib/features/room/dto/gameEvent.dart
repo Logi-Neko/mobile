@@ -24,6 +24,26 @@ abstract class GameEvent {
         throw Exception('Unknown event type: ${json['eventType']}');
     }
   }
+
+  // Helper method to parse timestamp from various formats
+  static DateTime _parseTimestamp(dynamic timestamp) {
+    if (timestamp is String) {
+      return DateTime.parse(timestamp);
+    } else if (timestamp is num) {
+      // Handle Unix timestamp in seconds or milliseconds
+      int timestampMs;
+      if (timestamp > 1e12) {
+        // Already in milliseconds
+        timestampMs = timestamp.toInt();
+      } else {
+        // In seconds, convert to milliseconds
+        timestampMs = (timestamp * 1000).toInt();
+      }
+      return DateTime.fromMillisecondsSinceEpoch(timestampMs);
+    } else {
+      throw Exception('Invalid timestamp format: $timestamp');
+    }
+  }
 }
 
 // Event for a new question
@@ -46,7 +66,7 @@ class QuestionRevealedEvent extends GameEvent {
     
     return QuestionRevealedEvent(
       eventType: json['eventType'],
-      timestamp: DateTime.parse(json['timestamp']),
+      timestamp: GameEvent._parseTimestamp(json['timestamp']),
       contestQuestionId: json['contestQuestionId'],
       question: questionData['questionText'] ?? questionData['text'] ?? '',
       options: optionsData.map((option) => option['optionText'] ?? option.toString()).cast<String>().toList(),
@@ -68,7 +88,7 @@ class LeaderboardUpdatedEvent extends GameEvent {
     final leaderboardData = List<Map<String, dynamic>>.from(json['leaderboard']);
     return LeaderboardUpdatedEvent(
       eventType: json['eventType'],
-      timestamp: DateTime.parse(json['timestamp']),
+      timestamp: GameEvent._parseTimestamp(json['timestamp']),
       leaderboard: leaderboardData.map((e) => LeaderboardEntry.fromJson(e)).toList(),
     );
   }
@@ -85,7 +105,7 @@ class ContestStartedEvent extends GameEvent {
   factory ContestStartedEvent.fromJson(Map<String, dynamic> json) {
     return ContestStartedEvent(
       eventType: json['eventType'],
-      timestamp: DateTime.parse(json['timestamp']),
+      timestamp: GameEvent._parseTimestamp(json['timestamp']),
     );
   }
 }
@@ -105,7 +125,7 @@ class ParticipantJoinedEvent extends GameEvent {
   factory ParticipantJoinedEvent.fromJson(Map<String, dynamic> json) {
     return ParticipantJoinedEvent(
       eventType: json['eventType'],
-      timestamp: DateTime.parse(json['timestamp']),
+      timestamp: GameEvent._parseTimestamp(json['timestamp']),
       participantName: json['participantName'] ?? '',
       participantId: json['participantId'] ?? 0,
     );
@@ -127,7 +147,7 @@ class ParticipantLeftEvent extends GameEvent {
   factory ParticipantLeftEvent.fromJson(Map<String, dynamic> json) {
     return ParticipantLeftEvent(
       eventType: json['eventType'],
-      timestamp: DateTime.parse(json['timestamp']),
+      timestamp: GameEvent._parseTimestamp(json['timestamp']),
       participantName: json['participantName'] ?? '',
       participantId: json['participantId'] ?? 0,
     );
@@ -144,7 +164,7 @@ class ContestEndedEvent extends GameEvent {
   factory ContestEndedEvent.fromJson(Map<String, dynamic> json) {
     return ContestEndedEvent(
       eventType: json['eventType'],
-      timestamp: DateTime.parse(json['timestamp']),
+      timestamp: GameEvent._parseTimestamp(json['timestamp']),
     );
   }
 }

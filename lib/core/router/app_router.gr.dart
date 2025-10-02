@@ -94,6 +94,8 @@ abstract class _$AppRouter extends RootStackRouter {
           questions: args.questions,
           answers: args.answers,
           score: args.score,
+          contestId: args.contestId,
+          totalTime: args.totalTime,
         ),
       );
     },
@@ -355,6 +357,8 @@ class QuizResultRoute extends PageRouteInfo<QuizResultRouteArgs> {
     required List<Question> questions,
     required Map<int, String> answers,
     required int score,
+    required int contestId,
+    Duration totalTime = const Duration(minutes: 3, seconds: 42),
     List<PageRouteInfo>? children,
   }) : super(
           QuizResultRoute.name,
@@ -363,6 +367,8 @@ class QuizResultRoute extends PageRouteInfo<QuizResultRouteArgs> {
             questions: questions,
             answers: answers,
             score: score,
+            contestId: contestId,
+            totalTime: totalTime,
           ),
           initialChildren: children,
         );
@@ -379,6 +385,8 @@ class QuizResultRouteArgs {
     required this.questions,
     required this.answers,
     required this.score,
+    required this.contestId,
+    this.totalTime = const Duration(minutes: 3, seconds: 42),
   });
 
   final Key? key;
@@ -389,9 +397,13 @@ class QuizResultRouteArgs {
 
   final int score;
 
+  final int contestId;
+
+  final Duration totalTime;
+
   @override
   String toString() {
-    return 'QuizResultRouteArgs{key: $key, questions: $questions, answers: $answers, score: $score}';
+    return 'QuizResultRouteArgs{key: $key, questions: $questions, answers: $answers, score: $score, contestId: $contestId, totalTime: $totalTime}';
   }
 }
 

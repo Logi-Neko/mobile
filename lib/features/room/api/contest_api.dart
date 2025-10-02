@@ -115,15 +115,24 @@ class ContestService {
     required int participantId,
     required int contestQuestionId,
     required String answer,
+    int? timeSpent, // Time spent in seconds
   }) async {
+    final queryParams = {
+      'answer': answer,
+      if (timeSpent != null) 'timeSpent': timeSpent.toString(),
+    };
+    
     final uri = Uri.parse('$baseUrl/api/game/$contestId/submit/$participantId/$contestQuestionId')
-        .replace(queryParameters: {'answer': answer});
+        .replace(queryParameters: queryParams);
 
+    print('📤 [ContestAPI] Submitting answer: $answer, timeSpent: $timeSpent seconds');
     final response = await http.post(uri);
 
     if (response.statusCode != 200) {
       throw Exception('Failed to submit answer: ${response.body}');
     }
+    
+    print('✅ [ContestAPI] Answer submitted successfully');
   }
 
   // This endpoint is likely called by a host/admin, but included for completeness
@@ -170,6 +179,18 @@ class ContestService {
       return QuestionResponse.fromJson(json["data"]);
     } else {
       throw Exception("Failed to load question");
+    }
+  }
+
+  Future<List<dynamic>> getLeaderboard(int contestId) async {
+    final uri = Uri.parse('$baseUrl/api/game/$contestId/leaderboard');
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      return jsonData['data']['leaderboard'] as List<dynamic>;
+    } else {
+      throw Exception('Failed to get leaderboard: ${response.body}');
     }
   }
 }

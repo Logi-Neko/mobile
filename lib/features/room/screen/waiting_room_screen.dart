@@ -145,19 +145,17 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> with SingleTicker
         throw Exception('Không tìm thấy participant ID. Vui lòng tham gia contest lại.');
       }
 
-      print('🚀 [WaitingRoom] Starting contest ${widget.contestId} with participantId: $_participantId');
-      
-      await _contestService.startContest(widget.contestId);
+      print('🚀 [WaitingRoom] Time to start! Navigating to countdown with contestId: ${widget.contestId}, participantId: $_participantId');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Contest đã bắt đầu!'),
+            content: Text('Thời gian bắt đầu! Chuyển đến màn hình countdown...'),
             backgroundColor: AppColors.success,
           ),
         );
 
-        // Navigate to countdown screen with contestId and participantId
+        // Navigate to countdown screen - let CountdownScreen handle starting the contest
         print('🧭 [WaitingRoom] Navigating to countdown with contestId: ${widget.contestId}, participantId: $_participantId');
         context.router.push(
           CountdownRoute(
@@ -167,12 +165,12 @@ class _WaitingRoomScreenState extends State<WaitingRoomScreen> with SingleTicker
         );
       }
     } catch (e) {
-      print('❌ [WaitingRoom] Error starting contest: $e');
+      print('❌ [WaitingRoom] Error navigating to countdown: $e');
       if (mounted) {
         setState(() => _hasStarted = false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Lỗi khi bắt đầu contest: $e'),
+            content: Text('Lỗi khi chuyển màn hình: $e'),
             backgroundColor: Colors.red,
           ),
         );

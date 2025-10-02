@@ -6,6 +6,7 @@ import 'package:logi_neko/features/room/bloc/room_state.dart';
 import 'package:logi_neko/features/room/service/stomp_websocket_service.dart';
 import 'package:logi_neko/features/room/dto/gameEvent.dart';
 import 'package:logi_neko/features/room/dto/contest.dart';
+import 'package:logi_neko/features/room/dto/leaderboard_entry.dart';
 
 class RoomBloc extends Bloc<RoomEvent, RoomState> {
   final ContestService _apiService;
@@ -19,9 +20,13 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
   
   // Question management
   List<ContestQuestionResponse> _contestQuestions = [];
-  List<QuestionResponse> _questions = [];
   int _currentQuestionIndex = 0;
   Timer? _questionRevealTimer;
+  
+  // Scoring and timing
+  int _totalScore = 0;
+  Map<int, String> _userAnswers = {}; // questionIndex -> answer
+  Map<int, int> _answerTimes = {}; // questionIndex -> time spent
 
   RoomBloc({
     ContestService? apiService,
@@ -61,9 +66,9 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       
       emit(WaitingForQuestion());
       
-      // Add fallback timer - if no contest.started event in 10 seconds, try to load questions anyway
-      Timer(const Duration(seconds: 10), () {
-        if (_questions.isEmpty) {
+      // Add fallback timer - if no contest.started event in 5 seconds, try to load questions anyway
+      Timer(const Duration(seconds: 5), () {
+        if (_contestQuestions.isEmpty) {
           print('⏰ [RoomBloc] No contest.started event received, trying to load questions anyway...');
           add(LoadQuestionsFallback());
         }
@@ -83,10 +88,13 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
         print('📝 [RoomBloc] Question revealed, starting timer');
         final questionEvent = gameEvent as QuestionRevealedEvent;
         _selectedAnswer = null;
+        const initialTime = 30; // 30 seconds per question
         emit(QuestionInProgress(
           questionEvent: questionEvent,
-          countdown: 30, // 30 seconds per question
+          countdown: initialTime,
           selectedAnswer: _selectedAnswer,
+          initialTime: initialTime,
+          isSubmitted: false,
         ));
         _startQuestionTimer();
         break;
@@ -124,15 +132,27 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
     _selectedAnswer = event.answer;
     
     final currentState = state;
-    if (currentState is QuestionInProgress) {
+    if (currentState is QuestionInProgress && !currentState.isSubmitted) {
+      // Calculate time spent (initial time - remaining time)
+      final timeSpent = currentState.initialTime - currentState.countdown;
+      
+      // Store answer and time
+      _userAnswers[_currentQuestionIndex] = event.answer;
+      _answerTimes[_currentQuestionIndex] = timeSpent;
+      
       emit(QuestionInProgress(
         questionEvent: currentState.questionEvent,
         countdown: currentState.countdown,
         selectedAnswer: _selectedAnswer,
+        initialTime: currentState.initialTime,
+        isSubmitted: true, // Mark as submitted
       ));
       
-      // Submit answer to server
-      _submitAnswer(currentState.questionEvent.contestQuestionId, event.answer);
+      // Submit answer to server with time
+      _submitAnswer(currentState.questionEvent.contestQuestionId, event.answer, timeSpent);
+      
+      // Load leaderboard after submission
+      _loadLeaderboardAfterAnswer();
     }
   }
 
@@ -146,9 +166,21 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
           questionEvent: currentState.questionEvent,
           countdown: newCountdown,
           selectedAnswer: currentState.selectedAnswer,
+          initialTime: currentState.initialTime,
+          isSubmitted: currentState.isSubmitted,
         ));
       } else {
-        // Time's up, move to next question
+        // Time's up, auto-submit if not already submitted
+        if (!currentState.isSubmitted) {
+          final timeSpent = currentState.initialTime;
+          _userAnswers[_currentQuestionIndex] = ''; // No answer
+          _answerTimes[_currentQuestionIndex] = timeSpent;
+          
+          // Submit empty answer
+          _submitAnswer(currentState.questionEvent.contestQuestionId, '', timeSpent);
+        }
+        
+        // Move to next question
         _timer?.cancel();
         _currentQuestionIndex++;
         
@@ -163,20 +195,43 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
     }
   }
 
-  void _showLeaderboardAndNextQuestion(Emitter<RoomState> emit) {
-    // Create a simple leaderboard event (you can enhance this later)
-    final leaderboardEvent = LeaderboardUpdatedEvent(
-      eventType: 'leaderboard.updated',
-      timestamp: DateTime.now(),
-      leaderboard: [], // Empty for now, can be populated later
-    );
-    
-    emit(ShowLeaderboard(
-      leaderboardEvent: leaderboardEvent,
-      countdown: 3, // 3 seconds to show leaderboard
-    ));
-    
-    _startLeaderboardTimer();
+  void _showLeaderboardAndNextQuestion(Emitter<RoomState> emit) async {
+    try {
+      // Get current leaderboard data
+      await _apiService.refreshLeaderboard(_contestId);
+      await Future.delayed(const Duration(milliseconds: 500));
+      final leaderboardData = await _apiService.getLeaderboard(_contestId);
+      
+      final leaderboardEntries = leaderboardData.map((data) => LeaderboardEntry.fromJson(data)).toList();
+      
+      final leaderboardEvent = LeaderboardUpdatedEvent(
+        eventType: 'leaderboard.updated',
+        timestamp: DateTime.now(),
+        leaderboard: leaderboardEntries,
+      );
+      
+      emit(ShowLeaderboard(
+        leaderboardEvent: leaderboardEvent,
+        countdown: 5, // 5 seconds to show leaderboard
+      ));
+      
+      _startLeaderboardTimer();
+    } catch (e) {
+      print('❌ [RoomBloc] Failed to load leaderboard: $e');
+      // Fallback to empty leaderboard
+      final leaderboardEvent = LeaderboardUpdatedEvent(
+        eventType: 'leaderboard.updated',
+        timestamp: DateTime.now(),
+        leaderboard: [],
+      );
+      
+      emit(ShowLeaderboard(
+        leaderboardEvent: leaderboardEvent,
+        countdown: 3,
+      ));
+      
+      _startLeaderboardTimer();
+    }
   }
 
   void _onLeaderboardTimerTicked(
@@ -294,10 +349,13 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       );
       
       _selectedAnswer = null;
+      final questionTime = question.timeLimit;
       emit(QuestionInProgress(
         questionEvent: questionEvent,
-        countdown: question.timeLimit, // Use question's time limit
+        countdown: questionTime,
         selectedAnswer: _selectedAnswer,
+        initialTime: questionTime,
+        isSubmitted: false,
       ));
       
       _startQuestionTimer();
@@ -308,19 +366,59 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
     }
   }
 
-  Future<void> _submitAnswer(int contestQuestionId, String answer) async {
+  Future<void> _submitAnswer(int contestQuestionId, String answer, int timeSpent) async {
     try {
+      print('📤 [RoomBloc] Submitting answer: "$answer" with time: ${timeSpent}s');
       await _apiService.submitAnswer(
         contestId: _contestId,
         participantId: _participantId,
         contestQuestionId: contestQuestionId,
         answer: answer,
+        timeSpent: timeSpent,
       );
+      print('✅ [RoomBloc] Answer submitted successfully');
     } catch (e) {
-      // Handle error silently or emit error state
-      print('Failed to submit answer: $e');
+      print('❌ [RoomBloc] Failed to submit answer: $e');
     }
   }
+
+  Future<void> _loadLeaderboardAfterAnswer() async {
+    try {
+      print('🔄 [RoomBloc] Refreshing leaderboard after answer submission');
+      await _apiService.refreshLeaderboard(_contestId);
+      
+      // Wait a bit for the leaderboard to update
+      await Future.delayed(const Duration(milliseconds: 1000));
+      
+      // Get updated leaderboard data
+      final leaderboardData = await _apiService.getLeaderboard(_contestId);
+      
+      // Create leaderboard event with real data
+      final leaderboardEntries = leaderboardData.map((data) => LeaderboardEntry.fromJson(data)).toList();
+      
+      final leaderboardEvent = LeaderboardUpdatedEvent(
+        eventType: 'leaderboard.updated',
+        timestamp: DateTime.now(),
+        leaderboard: leaderboardEntries,
+      );
+      
+      // Emit leaderboard state
+      add(GameEventReceived(leaderboardEvent));
+      
+      print('✅ [RoomBloc] Leaderboard refreshed with ${leaderboardEntries.length} entries');
+    } catch (e) {
+      print('❌ [RoomBloc] Failed to refresh leaderboard: $e');
+    }
+  }
+
+
+  // Getters for accessing private data
+  int get contestId => _contestId;
+  int get participantId => _participantId;
+  int get totalScore => _totalScore;
+  Map<int, String> get userAnswers => Map.from(_userAnswers);
+  Map<int, int> get answerTimes => Map.from(_answerTimes);
+  List<ContestQuestionResponse> get contestQuestions => List.from(_contestQuestions);
 
   @override
   Future<void> close() {
