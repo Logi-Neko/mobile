@@ -89,19 +89,14 @@ class _LessonViewState extends State<LessonView>
               }
             },
             builder: (context, state) {
-              return NestedScrollView(
-                headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-                  return <Widget>[
-                    SliverToBoxAdapter(
-                      child: Column(
-                        children: [
-                          _buildHeader(state),
-                        ],
-                      ),
-                    ),
-                  ];
-                },
-                body: _buildTabView(state),
+              return Column(
+                children: [
+                  _buildHeader(state),
+
+                  Expanded(
+                    child: _buildTabView(state),
+                  ),
+                ],
               );
             },
           ),
@@ -516,9 +511,12 @@ class _LessonViewState extends State<LessonView>
           lessonName: lesson.name,
         ),
       ),
-    );
+    ).then((_) {
+      if (mounted) {
+        context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
+      }
+    });
   }
-
   Widget _buildInfoCard({
     required IconData icon,
     required String title,
