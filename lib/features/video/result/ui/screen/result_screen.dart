@@ -82,7 +82,7 @@ class ResultScreen extends StatelessWidget {
   }
 
   void _onRetry(BuildContext context) {
-    Navigator.of(context).pop(true);
+    Navigator.of(context).pop('retry');
   }
 
   void _onHome(BuildContext context) {

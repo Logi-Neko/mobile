@@ -79,16 +79,16 @@ class LessonGridWidget extends StatelessWidget {
 
         if (constraints.maxWidth > 1200) {
           crossAxisCount = 4;
-          childAspectRatio = 0.75;
+          childAspectRatio = 1.2;
         } else if (constraints.maxWidth > 800) {
           crossAxisCount = 4;
-          childAspectRatio = 0.8;
+          childAspectRatio = 1.0;
         } else if (constraints.maxWidth > 600) {
           crossAxisCount = 3;
           childAspectRatio = 0.85;
         } else {
           crossAxisCount = 2;
-          childAspectRatio = 1.2;
+          childAspectRatio = 1.0;
         }
 
         return SingleChildScrollView(
@@ -215,11 +215,11 @@ class LessonCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Expanded(
-              flex: 5,
+              flex: 3,
               child: _buildThumbnail(),
             ),
             Expanded(
-              flex: 3,
+              flex: 1,
               child: _buildContent(),
             ),
           ],
@@ -350,32 +350,17 @@ class LessonCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              lesson.name,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-                height: 1.3,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
-          ),
-
-          const SizedBox(height: 8),
-
           Row(
             children: [
               if (lesson.totalVideo > 0)
                 Row(
                   children: [
-                    Icon(Icons.play_circle_outline, size: 14, color: Colors.grey[600]),
+                    Icon(Icons.play_circle_outline, size: 16, color: Colors.grey[600]),
                     const SizedBox(width: 4),
                     Text(
                       "${lesson.totalVideo}",
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         color: Colors.grey[600],
                       ),
                     ),
@@ -391,7 +376,7 @@ class LessonCard extends StatelessWidget {
                     Text(
                       "${lesson.star}",
                       style: const TextStyle(
-                        fontSize: 14,
+                        fontSize: 16,
                         color: Colors.orange,
                         fontWeight: FontWeight.w500,
                       ),
