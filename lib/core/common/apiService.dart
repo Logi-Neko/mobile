@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:logi_neko/core/interceptor/auth_interceptor.dart';
 import 'package:logi_neko/features/auth/dto/login_response.dart';
 import '../config/logger.dart';
@@ -8,7 +9,7 @@ import './ApiResponse.dart';
 import 'package:flutter/foundation.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://10.0.2.2:8081';
+  static String baseUrl = dotenv.env['BASE_URL'] ?? "";
 
   static late Dio _dio;
   static late TokenStorage _tokenStorage;

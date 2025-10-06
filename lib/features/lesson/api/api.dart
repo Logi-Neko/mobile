@@ -5,7 +5,7 @@ import '../dto/lesson.dart';
 class LessonApi {
   static Future<ApiResponse<List<Lesson>>> getLessonsByCourseId(int courseId) async {
     return await ApiService.getList<Lesson>(
-      '/lessons/course/$courseId',
+      '/lessons/courses/$courseId',
       fromJson: Lesson.fromJson,
     );
   }
