@@ -65,7 +65,7 @@ class _AnimatedAuthButtonState extends State<AnimatedAuthButton>
             scale: _scaleAnimation.value,
             child: Container(
               width: double.infinity,
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(15),
               decoration: BoxDecoration(
                 gradient: widget.isPrimary
                     ? const LinearGradient(

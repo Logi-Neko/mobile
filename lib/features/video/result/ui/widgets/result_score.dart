@@ -38,8 +38,8 @@ class ResultScore extends StatelessWidget {
     return Column(
       children: [
         Container(
-          width: 80,
-          height: 80,
+          width: 60,
+          height: 60,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
             gradient: LinearGradient(
@@ -50,11 +50,11 @@ class ResultScore extends StatelessWidget {
           ),
           child: Icon(
             resultIcon,
-            size: 40,
+            size: 30,
             color: Colors.white,
           ),
         ),
-        const SizedBox(height: 10),
+        const SizedBox(height: 5),
         Text(
           "$safeScore/$safeTotal",
           style: const TextStyle(
@@ -70,7 +70,7 @@ class ResultScore extends StatelessWidget {
             color: Colors.grey,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 4),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(

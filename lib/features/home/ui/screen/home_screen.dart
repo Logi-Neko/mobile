@@ -74,7 +74,7 @@ class _HomeScreenState extends State<HomeScreen> {
       if (screenWidth > 1000) return 4;
       if (screenWidth > 800) return 4;
       if (screenWidth > 650) return 4;
-      return 2;
+      return 4;
     } else {
       // Portrait mode (nếu có)
       if (screenWidth > 600) return 2;
