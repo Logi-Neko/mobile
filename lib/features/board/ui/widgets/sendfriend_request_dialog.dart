@@ -81,309 +81,332 @@ class SendFriendRequestDialog extends StatelessWidget {
       },
       child: Dialog(
         backgroundColor: Colors.transparent,
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.85,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.gradientStart,
-                AppColors.gradientMiddle,
-                AppColors.gradientEnd,
-              ],
-            ),
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: AppColors.cardShadow,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 40),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.9,
+            maxWidth: MediaQuery.of(context).size.width * 0.9,
           ),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.gradientStart,
+                  AppColors.gradientMiddle,
+                  AppColors.gradientEnd,
+                ],
+              ),
+              borderRadius: BorderRadius.circular(24),
+              boxShadow: AppColors.cardShadow,
+            ),
             child: Column(
-              mainAxisSize: MainAxisSize.min,
               children: [
-                // Header
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        gradient: LinearGradient(
-                          colors: [
-                            // THÊM: Thay đổi màu header dựa trên friendship status
-                            isFriend ? AppColors.success :
-                            hasPending ? AppColors.warning : AppColors.primaryPink,
-                            isFriend ? AppColors.buttonPrimary :
-                            hasPending ? AppColors.accent : AppColors.accent,
-                          ],
-                        ),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        // THÊM: Thay đổi icon dựa trên friendship status
-                        isFriend ? Icons.people :
-                        hasPending ? Icons.hourglass_empty : Icons.person_add,
-                        color: Colors.white,
-                        size: 24,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        // THÊM: Thay đổi title dựa trên friendship status
-                        isFriend ? 'Đã Là Bạn Bè' :
-                        hasPending ? 'Đã Gửi Lời Mời' : 'Thêm Bạn Bè',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w800,
-                        ),
-                      ),
-                    ),
-                    IconButton(
-                      icon: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.close,
-                          color: Colors.white,
-                          size: 20,
-                        ),
-                      ),
-                      onPressed: () => Navigator.of(context).pop(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-
-                // User Info Card
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.1),
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isFriend ? AppColors.success.withOpacity(0.5) :
-                      hasPending ? AppColors.warning.withOpacity(0.5) :
-                      Colors.white.withOpacity(0.2),
-                      width: 2,
-                    ),
-                  ),
+                // Header cố định
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
                   child: Row(
                     children: [
-                      // Avatar với viền theo status
                       Container(
+                        padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: isFriend ? AppColors.success :
-                            hasPending ? AppColors.warning : AppColors.primaryPink,
-                            width: 3,
+                          gradient: LinearGradient(
+                            colors: [
+                              // THÊM: Thay đổi màu header dựa trên friendship status
+                              isFriend ? AppColors.success :
+                              hasPending ? AppColors.warning : AppColors.primaryPink,
+                              isFriend ? AppColors.buttonPrimary :
+                              hasPending ? AppColors.accent : AppColors.accent,
+                            ],
                           ),
+                          borderRadius: BorderRadius.circular(12),
                         ),
-                        child: CircleAvatar(
-                          radius: 32,
-                          backgroundColor: AppColors.cardBackground.withOpacity(0.2),
-                          backgroundImage: user.avatarUrl != null
-                              ? NetworkImage(user.avatarUrl!)
-                              : null,
-                          child: user.avatarUrl == null
-                              ? Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              gradient: LinearGradient(
-                                colors: [
-                                  AppColors.primaryBlue.withOpacity(0.8),
-                                  AppColors.accent.withOpacity(0.6)
-                                ],
-                                begin: Alignment.topLeft,
-                                end: Alignment.bottomRight,
-                              ),
-                            ),
-                            child: Center(
-                              child: ClipOval(
-                                child: Image.asset(
-                                  "lib/shared/assets/images/LOGO.jpg",
-                                  width: 54,
-                                  height: 54,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
-                            ),
-                          )
-                              : null,
+                        child: Icon(
+                          // THÊM: Thay đổi icon dựa trên friendship status
+                          isFriend ? Icons.people :
+                          hasPending ? Icons.hourglass_empty : Icons.person_add,
+                          color: Colors.white,
+                          size: 24,
                         ),
                       ),
-                      const SizedBox(width: 16),
-
-                      // User Details với friendship status indicator
+                      const SizedBox(width: 12),
                       Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Row(
-                              children: [
-                                Expanded(
-                                  child: Text(
-                                    user.fullName,
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w800,
-                                    ),
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
-                                ),
-                                // THÊM: Status indicator
-                                if (isFriend) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [AppColors.success, AppColors.buttonPrimary],
-                                      ),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.check_circle, color: Colors.white, size: 12),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'BẠN BÈ',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ] else if (hasPending) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [AppColors.warning, AppColors.accent],
-                                      ),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(Icons.hourglass_empty, color: Colors.white, size: 12),
-                                        SizedBox(width: 4),
-                                        Text(
-                                          'CHỜ XÁC NHẬN',
-                                          style: TextStyle(
-                                            color: Colors.white,
-                                            fontSize: 10,
-                                            fontWeight: FontWeight.w800,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ] else if (user.premium == true) ...[
-                                  const SizedBox(width: 8),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(
-                                      horizontal: 8,
-                                      vertical: 4,
-                                    ),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [AppColors.primaryPink, AppColors.accent],
-                                      ),
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Text(
-                                      'PREMIUM',
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 10,
-                                        fontWeight: FontWeight.w800,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                            const SizedBox(height: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                gradient: LinearGradient(
-                                  colors: [
-                                    AppColors.warning.withOpacity(0.3),
-                                    AppColors.accent.withOpacity(0.2),
-                                  ],
-                                ),
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(
-                                  color: AppColors.warning.withOpacity(0.5),
-                                ),
-                              ),
-                              child: Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  const Icon(
-                                    Icons.star,
-                                    color: Colors.white,
-                                    size: 16,
-                                  ),
-                                  const SizedBox(width: 4),
-                                  Text(
-                                    '${user.totalStar}',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w700,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                          ],
+                        child: Text(
+                          // THÊM: Thay đổi title dựa trên friendship status
+                          isFriend ? 'Đã Là Bạn Bè' :
+                          hasPending ? 'Đã Gửi Lời Mời' : 'Thêm Bạn Bè',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 20,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
+                      ),
+                      IconButton(
+                        icon: Container(
+                          padding: const EdgeInsets.all(6),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.2),
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.close,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ),
+                        onPressed: () => Navigator.of(context).pop(),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
 
-                // Message theo status
-                Text(
-                  isFriend
-                      ? '🎉 Bạn và ${user.fullName} đã là bạn bè rồi!'
-                      : hasPending
-                      ? '⏳ Đã gửi lời mời kết bạn tới ${user.fullName}. Hãy chờ phản hồi nhé!'
-                      : 'Bạn có muốn gửi lời mời kết bạn tới ${user.fullName} không?',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
+                // Nội dung có thể scroll - sử dụng Expanded
+                Expanded(
+                  child: SingleChildScrollView(
+                    physics: const BouncingScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // User Info Card
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: isFriend ? AppColors.success.withOpacity(0.5) :
+                              hasPending ? AppColors.warning.withOpacity(0.5) :
+                              Colors.white.withOpacity(0.2),
+                              width: 2,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              // Avatar với viền theo status - thu nhỏ lại
+                              Container(
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: isFriend ? AppColors.success :
+                                    hasPending ? AppColors.warning : AppColors.primaryPink,
+                                    width: 2,
+                                  ),
+                                ),
+                                child: CircleAvatar(
+                                  radius: 28,
+                                  backgroundColor: AppColors.cardBackground.withOpacity(0.2),
+                                  backgroundImage: user.avatarUrl != null
+                                      ? NetworkImage(user.avatarUrl!)
+                                      : null,
+                                  child: user.avatarUrl == null
+                                      ? Container(
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      gradient: LinearGradient(
+                                        colors: [
+                                          AppColors.primaryBlue.withOpacity(0.8),
+                                          AppColors.accent.withOpacity(0.6)
+                                        ],
+                                        begin: Alignment.topLeft,
+                                        end: Alignment.bottomRight,
+                                      ),
+                                    ),
+                                    child: Center(
+                                      child: ClipOval(
+                                        child: Image.asset(
+                                          "lib/shared/assets/images/LOGO.jpg",
+                                          width: 48,
+                                          height: 48,
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                      : null,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+
+                              // User Details với friendship status indicator
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    // Tên user
+                                    Text(
+                                      user.fullName,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 16,
+                                        fontWeight: FontWeight.w800,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 8),
+
+                                    // Status indicators
+                                    Wrap(
+                                      spacing: 6,
+                                      runSpacing: 4,
+                                      children: [
+                                        if (isFriend)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [AppColors.success, AppColors.buttonPrimary],
+                                              ),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.check_circle, color: Colors.white, size: 10),
+                                                SizedBox(width: 3),
+                                                Text(
+                                                  'BẠN BÈ',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 9,
+                                                    fontWeight: FontWeight.w800,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          )
+                                        else if (hasPending)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [AppColors.warning, AppColors.accent],
+                                              ),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(Icons.hourglass_empty, color: Colors.white, size: 10),
+                                                SizedBox(width: 3),
+                                                Text(
+                                                  'CHỜ XÁC NHẬN',
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                    fontSize: 9,
+                                                    fontWeight: FontWeight.w800,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+
+                                        if (user.premium == true)
+                                          Container(
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 6,
+                                              vertical: 2,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              gradient: LinearGradient(
+                                                colors: [AppColors.primaryPink, AppColors.accent],
+                                              ),
+                                              borderRadius: BorderRadius.circular(6),
+                                            ),
+                                            child: const Text(
+                                              'PREMIUM',
+                                              style: TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 9,
+                                                fontWeight: FontWeight.w800,
+                                              ),
+                                            ),
+                                          ),
+
+                                        // Star count
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 8,
+                                            vertical: 3,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            gradient: LinearGradient(
+                                              colors: [
+                                                AppColors.warning.withOpacity(0.3),
+                                                AppColors.accent.withOpacity(0.2),
+                                              ],
+                                            ),
+                                            borderRadius: BorderRadius.circular(8),
+                                            border: Border.all(
+                                              color: AppColors.warning.withOpacity(0.5),
+                                            ),
+                                          ),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              const Icon(
+                                                Icons.star,
+                                                color: Colors.white,
+                                                size: 12,
+                                              ),
+                                              const SizedBox(width: 3),
+                                              Text(
+                                                '${user.totalStar}',
+                                                style: const TextStyle(
+                                                  color: Colors.white,
+                                                  fontSize: 12,
+                                                  fontWeight: FontWeight.w700,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+
+                        // Message theo status
+                        Text(
+                          isFriend
+                              ? '🎉 Bạn và ${user.fullName} đã là bạn bè rồi!'
+                              : hasPending
+                              ? '⏳ Đã gửi lời mời kết bạn tới ${user.fullName}. Hãy chờ phản hồi nhé!'
+                              : 'Bạn có muốn gửi lời mời kết bạn tới ${user.fullName} không?',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            height: 1.3,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                        const SizedBox(height: 16),
+                      ],
+                    ),
                   ),
-                  textAlign: TextAlign.center,
                 ),
-                const SizedBox(height: 12),
 
-                // Action Buttons
-                _buildActionButtons(context, isFriend, hasPending),
+                // Action Buttons cố định ở bottom
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(24, 8, 24, 12),
+                  child: _buildActionButtons(context, isFriend, hasPending),
+                ),
               ],
             ),
           ),
