@@ -50,3 +50,9 @@ class LeaderboardTimerTicked extends RoomEvent {}
 
 // Event to disconnect from WebSocket
 class DisconnectEvent extends RoomEvent {}
+
+// Internal event for the correct answer display timer
+class CorrectAnswerTimerTicked extends RoomEvent {}
+
+// Event to show leaderboard and move to next question
+class ShowLeaderboardEvent extends RoomEvent {}

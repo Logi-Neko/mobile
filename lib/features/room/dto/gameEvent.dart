@@ -20,6 +20,10 @@ abstract class GameEvent {
         return ParticipantJoinedEvent.fromJson(json);
       case 'participant.left':
         return ParticipantLeftEvent.fromJson(json);
+      case 'question.ended':
+        return QuestionEndedEvent.fromJson(json);
+      case 'answer.submitted':
+        return AnswerSubmittedEvent.fromJson(json);
       default:
         throw Exception('Unknown event type: ${json['eventType']}');
     }
@@ -165,6 +169,59 @@ class ContestEndedEvent extends GameEvent {
     return ContestEndedEvent(
       eventType: json['eventType'],
       timestamp: GameEvent._parseTimestamp(json['timestamp']),
+    );
+  }
+}
+
+// Event for when a question ends
+class QuestionEndedEvent extends GameEvent {
+  final int contestId;
+  final int contestQuestionId;
+  final String correctAnswer;
+
+  QuestionEndedEvent({
+    required String eventType,
+    required DateTime timestamp,
+    required this.contestId,
+    required this.contestQuestionId,
+    required this.correctAnswer,
+  }) : super(eventType: eventType, timestamp: timestamp);
+
+  factory QuestionEndedEvent.fromJson(Map<String, dynamic> json) {
+    return QuestionEndedEvent(
+      eventType: json['eventType'],
+      timestamp: GameEvent._parseTimestamp(json['timestamp']),
+      contestId: json['contestId'] ?? 0,
+      contestQuestionId: json['contestQuestionId'] ?? 0,
+      correctAnswer: json['correctAnswer'] ?? '',
+    );
+  }
+}
+
+// Event for when an answer is submitted
+class AnswerSubmittedEvent extends GameEvent {
+  final int contestId;
+  final int participantId;
+  final int contestQuestionId;
+  final String answer;
+
+  AnswerSubmittedEvent({
+    required String eventType,
+    required DateTime timestamp,
+    required this.contestId,
+    required this.participantId,
+    required this.contestQuestionId,
+    required this.answer,
+  }) : super(eventType: eventType, timestamp: timestamp);
+
+  factory AnswerSubmittedEvent.fromJson(Map<String, dynamic> json) {
+    return AnswerSubmittedEvent(
+      eventType: json['eventType'],
+      timestamp: GameEvent._parseTimestamp(json['timestamp']),
+      contestId: json['contestId'] ?? 0,
+      participantId: json['participantId'] ?? 0,
+      contestQuestionId: json['contestQuestionId'] ?? 0,
+      answer: json['answer'] ?? '',
     );
   }
 }

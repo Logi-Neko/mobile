@@ -156,14 +156,14 @@ class QuestionResponse {
   final String questionText;
   final List<AnswerOptionResponse> options;
   final int points;
-  final int timeLimit;
+  final int? timeLimit;
 
   QuestionResponse({
     required this.id,
     required this.questionText,
     required this.options,
     required this.points,
-    required this.timeLimit,
+    this.timeLimit,
   });
 
   factory QuestionResponse.fromJson(Map<String, dynamic> json) {

@@ -51,6 +51,24 @@ class ShowLeaderboard extends RoomState {
   List<Object?> get props => [leaderboardEvent, countdown];
 }
 
+// Showing correct answer after question ends
+class ShowCorrectAnswer extends RoomState {
+  final String correctAnswer;
+  final String userAnswer;
+  final bool isCorrect;
+  final int countdown;
+
+  const ShowCorrectAnswer({
+    required this.correctAnswer,
+    required this.userAnswer,
+    required this.isCorrect,
+    required this.countdown,
+  });
+
+  @override
+  List<Object?> get props => [correctAnswer, userAnswer, isCorrect, countdown];
+}
+
 // The quiz has finished
 class QuizFinished extends RoomState {}
 

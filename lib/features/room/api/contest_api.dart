@@ -117,22 +117,45 @@ class ContestService {
     required String answer,
     int? timeSpent, // Time spent in seconds
   }) async {
-    final queryParams = {
-      'answer': answer,
-      if (timeSpent != null) 'timeSpent': timeSpent.toString(),
-    };
-    
-    final uri = Uri.parse('$baseUrl/api/game/$contestId/submit/$participantId/$contestQuestionId')
-        .replace(queryParameters: queryParams);
+    try {
+      // Validate inputs
+      if (answer.trim().isEmpty) {
+        throw Exception('Answer cannot be empty');
+      }
+      
+      final queryParams = {
+        'answer': answer.trim(),
+        if (timeSpent != null && timeSpent >= 0) 'timeSpent': timeSpent.toString(),
+      };
+      
+      final uri = Uri.parse('$baseUrl/api/game/$contestId/submit/$participantId/$contestQuestionId')
+          .replace(queryParameters: queryParams);
 
-    print('📤 [ContestAPI] Submitting answer: $answer, timeSpent: $timeSpent seconds');
-    final response = await http.post(uri);
+      print('📤 [ContestAPI] Submitting answer: "$answer", timeSpent: $timeSpent seconds');
+      print('📤 [ContestAPI] Request URL: $uri');
+      print('📤 [ContestAPI] Query params: $queryParams');
+      
+      final response = await http.post(uri);
+      
+      print('📤 [ContestAPI] Response status: ${response.statusCode}');
+      print('📤 [ContestAPI] Response body: ${response.body}');
 
-    if (response.statusCode != 200) {
-      throw Exception('Failed to submit answer: ${response.body}');
+      if (response.statusCode == 200) {
+        print('✅ [ContestAPI] Answer submitted successfully');
+      } else {
+        // Parse error response for better error messages
+        try {
+          final errorData = json.decode(response.body);
+          final errorMessage = errorData['message'] ?? 'Unknown error';
+          throw Exception('Failed to submit answer: $errorMessage');
+        } catch (e) {
+          throw Exception('Failed to submit answer: ${response.body}');
+        }
+      }
+    } catch (e) {
+      print('❌ [ContestAPI] Error submitting answer: $e');
+      rethrow;
     }
-    
-    print('✅ [ContestAPI] Answer submitted successfully');
   }
 
   // This endpoint is likely called by a host/admin, but included for completeness
@@ -141,6 +164,14 @@ class ContestService {
     final response = await http.post(uri);
     if (response.statusCode != 200) {
       throw Exception('Failed to reveal question');
+    }
+  }
+
+  Future<void> endQuestion(int contestQuestionId) async {
+    final uri = Uri.parse('$baseUrl/api/game/end-question/$contestQuestionId');
+    final response = await http.post(uri);
+    if (response.statusCode != 200) {
+      throw Exception('Failed to end question: ${response.body}');
     }
   }
 

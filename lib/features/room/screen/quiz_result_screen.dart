@@ -41,23 +41,28 @@ class _QuizResultScreenState extends State<QuizResultScreen> {
   Future<void> _loadLeaderboard() async {
     setState(() => _isLoadingLeaderboard = true);
     try {
+      print('🔄 [QuizResultScreen] Loading leaderboard for contest ${widget.contestId}');
+      
       // Refresh leaderboard first
       await _contestService.refreshLeaderboard(widget.contestId);
+      print('🔄 [QuizResultScreen] Leaderboard refresh API called');
       
       // Wait a bit for the leaderboard to update
-      await Future.delayed(const Duration(milliseconds: 1000));
+      await Future.delayed(const Duration(milliseconds: 1500));
       
       // Then get the updated leaderboard
       final leaderboardData = await _contestService.getLeaderboard(widget.contestId);
+      print('🔄 [QuizResultScreen] Retrieved leaderboard data: ${leaderboardData.length} entries');
+      
       final leaderboard = leaderboardData.map((data) => LeaderboardEntry.fromJson(data)).toList();
       
       // Sort by rank
       leaderboard.sort((a, b) => a.rank.compareTo(b.rank));
       
       setState(() => _leaderboard = leaderboard);
-      print('✅ Loaded leaderboard with ${leaderboard.length} participants');
+      print('✅ [QuizResultScreen] Loaded leaderboard with ${leaderboard.length} participants');
     } catch (e) {
-      print('Error loading leaderboard: $e');
+      print('❌ [QuizResultScreen] Error loading leaderboard: $e');
       // Keep empty list on error
       setState(() => _leaderboard = []);
     } finally {
