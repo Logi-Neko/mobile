@@ -25,25 +25,10 @@ class LessonHeaderWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row with back button and menu
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              TextButton.icon(
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    side: const BorderSide(color: Colors.black),
-                  ),
-                ),
-                onPressed: onBack,
-                icon: const Icon(Icons.arrow_back, color: Colors.black, size: 18),
-                label: const Text(
-                  "Quay lại",
-                  style: TextStyle(color: Colors.black, fontSize: 14),
-                ),
-              ),
+              _buildBackButton(),
               Text(
                 courseName,
                 style: const TextStyle(
@@ -99,6 +84,55 @@ class LessonHeaderWidget extends StatelessWidget {
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBackButton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(15),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(15),
+          onTap: onBack,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.arrow_back,
+                  color: const Color(0xFF2E3A87),
+                  size: 20,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  "Quay lại",
+                  style: TextStyle(
+                    color: const Color(0xFF2E3A87),
+                    fontSize:  14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
