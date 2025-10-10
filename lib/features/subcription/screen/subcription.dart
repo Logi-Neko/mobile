@@ -9,6 +9,8 @@ class SubscriptionScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final isSmallScreen = screenWidth < 800;
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -52,7 +54,7 @@ class SubscriptionScreen extends StatelessWidget {
                           ),
                         ),
                       ),
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 15),
 
                       Row(
                         mainAxisAlignment: MainAxisAlignment.center,
@@ -140,13 +142,13 @@ class SubscriptionScreen extends StatelessWidget {
                   flex: 1,
                   child: Column(
                     children: [
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 45),
 
-                      const Text(
-                        'Tiết kiệm 25% với gói hàng năm của chúng tôi!',
+                      Text(
+                        'Tiết kiệm 20% với gói hàng năm!',
                         style: TextStyle(
                           color: Colors.white,
-                          fontSize: 14,
+                          fontSize: isSmallScreen ? 13 : 16,
                           fontWeight: FontWeight.bold,
                           height: 1,
                         ),
@@ -157,67 +159,67 @@ class SubscriptionScreen extends StatelessWidget {
                       // Yearly plan
                       PricingCardWidget(
                         period: '1 năm',
-                        originalPrice: '2.386.000 đ',
-                        finalPrice: '1.790.000 đ',
-                        discount: '25% OFF',
-                        subPrice: "149.000 đ/tháng"
+                        originalPrice: '700.000 đ',
+                        finalPrice: '549.000 đ',
+                        discount: '20% OFF',
+                        subPrice: "45.000 đ/tháng"
                       ),
                       const SizedBox(height: 12),
 
                       // Monthly plan
                       MonthlyPricingCard(),
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 18),
 
-                      Container(
-                        width: double.infinity,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFF4A90E2),
-                              Color(0xFF357ABD),
-                            ],
-                          ),
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            // upgrade
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                          ),
-                          child: const Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              Text(
-                                'Nâng cấp lên gói Plus',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w600,
-                                ),
-                              ),
-                              SizedBox(width: 8),
-                              Text(
-                                '👑',
-                                style: TextStyle(fontSize: 16),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: 16),
+                      // Container(
+                      //   width: double.infinity,
+                      //   height: 40,
+                      //   decoration: BoxDecoration(
+                      //     gradient: const LinearGradient(
+                      //       colors: [
+                      //         Color(0xFF4A90E2),
+                      //         Color(0xFF357ABD),
+                      //       ],
+                      //     ),
+                      //     borderRadius: BorderRadius.circular(25),
+                      //   ),
+                      //   child: ElevatedButton(
+                      //     onPressed: () {
+                      //       // upgrade
+                      //     },
+                      //     style: ElevatedButton.styleFrom(
+                      //       backgroundColor: Colors.transparent,
+                      //       shadowColor: Colors.transparent,
+                      //       shape: RoundedRectangleBorder(
+                      //         borderRadius: BorderRadius.circular(25),
+                      //       ),
+                      //     ),
+                      //     child: const Row(
+                      //       mainAxisAlignment: MainAxisAlignment.center,
+                      //       children: [
+                      //         Text(
+                      //           'Nâng cấp lên gói Plus',
+                      //           style: TextStyle(
+                      //             color: Colors.white,
+                      //             fontSize: 16,
+                      //             fontWeight: FontWeight.w600,
+                      //           ),
+                      //         ),
+                      //         SizedBox(width: 8),
+                      //         Text(
+                      //           '👑',
+                      //           style: TextStyle(fontSize: 16),
+                      //         ),
+                      //       ],
+                      //     ),
+                      //   ),
+                      // ),
+                      const SizedBox(height: 10),
 
-                      const Text(
-                        'Hủy bất cứ lúc nào. Thanh toán định kỳ',
+                      Text(
+                        'Truy cập trang web logineko.vn để thanh toán',
                         style: TextStyle(
-                          color: Colors.white60,
-                          fontSize: 12,
+                          color: Colors.white,
+                          fontSize: isSmallScreen ? 13 : 16,
                         ),
                       ),
                     ],

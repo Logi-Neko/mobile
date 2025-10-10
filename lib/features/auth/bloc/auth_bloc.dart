@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logi_neko/core/common/apiService.dart';
 import '../../../core/config/logger.dart';
 import '../../../core/storage/token_storage.dart';
+import '../../../core/exception/exception_helper.dart';
 import '../dto/signup_request.dart';
 import '../dto/login_response.dart';
 import '../repository/auth_repository.dart';
@@ -76,8 +77,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
 
       // Tự động lưu token khi login thành công
       if (response.data != null) {
-        await _tokenStorage.saveTokenResponse(response.data!);
-        logger.i("🔐 Tokens saved successfully");
+        await ApiService.setAuthTokenFromLogin(response.data!);
+        logger.i("🔐 Tokens saved successfully" );
       }
 
       emit(AuthLoginSuccess(response.data!));
@@ -112,10 +113,19 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     try {
       final response = await _authRepository.refreshToken(event.refreshToken);
       logger.i("✅ Refresh token response in bloc: $response");
-      emit(AuthRefreshTokenSuccess(response.data!));
+      
+      // Tự động lưu token mới khi refresh thành công
+      if (response.data != null) {
+        await ApiService.setAuthTokenFromLogin(response.data!);
+        logger.i("🔐 New tokens saved successfully after refresh");
+        emit(AuthRefreshTokenSuccess(response.data!));
+      } else {
+        logger.e("❌ Refresh token response data is null");
+        emit(const AuthFailure("Không thể làm mới token - dữ liệu trống"));
+      }
     } catch (e, s) {
-      logger.i("❌ Refresh token error in bloc: $e\n$s");
-      emit(AuthFailure(e.toString()));
+      logger.e("❌ Refresh token error in bloc: $e\n$s");
+      emit(AuthFailure(ExceptionHelper.getLocalizedErrorMessage(e)));
     }
   }
 

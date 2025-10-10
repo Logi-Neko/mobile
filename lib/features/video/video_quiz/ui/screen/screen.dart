@@ -10,7 +10,6 @@ import '../../bloc/video_bloc.dart';
 import '../../dto/video.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
 
-
 class QuizChoiceScreen extends StatelessWidget {
   final int lessonId;
   final String? lessonName;
@@ -70,49 +69,201 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: AppColors.primaryGradient,
-        ),
-        child: SafeArea(
-          child: BlocConsumer<VideoBloc, VideoState>(
-            listener: (context, state) {
-              if (state is VideoError) {
-                _showErrorSnackBar(context, state);
-              } else if (state is QuizCompleted) {
-                _navigateToResultScreen(state);
-              }
-            },
-            builder: (context, state) {
-              if (state is VideoLoading) {
-                return _buildLoadingWidget();
-              }
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.of(context).pop('back');
+        return false;
+      },
+      child: Scaffold(
+        body: Container(
+          decoration: BoxDecoration(
+            gradient: AppColors.primaryGradient,
+          ),
+          child: SafeArea(
+            child: BlocConsumer<VideoBloc, VideoState>(
+              listener: (context, state) {
+                if (state is VideoError) {
+                  _showErrorSnackBar(context, state);
+                } else if (state is QuizCompleted) {
+                  _navigateToResultScreen(state);
+                } else if (state is QuestionAnswered && state.isAllAnswered) {
+                  _showCompletionOptions(context, state);
+                }
+              },
+              builder: (context, state) {
+                // Existing builder code remains the same...
+                if (state is VideoLoading) {
+                  return _buildLoadingWidget();
+                }
 
-              if (state is VideoError) {
-                return _buildErrorWidget(state);
-              }
+                if (state is VideoError) {
+                  return _buildErrorWidget(state);
+                }
 
-              if (state is VideosLoaded) {
-                return _buildQuizContent(state.currentVideo, state.progress, false, -1);
-              }
+                // Chế độ chỉ xem video
+                if (state is VideoWatchMode) {
+                  return _buildWatchModeContent(state);
+                }
 
-              if (state is QuestionAnswered) {
-                return _buildQuizContent(
-                  state.currentVideo,
-                  state.progress,
-                  true,
-                  state.selectedAnswerIndex,
-                  isCorrect: state.isCorrect,
-                );
-              }
+                if (state is VideosLoaded) {
+                  return _buildQuizContent(
+                    state.currentVideo,
+                    state.progress,
+                    false,
+                    -1,
+                    isAllAnswered: state.isAllAnswered,
+                  );
+                }
 
-              return _buildErrorWidget(VideoError('Không có dữ liệu'));
-            },
+                if (state is QuestionAnswered) {
+                  return _buildQuizContent(
+                    state.currentVideo,
+                    state.progress,
+                    true,
+                    state.selectedAnswerIndex,
+                    isCorrect: state.isCorrect,
+                    isAllAnswered: state.isAllAnswered,
+                  );
+                }
+
+                return _buildErrorWidget(VideoError('Không có dữ liệu'));
+              },
+            ),
           ),
         ),
       ),
     );
+  }
+
+  Widget _buildWatchModeContent(VideoWatchMode state) {
+    return Column(
+      children: [
+        Container(
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          decoration: BoxDecoration(
+            gradient: AppColors.primaryGradient,
+          ),
+          child: SafeArea(
+            child: Row(
+              children: [
+                TextButton.icon(
+                  style: TextButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                      side: const BorderSide(color: Colors.black),
+                    ),
+                    minimumSize: Size(0, 36),
+                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                  ),
+                  onPressed: () => Navigator.pop(context, 'completed'),
+                  icon: const Icon(Icons.arrow_back, color: Colors.black, size: 18),
+                  label: const Text("Quay lại", style: TextStyle(color: Colors.black, fontSize: 14)),
+                ),
+
+                SizedBox(width: 30),
+
+                Expanded(
+                  child: Text(
+                    widget.lessonName ?? "Bài học",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    textAlign: TextAlign.center,
+                  ),
+                ),
+
+                SizedBox(width: 12),
+
+                _buildQuestionButton(state),
+              ],
+            ),
+          ),
+        ),
+
+        Expanded(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            child: EquationDisplay(
+              videoData: state.currentVideo,
+            ),
+          ),
+        )
+      ],
+    );
+  }
+
+  Widget _buildQuestionButton(VideoWatchMode state) {
+    final hasQuestion = state.currentVideo.videoQuestion.question.isNotEmpty;
+    final hasAnswered = state.answeredQuestions.containsKey(state.currentVideo.id);
+
+    if (hasQuestion) {
+      return ElevatedButton(
+        onPressed: () {
+          context.read<VideoBloc>().add(ShowQuestion());
+        },
+        style: ElevatedButton.styleFrom(
+          backgroundColor: hasAnswered ? Colors.orange : Colors.green,
+          foregroundColor: Colors.white,
+          padding: EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          elevation: 3,
+          minimumSize: Size(0, 36),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              hasAnswered ? Icons.edit : Icons.quiz,
+              size: 16,
+            ),
+            SizedBox(width: 6),
+            Text(
+              hasAnswered ? 'Xem câu hỏi' : 'Trả lời câu hỏi',
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+      );
+    } else {
+      return Container(
+        padding: EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: Colors.white.withOpacity(0.2),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              Icons.info_outline,
+              color: Colors.white.withOpacity(0.8),
+              size: 14,
+            ),
+            SizedBox(width: 4),
+            Text(
+              'Chỉ xem',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.9),
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   Widget _buildLoadingWidget() {
@@ -242,12 +393,60 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
     );
   }
 
+  void _showCompletionOptions(BuildContext context, QuestionAnswered state) {
+    final videoBloc = context.read<VideoBloc>();
+
+    Future.delayed(Duration(milliseconds: 500), () {
+      if (mounted) {
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext dialogContext) {
+            return AlertDialog(
+              title: Row(
+                children: [
+                  Icon(Icons.celebration, color: Colors.amber[600], size: 28),
+                  SizedBox(width: 8),
+                  Text('Hoàn thành!'),
+                ],
+              ),
+              content: Text(
+                'Bạn đã trả lời hết tất cả câu hỏi!\nBạn có muốn xem kết quả ngay bây giờ?',
+                style: TextStyle(fontSize: 16),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                  },
+                  child: Text('Xem lại'),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    videoBloc.add(NextVideo());
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                  ),
+                  child: Text('Xem kết quả'),
+                ),
+              ],
+            );
+          },
+        );
+      }
+    });
+  }
+
   Widget _buildQuizContent(
       VideoData currentVideo,
       Map<String, int> progress,
       bool showResult,
       int selectedAnswer, {
         bool isCorrect = false,
+        bool isAllAnswered = false,
       }) {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
@@ -264,9 +463,11 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
                     side: const BorderSide(color: Colors.black),
                   ),
                 ),
-                onPressed: () => Navigator.pop(context),
+                onPressed: () {
+                  context.read<VideoBloc>().add(HideQuestion());
+                },
                 icon: const Icon(Icons.arrow_back, color: Colors.black),
-                label: const Text("Quay lại", style: TextStyle(color: Colors.black)),
+                label: const Text("Xem video", style: TextStyle(color: Colors.black)),
               ),
 
               Text(
@@ -278,23 +479,55 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
                 ),
               ),
 
-              IconButton(
-                icon: Container(
-                  padding: EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.3),
-                    shape: BoxShape.circle,
+              Row(
+                children: [
+                  if (isAllAnswered) ...[
+                    Container(
+                      margin: EdgeInsets.only(right: 8),
+                      child: ElevatedButton(
+                        onPressed: () {
+                          context.read<VideoBloc>().add(NextVideo());
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.assessment, size: 16),
+                            SizedBox(width: 4),
+                            Text(
+                              'Kết quả',
+                              style: TextStyle(fontSize: 12),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                  IconButton(
+                    icon: Container(
+                      padding: EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.3),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.close, color: Colors.white),
+                    ),
+                    onPressed: () {
+                      Navigator.pop(context, 'completed');
+                    },
                   ),
-                  child: Icon(Icons.close, color: Colors.white),
-                ),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+                ],
               ),
             ],
           ),
 
-          SizedBox(height: 20),
+          SizedBox(height: 10),
 
           Expanded(
             child: Row(
@@ -315,7 +548,7 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
                       Text(
                         currentVideo.videoQuestion.question.isNotEmpty
                             ? currentVideo.videoQuestion.question
-                            : 'Hãy chọn đáp án đúng? 🤔',
+                            : 'Hãy chọn đáp án đúng?',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: 16,
@@ -336,7 +569,7 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
             ),
           ),
 
-          SizedBox(height: 20),
+          SizedBox(height: 10),
 
           GameProgressIndicator(
             current: progress['current']!,
@@ -344,7 +577,7 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
             onPrevious: context.read<VideoBloc>().canGoPrevious()
                 ? () => context.read<VideoBloc>().add(PreviousVideo())
                 : null,
-            onNext: context.read<VideoBloc>().canGoNext()
+            onNext: context.read<VideoBloc>().canGoNext() || isAllAnswered
                 ? () => context.read<VideoBloc>().add(NextVideo())
                 : null,
           ),
@@ -384,7 +617,7 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
           isCorrect: index == currentVideo.videoQuestion.correctAnswerIndex,
           showResult: showResult,
           onPressed: showResult
-              ? () {}
+              ? () {}  // Disabled after answer is selected
               : () => _onAnswerSelected(index),
         );
       },
@@ -393,17 +626,9 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
 
   void _onAnswerSelected(int index) {
     context.read<VideoBloc>().add(AnswerQuestion(index));
-
-    Future.delayed(Duration(seconds: 2), () {
-      if (mounted && context.read<VideoBloc>().canGoNext()) {
-        context.read<VideoBloc>().add(NextVideo());
-      } else if (mounted) {
-        context.read<VideoBloc>().add(NextVideo());
-      }
-    });
   }
 
-  void _navigateToResultScreen(QuizCompleted state) {
+  void _navigateToResultScreen(QuizCompleted state) async {
     final stats = state.completionStats;
 
     SystemChrome.setPreferredOrientations([
@@ -413,7 +638,7 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
       DeviceOrientation.landscapeRight,
     ]);
 
-    Navigator.pushReplacement(
+    final result = await Navigator.pushReplacement(
       context,
       MaterialPageRoute(
         builder: (context) => ResultScreen(
@@ -428,5 +653,13 @@ class _QuizChoiceViewState extends State<QuizChoiceView> {
         ),
       ),
     );
+
+    if (result == 'retry' && mounted) {
+      context.read<VideoBloc>().add(ResetToFirstVideo());
+    } else if (result == 'home' || result == null) {
+      if (mounted) {
+        Navigator.of(context).pop('completed');
+      }
+    }
   }
 }

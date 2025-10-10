@@ -1,5 +1,6 @@
 import 'package:flutter/cupertino.dart';
 import 'package:logi_neko/features/auth/screens/auth_selection.dart';
+import 'package:logi_neko/features/dashboard/ui/screen/learning_report_screen.dart';
 import 'package:logi_neko/features/home/ui/screen/home_screen.dart';
 import 'package:logi_neko/features/login/screen/login_screen.dart';
 import 'package:logi_neko/features/login/screen/start_screen.dart';
@@ -12,6 +13,8 @@ import 'package:logi_neko/features/room/screen/quiz_result_screen.dart';
 import 'package:logi_neko/features/room/dto/question.dart';
 import 'package:logi_neko/features/character/ui/screen/character_screen.dart';
 import 'package:logi_neko/features/character/ui/screen/my_character_screen.dart';
+import 'package:logi_neko/features/splash/screen/splash_screen.dart';
+import 'package:logi_neko/features/board/ui/screen/leaderboard_screen.dart';
 
 import 'package:auto_route/auto_route.dart';
 import 'package:logi_neko/features/subcription/screen/subcription.dart';
@@ -27,7 +30,8 @@ part 'app_router.gr.dart';
 class AppRouter extends _$AppRouter {
   @override
   List<AutoRoute> get routes => [
-    AutoRoute(page: StartRoute.page, initial: true), // Thay đổi tạm thời để testStartRoute
+    AutoRoute(page: SplashRoute.page, initial: true), // Splash screen as initial route
+    AutoRoute(page: StartRoute.page, path: '/start'),
     AutoRoute(page: WaitingRoomRoute.page, path: '/waiting-room'),
     AutoRoute(page: CustomerAuthRoute.page, path: '/customer-auth'),
     AutoRoute(page: AuthSelectionRoute.page, path: '/auth-selection'),
@@ -37,6 +41,7 @@ class AppRouter extends _$AppRouter {
     AutoRoute(page: SignUpStepTwoRoute.page, path: '/register/step-two/:username/:email'),
     AutoRoute(page: CourseRoute.page, path: '/course'),
     // Sau này thêm các màn khác ở đây
+    AutoRoute(page: LearningReportRoute.page, path: '/report/:accountId'),
     AutoRoute(page: HomeRoute.page, path: '/'),
     AutoRoute(page: SubscriptionRoute.page, path: '/subscription'),
     AutoRoute(page: CountdownRoute.page, path: '/countdown'),
@@ -45,5 +50,6 @@ class AppRouter extends _$AppRouter {
     AutoRoute(page: CharacterRoute.page, path: '/character'),
     AutoRoute(page: MyCharacterRoute.page, path: '/my-character'),
     AutoRoute(page: ContestListRoute.page, path: '/contest-list'),
+    AutoRoute(page: LeaderboardRoute.page, path: '/leaderboard'),
   ];
 }

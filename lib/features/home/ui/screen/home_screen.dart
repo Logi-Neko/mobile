@@ -2,11 +2,12 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logi_neko/core/router/app_router.dart';
+import 'package:logi_neko/features/board/ui/screen/leaderboard_screen.dart';
+import 'package:logi_neko/features/character/ui/screen/character_screen.dart';
 import 'package:logi_neko/features/home/bloc/home_bloc.dart';
 import 'package:logi_neko/features/home/repository/home_repo.dart';
 import 'package:logi_neko/features/home/ui/widgets/header_widget.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
-
 import '../../../course/ui/screen/course_main_screen.dart';
 import '../widgets/learning_card_widget.dart';
 
@@ -30,18 +31,25 @@ class _HomeScreenState extends State<HomeScreen> {
       'imagePath': 'lib/shared/assets/images/hoctap.jpg',
     },
     {
-      'title': 'Cuộc thi cho bé',
+      'title': 'Cuộc thi',
       'icon': Icons.sports_esports,
       'color': Color(0xFFFF8C42),
       'bgColor': Color(0xFFFFE0CC),
       'imagePath': 'lib/shared/assets/images/cuocthi.png',
     },
     {
-      'title': 'Cửa hàng nhân vật',
+      'title': 'Nhân vật',
       'icon': Icons.store,
       'color': Color(0xFF4CAF50),
       'bgColor': Color(0xFFDCF2DD),
       'imagePath': 'lib/shared/assets/images/cuahang.jpg',
+    },
+    {
+      'title': 'Bảng xếp hạng',
+      'icon': Icons.leaderboard,
+      'color': Color(0xFFE91E63),
+      'bgColor': Color(0xFFFCE4EC),
+      'imagePath': 'lib/shared/assets/images/leaderboard.jpg',
     },
   ];
 
@@ -56,6 +64,38 @@ class _HomeScreenState extends State<HomeScreen> {
   void dispose() {
     _homeBloc.close();
     super.dispose();
+  }
+
+  int _calculateCrossAxisCount(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    if (screenWidth > screenHeight) {
+      if (screenWidth > 1000) return 4;
+      if (screenWidth > 800) return 4;
+      if (screenWidth > 650) return 4;
+      return 4;
+    } else {
+      // Portrait mode (nếu có)
+      if (screenWidth > 600) return 2;
+      return 2;
+    }
+  }
+
+  // Helper method để tính childAspectRatio
+  double _calculateChildAspectRatio(BuildContext context) {
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
+
+    if (screenWidth > screenHeight) {
+      if (screenWidth > 1000) return 1.0;
+      if (screenWidth > 800) return 0.9;
+      if (screenWidth > 650) return 0.85;
+      return 0.85;
+    } else {
+      // Portrait mode
+      return 1.0;
+    }
   }
 
   @override
@@ -75,15 +115,19 @@ class _HomeScreenState extends State<HomeScreen> {
                 }
               },
               builder: (context, state) {
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 16.0),
-                  child: Column(
-                    children: [
-                      _buildHeader(state),
-                      const SizedBox(height: 18),
-                      _buildContent(context, state),
-                    ],
-                  ),
+                return Column(
+                  children: [
+                    // Header cố định
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20.0, 16.0, 20.0, 0),
+                      child: _buildHeader(state),
+                    ),
+                    const SizedBox(height: 18),
+                    // Content có thể scroll
+                    Expanded(
+                      child: _buildContent(context, state),
+                    ),
+                  ],
                 );
               },
             ),
@@ -117,80 +161,122 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _buildContent(BuildContext context, HomeState state) {
     if (state is HomeError) {
-      return Expanded(
+      return SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0),
         child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            _buildLearningCards(),
-            const SizedBox(height: 40),
+            _buildLearningCards(context),
+            const SizedBox(height: 20),
             _buildErrorSection(context, state),
+            const SizedBox(height: 20), // Padding bottom
           ],
         ),
       );
     }
 
-    return Expanded(
-      child: _buildLearningCards(),
+    // Content chính - CỐ ĐỊNH hoàn toàn
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 20.0),
+      child: _buildLearningCards(context),
     );
   }
 
-  Widget _buildLearningCards() {
-    return
-      Row(children: [
-              Expanded(
-                child: LearningCardWidget(
-                  title: learningTopics[0]['title'],
-                  icon: learningTopics[0]['icon'],
-                  color: learningTopics[0]['color'],
-                  bgColor: learningTopics[0]['bgColor'],
-                  imagePath: learningTopics[0]['imagePath'],
-                    onTap: () {
-                      final userIsPremium = _homeBloc.currentUser?.isPremium ?? false;
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => BlocProvider.value(
-                            value: _homeBloc,
-                            child: CourseScreen(userIsPremium: userIsPremium),
-                          ),
-                        ),
-                      );
-                    }
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: LearningCardWidget(
-                  title: learningTopics[1]['title'],
-                  icon: learningTopics[1]['icon'],
-                  color: learningTopics[1]['color'],
-                  bgColor: learningTopics[1]['bgColor'],
-                  imagePath: learningTopics[1]['imagePath'],
-                 onTap: () {
-                    context.router.pushAndPopUntil(
-                      const ContestListRoute(),
-                      predicate: (route) => false,
-                    );                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: LearningCardWidget(
-                  title: learningTopics[2]['title'],
-                  icon: learningTopics[2]['icon'],
-                  color: learningTopics[2]['color'],
-                  bgColor: learningTopics[2]['bgColor'],
-                  imagePath: learningTopics[2]['imagePath'],
-                  onTap: () {
-                    context.router.pushAndPopUntil(
-                      const CharacterRoute(),
-                      predicate: (route) => false,
-                    );                  },
-                ),
-              ),
-            ],
-          );
+  Widget _buildLearningCards(BuildContext context) {
+    final crossAxisCount = _calculateCrossAxisCount(context);
+    final childAspectRatio = _calculateChildAspectRatio(context);
+    final screenWidth = MediaQuery.of(context).size.width;
+    final screenHeight = MediaQuery.of(context).size.height;
 
+    final spacing = screenWidth > 1000 ? 16.0 : screenWidth > 700 ? 12.0 : 8.0;
+
+    final availableWidth = screenWidth * 0.9;
+    final cardWidth = (availableWidth - (spacing * (crossAxisCount - 1))) / crossAxisCount;
+    final cardHeight = cardWidth / childAspectRatio;
+    final rows = (learningTopics.length / crossAxisCount).ceil();
+    final totalGridHeight = (cardHeight * rows) + (spacing * (rows - 1));
+
+    final availableHeight = screenHeight - 200;
+
+    final adjustedAspectRatio = totalGridHeight > availableHeight
+        ? cardWidth / (availableHeight / rows - spacing * (rows - 1) / rows)
+        : childAspectRatio;
+
+    return Center(
+      child: Container(
+        width: availableWidth,
+        constraints: BoxConstraints(
+          maxHeight: availableHeight,
+        ),
+        child: _buildGrid(context, crossAxisCount, adjustedAspectRatio, spacing),
+      ),
+    );
+  }
+
+  Widget _buildGrid(BuildContext context, int crossAxisCount, double childAspectRatio, double spacing) {
+    return GridView.builder(
+      physics: const NeverScrollableScrollPhysics(),
+      shrinkWrap: true,
+      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+        crossAxisCount: crossAxisCount,
+        crossAxisSpacing: spacing,
+        mainAxisSpacing: spacing,
+        childAspectRatio: childAspectRatio,
+      ),
+      itemCount: learningTopics.length,
+      itemBuilder: (context, index) {
+        final topic = learningTopics[index];
+        return LearningCardWidget(
+          title: topic['title'],
+          icon: topic['icon'],
+          color: topic['color'],
+          bgColor: topic['bgColor'],
+          imagePath: topic['imagePath'],
+          onTap: () => _handleCardTap(context, index),
+        );
+      },
+    );
+  }
+
+  void _handleCardTap(BuildContext context, int index) {
+    switch (index) {
+      case 0: // Học tập
+        final userIsPremium = _homeBloc.currentUser?.isPremium ?? false;
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BlocProvider.value(
+              value: _homeBloc,
+              child: CourseScreen(userIsPremium: userIsPremium),
+            ),
+          ),
+        );
+        break;
+      case 1: // Cuộc thi
+        context.router.pushAndPopUntil(
+          const ContestListRoute(),
+          predicate: (route) => false,
+        );
+        break;
+      case 2: // Nhân vật
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => CharacterScreen(user: _homeBloc.currentUser),
+          ),
+        );
+        break;
+      case 3: // Bảng xếp hạng
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => BlocProvider.value(
+              value: _homeBloc,
+              child: LeaderboardScreen(currentUser: _homeBloc.currentUser),
+            ),
+          ),
+        );
+        break;
+    }
   }
 
   Widget _buildErrorSection(BuildContext context, HomeError errorState) {
@@ -292,6 +378,8 @@ class _HomeScreenState extends State<HomeScreen> {
               child: Text(
                 message,
                 style: const TextStyle(fontSize: 14),
+                overflow: TextOverflow.ellipsis,
+                maxLines: 2,
               ),
             ),
           ],

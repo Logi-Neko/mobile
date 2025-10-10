@@ -23,7 +23,7 @@ class PricingCardWidget extends StatelessWidget {
       children: [
         Container(
           width: double.infinity,
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(12),
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(16),
             border: Border.all(color: const Color(0xFFFF6B6B), width: 2),
@@ -92,7 +92,7 @@ class PricingCardWidget extends StatelessWidget {
             top: -12,
             left: 12,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
               decoration: BoxDecoration(
                 color: const Color(0xFFFF3B30),
                 borderRadius: BorderRadius.circular(12),
@@ -143,7 +143,7 @@ class MonthlyPricingCard extends StatelessWidget {
             ),
           ),
           Text(
-            '199.000 đ/tháng',
+            '59.000 đ/tháng',
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,

@@ -89,20 +89,14 @@ class _LessonViewState extends State<LessonView>
               }
             },
             builder: (context, state) {
-              return NestedScrollView(
-                headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-                  return <Widget>[
-                    SliverToBoxAdapter(
-                      child: Column(
-                        children: [
-                          _buildHeader(state),
-                          const SizedBox(height: 8),
-                        ],
-                      ),
-                    ),
-                  ];
-                },
-                body: _buildTabView(state),
+              return Column(
+                children: [
+                  _buildHeader(state),
+
+                  Expanded(
+                    child: _buildTabView(state),
+                  ),
+                ],
               );
             },
           ),
@@ -361,55 +355,96 @@ class _LessonViewState extends State<LessonView>
                     )
                   else
                     const SizedBox(height: 40),
-                  Row(
-                    children: [
-                      _buildInfoCard(
-                        icon: Icons.play_circle_outline,
-                        title: "Video",
-                        value: "${lesson.totalVideo}",
-                        color: Colors.blue,
-                      ),
-                      const SizedBox(width: 12),
-                      _buildInfoCard(
-                        icon: Icons.access_time,
-                        title: "Thời lượng",
-                        value: lesson.formattedDuration,
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 12),
-                      _buildInfoCard(
-                        icon: Icons.star,
-                        title: "Đánh giá",
-                        value: "${lesson.star}/5",
-                        color: Colors.orange,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 10),
-                  SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton(
-                      onPressed: () {
-                        Navigator.pop(context);
-                        _navigateToQuizScreen(lesson);
-                      },
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: lesson.isCompleted ? Colors.green : Colors.blue,
-                        foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(vertical: 12),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
+
+                  if (lesson.totalVideo > 0)
+                    Column(
+                      children: [
+                        Row(
+                          children: [
+                            _buildInfoCard(
+                              icon: Icons.play_circle_outline,
+                              title: "Video",
+                              value: "${lesson.totalVideo}",
+                              color: Colors.blue,
+                            ),
+                            const SizedBox(width: 12),
+                            _buildInfoCard(
+                              icon: Icons.access_time,
+                              title: "Thời lượng",
+                              value: lesson.formattedDuration,
+                              color: Colors.green,
+                            ),
+                            const SizedBox(width: 12),
+                            _buildInfoCard(
+                              icon: Icons.star,
+                              title: "Đánh giá",
+                              value: "${lesson.star}/5",
+                              color: Colors.orange,
+                            ),
+                          ],
                         ),
-                      ),
-                      child: Text(
-                        lesson.isCompleted ? "Học lại" : "Bắt đầu học",
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () {
+                              Navigator.pop(context);
+                              _navigateToQuizScreen(lesson);
+                            },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: lesson.isCompleted ? Colors.green : Colors.blue,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 12),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: Text(
+                              lesson.isCompleted ? "Học lại" : "Bắt đầu học",
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
                         ),
+                      ],
+                    )
+                  else
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey[100],
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: Colors.grey[300]!),
+                      ),
+                      child: Column(
+                        children: [
+                          Icon(
+                            Icons.video_library_outlined,
+                            color: Colors.grey[400],
+                            size: 32,
+                          ),
+                          const SizedBox(height: 8),
+                          Text(
+                            "Chưa có video nào",
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 14,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                          Text(
+                            "Nội dung đang được cập nhật",
+                            style: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                  ),
                 ],
               ),
             ),
@@ -476,9 +511,12 @@ class _LessonViewState extends State<LessonView>
           lessonName: lesson.name,
         ),
       ),
-    );
+    ).then((_) {
+      if (mounted) {
+        context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
+      }
+    });
   }
-
   Widget _buildInfoCard({
     required IconData icon,
     required String title,

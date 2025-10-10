@@ -18,31 +18,40 @@ class HeaderWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      // padding: const EdgeInsets.all(),
-      
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          _buildUserInfo(context),
-          _buildRightSection(context),
-        ],
-      ),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        return Center(
+          child: Container(
+            constraints: const BoxConstraints(maxWidth: 1200),
+            child: Row(
+              children: [
+                _buildUserInfo(context, constraints.maxWidth),
+                const SizedBox(width: 8),
+                _buildRightSection(context, constraints.maxWidth),
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildUserInfo(BuildContext context) {
+  Widget _buildUserInfo(BuildContext context, double screenWidth) {
+    final isSmallScreen = screenWidth < 750;
+
     return Expanded(
       flex: 2,
       child: GestureDetector(
         onTap: () {
           if (user != null) {
             UserDetailDialog.show(context, user!);
-
           }
         },
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          padding: EdgeInsets.symmetric(
+              horizontal: isSmallScreen ? 12 : 16,
+              vertical: isSmallScreen ? 8 : 12
+          ),
           decoration: BoxDecoration(
             gradient: LinearGradient(
               begin: Alignment.topLeft,
@@ -65,8 +74,8 @@ class HeaderWidget extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: 40,
-                height: 40,
+                width: isSmallScreen ? 32 : 40,
+                height: isSmallScreen ? 32 : 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
@@ -79,215 +88,144 @@ class HeaderWidget extends StatelessWidget {
                       offset: const Offset(0, 2),
                     ),
                   ],
-                  image: user?.avatarUrl != null 
+                  image: user?.avatarUrl != null
                       ? DecorationImage(
-                          image: NetworkImage(user!.avatarUrl!),
-                          fit: BoxFit.cover,
-                        )
+                    image: NetworkImage(user!.avatarUrl!),
+                    fit: BoxFit.cover,
+                  )
                       : const DecorationImage(
-                          image: AssetImage("lib/shared/assets/images/LOGO.jpg"),
-                          fit: BoxFit.cover,
-                        ),
+                    image: AssetImage("lib/shared/assets/images/LOGO.jpg"),
+                    fit: BoxFit.cover,
+                  ),
                 ),
               ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Flexible(
-                        child: Text(
-                          user?.fullName ?? 'Người dùng',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            shadows: [
-                              Shadow(
-                                color: Colors.black26,
-                                offset: Offset(1, 1),
-                                blurRadius: 2,
-                              ),
-                            ],
+              SizedBox(width: isSmallScreen ? 8 : 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            user?.fullName ?? 'Người dùng',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: isSmallScreen ? 14 : 16,
+                              fontWeight: FontWeight.bold,
+                              shadows: [
+                                Shadow(
+                                  color: Colors.black26,
+                                  offset: Offset(1, 1),
+                                  blurRadius: 2,
+                                ),
+                              ],
+                            ),
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          overflow: TextOverflow.ellipsis,
+                        ),
+                        if (isUpdating) ...[
+                          const SizedBox(width: 6),
+                          SizedBox(
+                            width: isSmallScreen ? 10 : 12,
+                            height: isSmallScreen ? 10 : 12,
+                            child: CircularProgressIndicator(
+                              strokeWidth: 2,
+                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    if (!isSmallScreen) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        user?.displayAge ?? 'Chưa cập nhật',
+                        style: const TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
                         ),
                       ),
-                      if (isUpdating) ...[
-                        const SizedBox(width: 8),
-                        const SizedBox(
-                          width: 12,
-                          height: 12,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                          ),
-                        ),
-                      ],
                     ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text(
-                    user?.displayAge ?? 'Chưa cập nhật',
-                    style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
+                  ],
+                ),
               ),
-            ),
-          ],
-        ),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildRightSection(BuildContext context) {
+  Widget _buildRightSection(BuildContext context, double screenWidth) {
+    final isVerySmallScreen = screenWidth < 750;
+
     return Expanded(
-      flex: 3,
+      flex: 4,
       child: Row(
         mainAxisAlignment: MainAxisAlignment.end,
         children: [
-          _buildStarContainer(),
-          const SizedBox(width: 8),
-          _buildMyCharacter(context),
-          const SizedBox(width: 8),
-          _buildParentContainer(),
-          const SizedBox(width: 8),
-          _buildPremiumContainer(context),
+          _buildStarContainer(isVerySmallScreen),
+          SizedBox(width: isVerySmallScreen ? 4 : 6),
+
+          if (screenWidth > 360) ...[
+            _buildMyCharacter(context, isVerySmallScreen),
+            SizedBox(width: isVerySmallScreen ? 4 : 6),
+          ],
+
+          if (screenWidth > 400) ...[
+            _buildParentContainer(context, isVerySmallScreen),
+            SizedBox(width: isVerySmallScreen ? 4 : 6),
+          ],
+
+          // Premium - luôn hiển thị
+          _buildPremiumContainer(context, isVerySmallScreen),
         ],
       ),
     );
   }
 
-  Widget _buildStarContainer() {
+  Widget _buildStarContainer(bool isVerySmallScreen) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      padding: EdgeInsets.symmetric(
+          horizontal: isVerySmallScreen ? 10 : 12,
+          vertical: isVerySmallScreen ? 8 : 10
+      ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
           colors: [
             const Color(0xFFFF8C42),
             const Color(0xFFFF8C42).withOpacity(0.8),
           ],
         ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFFFF8C42).withOpacity(0.3),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
+        borderRadius: BorderRadius.circular(18),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 24,
-            height: 24,
+            width: isVerySmallScreen ? 22 : 24,
+            height: isVerySmallScreen ? 22 : 24,
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [const Color(0xFFFFB74D), Colors.amber.shade600],
-              ),
+              color: const Color(0xFFFFB74D),
               shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.amber.withOpacity(0.4),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
             ),
-            child: const Icon(
+            child: Icon(
               Icons.star,
               color: Colors.white,
-              size: 14,
+              size: isVerySmallScreen ? 12 : 14,
             ),
           ),
-          const SizedBox(width: 6),
+          SizedBox(width: isVerySmallScreen ? 6 : 8),
           Text(
             user?.starDisplay ?? '0',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 12,
-              fontWeight: FontWeight.bold,
-              shadows: [
-                Shadow(
-                  color: Colors.black26,
-                  offset: Offset(1, 1),
-                  blurRadius: 2,
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildParentContainer() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            Colors.white,
-            Colors.white.withOpacity(0.9),
-          ],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: const Color(0xFF9575CD), width: 1.5),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF9575CD).withOpacity(0.2),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 24,
-            height: 24,
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [const Color(0xFFFF8C42), Colors.deepOrange.shade600],
-              ),
-              shape: BoxShape.circle,
-              boxShadow: [
-                BoxShadow(
-                  color: const Color(0xFFFF8C42).withOpacity(0.3),
-                  blurRadius: 4,
-                  offset: const Offset(0, 2),
-                ),
-              ],
-            ),
-            child: const Icon(
-              Icons.people,
-              color: Colors.white,
-              size: 14,
-            ),
-          ),
-          const SizedBox(width: 6),
-          const Text(
-            'Phụ huynh',
             style: TextStyle(
-              color: Color(0xFF5C6BC0),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
+              color: Colors.white,
+              fontSize: isVerySmallScreen ? 12 : 14,
+              fontWeight: FontWeight.bold,
             ),
           ),
         ],
@@ -295,7 +233,58 @@ class HeaderWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildPremiumContainer(BuildContext context) {
+  Widget _buildParentContainer(BuildContext context, bool isVerySmallScreen) {
+    return GestureDetector(
+        onTap: () {
+          if (user?.id != null) {
+            context.router.pushAndPopUntil(
+              LearningReportRoute(accountId: user!.id),
+              predicate: (route) => false,
+            );
+          }
+        },
+        child: Container(
+          padding: EdgeInsets.symmetric(
+              horizontal: isVerySmallScreen ? 10 : 12,
+              vertical: isVerySmallScreen ? 8 : 10
+          ),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: const Color(0xFF9575CD), width: 1.5),
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: isVerySmallScreen ? 22 : 24,
+                height: isVerySmallScreen ? 22 : 24,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFF8C42),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.people,
+                  color: Colors.white,
+                  size: isVerySmallScreen ? 12 : 14,
+                ),
+              ),
+              SizedBox(width: isVerySmallScreen ? 6 : 8),
+              Text(
+                isVerySmallScreen ? "PH" : "Phụ huynh",
+                style: TextStyle(
+                  color: Color(0xFF5C6BC0),
+                  fontSize: isVerySmallScreen ? 12 : 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        )
+    );
+  }
+
+  Widget _buildPremiumContainer(BuildContext context, bool isVerySmallScreen) {
     return GestureDetector(
       onTap: () {
         context.router.pushAndPopUntil(
@@ -303,66 +292,43 @@ class HeaderWidget extends StatelessWidget {
           predicate: (route) => false,
         );
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+            horizontal: isVerySmallScreen ? 10 : 12,
+            vertical: isVerySmallScreen ? 8 : 10
+        ),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
             colors: [
               const Color(0xFFFF8C42),
               Colors.deepOrange.shade600,
             ],
           ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFFFF8C42).withOpacity(0.4),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 24,
-              height: 24,
+              width: isVerySmallScreen ? 22 : 24,
+              height: isVerySmallScreen ? 22 : 24,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [const Color(0xFFFFB74D), Colors.amber.shade600],
-                ),
+                color: const Color(0xFFFFB74D),
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.amber.withOpacity(0.4),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.star,
                 color: Colors.white,
-                size: 14,
+                size: isVerySmallScreen ? 12 : 14,
               ),
             ),
-            const SizedBox(width: 6),
-            const Text(
+            SizedBox(width: isVerySmallScreen ? 6 : 8),
+            Text(
               'Premium',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 12,
+                fontSize: isVerySmallScreen ? 12 : 14,
                 fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(
-                    color: Colors.black26,
-                    offset: Offset(1, 1),
-                    blurRadius: 2,
-                  ),
-                ],
               ),
             ),
           ],
@@ -371,71 +337,48 @@ class HeaderWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildMyCharacter(BuildContext context) {
+  Widget _buildMyCharacter(BuildContext context, bool isVerySmallScreen) {
     return GestureDetector(
       onTap: () {
         context.router.push(const MyCharacterRoute());
       },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      child: Container(
+        padding: EdgeInsets.symmetric(
+            horizontal: isVerySmallScreen ? 10 : 12,
+            vertical: isVerySmallScreen ? 8 : 10
+        ),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
             colors: [
               const Color(0xFF9C27B0),
               const Color(0xFF7B1FA2),
             ],
           ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF9C27B0).withOpacity(0.4),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
+          borderRadius: BorderRadius.circular(18),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 24,
-              height: 24,
+              width: isVerySmallScreen ? 22 : 24,
+              height: isVerySmallScreen ? 22 : 24,
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [const Color(0xFFBA68C8), const Color(0xFF9C27B0)],
-                ),
+                color: const Color(0xFFBA68C8),
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: const Color(0xFF9C27B0).withOpacity(0.4),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
               ),
-              child: const Icon(
+              child: Icon(
                 Icons.collections,
                 color: Colors.white,
-                size: 14,
+                size: isVerySmallScreen ? 12 : 14,
               ),
             ),
-            const SizedBox(width: 6),
-            const Text(
-              'Bộ sưu tập',
+            SizedBox(width: isVerySmallScreen ? 6 : 8),
+            Text(
+              isVerySmallScreen ? "BST" : "Bộ sưu tập",
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 12,
+                fontSize: isVerySmallScreen ? 12 : 14,
                 fontWeight: FontWeight.bold,
-                shadows: [
-                  Shadow(
-                    color: Colors.black26,
-                    offset: Offset(1, 1),
-                    blurRadius: 2,
-                  ),
-                ],
               ),
             ),
           ],
@@ -450,188 +393,180 @@ class HeaderLoadingWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _buildLoadingUserInfo(),
-        _buildLoadingRightSection(),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmallScreen = constraints.maxWidth < 400;
+
+        return Row(
+          children: [
+            _buildLoadingUserInfo(isSmallScreen),
+            const SizedBox(width: 8),
+            _buildLoadingRightSection(isSmallScreen),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildLoadingUserInfo() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: const Color(0xFF5C6BC0).withOpacity(0.7),
-        borderRadius: BorderRadius.circular(25),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 35,
-            height: 35,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.7),
-              borderRadius: BorderRadius.circular(17.5),
-            ),
-            child: const Center(
-              child: SizedBox(
-                width: 20,
-                height: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2,
-                  valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5C6BC0)),
+  Widget _buildLoadingUserInfo(bool isSmallScreen) {
+    return Expanded(
+      flex: isSmallScreen ? 2 : 3,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 12 : 16,
+            vertical: isSmallScreen ? 8 : 10
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFF5C6BC0).withOpacity(0.7),
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: isSmallScreen ? 28 : 35,
+              height: isSmallScreen ? 28 : 35,
+              decoration: BoxDecoration(
+                color: Colors.white.withOpacity(0.7),
+                borderRadius: BorderRadius.circular(isSmallScreen ? 14 : 17.5),
+              ),
+              child: Center(
+                child: SizedBox(
+                  width: isSmallScreen ? 16 : 20,
+                  height: isSmallScreen ? 16 : 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF5C6BC0)),
+                  ),
                 ),
               ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              // Loading placeholder for name
-              Container(
-                width: 80,
-                height: 16,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(8),
-                ),
+            SizedBox(width: isSmallScreen ? 8 : 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Loading placeholder for name
+                  Container(
+                    width: isSmallScreen ? 60 : 80,
+                    height: isSmallScreen ? 12 : 16,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                  ),
+                  if (!isSmallScreen) ...[
+                    const SizedBox(height: 4),
+                    // Loading placeholder for age
+                    Container(
+                      width: 50,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.3),
+                        borderRadius: BorderRadius.circular(6),
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              const SizedBox(height: 4),
-              // Loading placeholder for age
-              Container(
-                width: 50,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.3),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildLoadingRightSection() {
-    return Row(
-      children: [
-        // Parent button (static)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF9575CD), width: 1),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFF8C42),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.people,
-                  color: Colors.white,
-                  size: 14,
-                ),
+  Widget _buildLoadingRightSection(bool isSmallScreen) {
+    return Expanded(
+      flex: isSmallScreen ? 3 : 5,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Loading star count
+            Container(
+              padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 8 : 12,
+                  vertical: isSmallScreen ? 6 : 8
               ),
-              const SizedBox(width: 6),
-              const Text(
-                'Phụ huynh',
-                style: TextStyle(
-                  color: Color(0xFF5C6BC0),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+              decoration: BoxDecoration(
+                color: const Color(0xFFFF8C42).withOpacity(0.7),
+                borderRadius: BorderRadius.circular(20),
               ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: isSmallScreen ? 20 : 24,
+                    height: isSmallScreen ? 20 : 24,
+                    decoration: const BoxDecoration(
+                      color: Color(0xFFFFB74D),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.star,
+                      color: Colors.white,
+                      size: isSmallScreen ? 10 : 14,
+                    ),
+                  ),
+                  SizedBox(width: isSmallScreen ? 4 : 6),
+                  Container(
+                    width: isSmallScreen ? 16 : 20,
+                    height: isSmallScreen ? 10 : 12,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: isSmallScreen ? 4 : 8),
 
-        // Loading star count
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: const Color(0xFFFF8C42).withOpacity(0.7),
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFFB74D),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.star,
-                  color: Colors.white,
-                  size: 14,
-                ),
+            // Loading premium status
+            Container(
+              padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 8 : 12,
+                  vertical: isSmallScreen ? 6 : 8
               ),
-              const SizedBox(width: 6),
-              Container(
-                width: 20,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(6),
-                ),
+              decoration: BoxDecoration(
+                color: Colors.grey[400],
+                borderRadius: BorderRadius.circular(20),
               ),
-            ],
-          ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: isSmallScreen ? 20 : 24,
+                    height: isSmallScreen ? 20 : 24,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[500],
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.lock,
+                      color: Colors.white,
+                      size: isSmallScreen ? 10 : 14,
+                    ),
+                  ),
+                  SizedBox(width: isSmallScreen ? 4 : 6),
+                  Container(
+                    width: isSmallScreen ? 24 : 30,
+                    height: isSmallScreen ? 10 : 12,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-
-        // Loading premium status
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.grey[400],
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: Colors.grey[500],
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.lock,
-                  color: Colors.white,
-                  size: 14,
-                ),
-              ),
-              const SizedBox(width: 6),
-              Container(
-                width: 30,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.5),
-                  borderRadius: BorderRadius.circular(6),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 }
@@ -647,182 +582,174 @@ class HeaderErrorWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-      children: [
-        _buildErrorUserInfo(),
-        _buildErrorRightSection(),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmallScreen = constraints.maxWidth < 400;
+
+        return Row(
+          children: [
+            _buildErrorUserInfo(isSmallScreen),
+            const SizedBox(width: 8),
+            _buildErrorRightSection(isSmallScreen),
+          ],
+        );
+      },
     );
   }
 
-  Widget _buildErrorUserInfo() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      decoration: BoxDecoration(
-        color: Colors.red.shade400,
-        borderRadius: BorderRadius.circular(25),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          GestureDetector(
-            onTap: onRetry,
-            child: Container(
-              width: 35,
-              height: 35,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(17.5),
-              ),
-              child: Icon(
-                Icons.refresh,
-                color: Colors.red.shade400,
-                size: 20,
+  Widget _buildErrorUserInfo(bool isSmallScreen) {
+    return Expanded(
+      flex: isSmallScreen ? 2 : 3,
+      child: Container(
+        padding: EdgeInsets.symmetric(
+            horizontal: isSmallScreen ? 12 : 16,
+            vertical: isSmallScreen ? 8 : 10
+        ),
+        decoration: BoxDecoration(
+          color: Colors.red.shade400,
+          borderRadius: BorderRadius.circular(25),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            GestureDetector(
+              onTap: onRetry,
+              child: Container(
+                width: isSmallScreen ? 28 : 35,
+                height: isSmallScreen ? 28 : 35,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(isSmallScreen ? 14 : 17.5),
+                ),
+                child: Icon(
+                  Icons.refresh,
+                  color: Colors.red.shade400,
+                  size: isSmallScreen ? 16 : 20,
+                ),
               ),
             ),
-          ),
-          const SizedBox(width: 10),
-          const Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'Lỗi tải dữ liệu',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                ),
+            SizedBox(width: isSmallScreen ? 8 : 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    'Lỗi tải dữ liệu',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isSmallScreen ? 12 : 16,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  if (!isSmallScreen)
+                    Text(
+                      'Nhấn để thử lại',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                      ),
+                    ),
+                ],
               ),
-              Text(
-                'Nhấn để thử lại',
-                style: TextStyle(
-                  color: Colors.white70,
-                  fontSize: 12,
-                ),
-              ),
-            ],
-          ),
-        ],
+            ),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _buildErrorRightSection() {
-    return Row(
-      children: [
-        // Parent button (static)
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.9),
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: Colors.red.shade300, width: 1),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: const BoxDecoration(
-                  color: Color(0xFFFF8C42),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.people,
-                  color: Colors.white,
-                  size: 14,
-                ),
+  Widget _buildErrorRightSection(bool isSmallScreen) {
+    return Expanded(
+      flex: isSmallScreen ? 3 : 5,
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Error star count
+            Container(
+              padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 8 : 12,
+                  vertical: isSmallScreen ? 6 : 8
               ),
-              const SizedBox(width: 6),
-              Text(
-                'Phụ huynh',
-                style: TextStyle(
-                  color: Colors.red.shade600,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
+              decoration: BoxDecoration(
+                color: Colors.grey[400],
+                borderRadius: BorderRadius.circular(20),
               ),
-            ],
-          ),
-        ),
-        const SizedBox(width: 8),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: isSmallScreen ? 20 : 24,
+                    height: isSmallScreen ? 20 : 24,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[500],
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.star_border,
+                      color: Colors.white,
+                      size: isSmallScreen ? 10 : 14,
+                    ),
+                  ),
+                  SizedBox(width: isSmallScreen ? 4 : 6),
+                  Text(
+                    '--',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isSmallScreen ? 10 : 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: isSmallScreen ? 4 : 8),
 
-        // Error star count
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.grey[400],
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: Colors.grey[500],
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.star_border,
-                  color: Colors.white,
-                  size: 14,
-                ),
+            // Error premium status
+            Container(
+              padding: EdgeInsets.symmetric(
+                  horizontal: isSmallScreen ? 8 : 12,
+                  vertical: isSmallScreen ? 6 : 8
               ),
-              const SizedBox(width: 6),
-              const Text(
-                '--',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
+              decoration: BoxDecoration(
+                color: Colors.grey[400],
+                borderRadius: BorderRadius.circular(20),
               ),
-            ],
-          ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: isSmallScreen ? 20 : 24,
+                    height: isSmallScreen ? 20 : 24,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[500],
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      Icons.error_outline,
+                      color: Colors.white,
+                      size: isSmallScreen ? 10 : 14,
+                    ),
+                  ),
+                  SizedBox(width: isSmallScreen ? 4 : 6),
+                  Text(
+                    'Error',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: isSmallScreen ? 10 : 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-
-        // Error premium status
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-          decoration: BoxDecoration(
-            color: Colors.grey[400],
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 24,
-                height: 24,
-                decoration: BoxDecoration(
-                  color: Colors.grey[500],
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.error_outline,
-                  color: Colors.white,
-                  size: 14,
-                ),
-              ),
-              const SizedBox(width: 6),
-              const Text(
-                'Error',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
+      ),
     );
   }
 }

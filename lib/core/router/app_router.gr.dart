@@ -73,6 +73,23 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const HomeScreen(),
       );
     },
+    LeaderboardRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const LeaderboardScreen(),
+      );
+    },
+    LearningReportRoute.name: (routeData) {
+      final args = routeData.argsAs<LearningReportRouteArgs>(
+          orElse: () => const LearningReportRouteArgs());
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: LearningReportPage(
+          key: args.key,
+          accountId: args.accountId,
+        ),
+      );
+    },
     LoginRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -130,6 +147,12 @@ abstract class _$AppRouter extends RootStackRouter {
           username: args.username,
           email: args.email,
         ),
+      );
+    },
+    SplashRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const SplashScreen(),
       );
     },
     StartRoute.name: (routeData) {
@@ -322,6 +345,58 @@ class HomeRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
+/// [LeaderboardScreen]
+class LeaderboardRoute extends PageRouteInfo<void> {
+  const LeaderboardRoute({List<PageRouteInfo>? children})
+      : super(
+          LeaderboardRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'LeaderboardRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [LearningReportPage]
+class LearningReportRoute extends PageRouteInfo<LearningReportRouteArgs> {
+  LearningReportRoute({
+    Key? key,
+    int? accountId,
+    List<PageRouteInfo>? children,
+  }) : super(
+          LearningReportRoute.name,
+          args: LearningReportRouteArgs(
+            key: key,
+            accountId: accountId,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'LearningReportRoute';
+
+  static const PageInfo<LearningReportRouteArgs> page =
+      PageInfo<LearningReportRouteArgs>(name);
+}
+
+class LearningReportRouteArgs {
+  const LearningReportRouteArgs({
+    this.key,
+    this.accountId,
+  });
+
+  final Key? key;
+
+  final int? accountId;
+
+  @override
+  String toString() {
+    return 'LearningReportRouteArgs{key: $key, accountId: $accountId}';
+  }
+}
+
+/// generated route for
 /// [LoginScreen]
 class LoginRoute extends PageRouteInfo<void> {
   const LoginRoute({List<PageRouteInfo>? children})
@@ -509,6 +584,20 @@ class SignUpStepTwoRouteArgs {
   String toString() {
     return 'SignUpStepTwoRouteArgs{key: $key, username: $username, email: $email}';
   }
+}
+
+/// generated route for
+/// [SplashScreen]
+class SplashRoute extends PageRouteInfo<void> {
+  const SplashRoute({List<PageRouteInfo>? children})
+      : super(
+          SplashRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'SplashRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
 }
 
 /// generated route for

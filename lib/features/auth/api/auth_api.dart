@@ -18,8 +18,7 @@ class AuthApiService {
   AuthApiService({Dio? dio})
       : _dio = dio ??
             Dio(BaseOptions(
-           //   baseUrl:  "http://192.168.1.12:8081/api",
-              baseUrl:  "http://10.0.2.2:8081/api",
+              baseUrl:  dotenv.env['AUTH_URL']!,
               connectTimeout: const Duration(seconds: 15),
               receiveTimeout: const Duration(seconds: 15),
             )) {
