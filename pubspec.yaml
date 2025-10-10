@@ -36,6 +36,7 @@ dev_dependencies:
   auto_route_generator: ^8.0.0
   font_awesome_flutter: 10.9.1
   flutter_lints: ^5.0.0
+  flutter_launcher_icons: ^0.13.1
 
 flutter:
 
@@ -43,3 +44,9 @@ flutter:
   - .env
   - lib/shared/assets/images/
   uses-material-design: true
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "lib/shared/assets/images/anh_nen.jpg"
+  min_sdk_android: 21

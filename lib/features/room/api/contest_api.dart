@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 import 'package:logi_neko/features/room/dto/contest.dart';
 import 'dart:io' show Platform;
@@ -8,9 +9,7 @@ class ContestService {
   // '10.0.2.2' for Android Emulator
   // 'localhost' or '127.0.0.1' for iOS Simulator
   // Your machine's local IP address (e.g., '192.168.1.5') for physical devices
-  final String baseUrl = Platform.isAndroid
-      ? 'http://10.0.2.2:8081'
-      : 'http://192.168.1.12:8081'; // Adjust for physical device testing
+  static String baseUrl = dotenv.env['BASE_URL'] ?? ""; // Adjust for physical device testing
 
   Future<PaginatedResponse> getAllContests({
     String? keyword,
