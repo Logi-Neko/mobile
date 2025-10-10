@@ -253,7 +253,7 @@ class _HomeScreenState extends State<HomeScreen> {
         break;
       case 1: // Cuộc thi
         context.router.pushAndPopUntil(
-          const WaitingRoomRoute(),
+          const ContestListRoute(),
           predicate: (route) => false,
         );
         break;

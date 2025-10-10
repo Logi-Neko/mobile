@@ -27,10 +27,21 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const CharacterScreen(),
       );
     },
-    CountdownRoute.name: (routeData) {
+    ContestListRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const CountdownScreen(),
+        child: const ContestListScreen(),
+      );
+    },
+    CountdownRoute.name: (routeData) {
+      final args = routeData.argsAs<CountdownRouteArgs>();
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: CountdownScreen(
+          key: args.key,
+          contestId: args.contestId,
+          participantId: args.participantId,
+        ),
       );
     },
     CourseRoute.name: (routeData) {
@@ -100,13 +111,20 @@ abstract class _$AppRouter extends RootStackRouter {
           questions: args.questions,
           answers: args.answers,
           score: args.score,
+          contestId: args.contestId,
+          totalTime: args.totalTime,
         ),
       );
     },
     RoomQuizRoute.name: (routeData) {
+      final args = routeData.argsAs<RoomQuizRouteArgs>();
       return AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const RoomQuizScreen(),
+        child: RoomQuizScreen(
+          key: args.key,
+          contestId: args.contestId,
+          participantId: args.participantId,
+        ),
       );
     },
     SignUpStepOneRoute.name: (routeData) {
@@ -150,9 +168,13 @@ abstract class _$AppRouter extends RootStackRouter {
       );
     },
     WaitingRoomRoute.name: (routeData) {
+      final args = routeData.argsAs<WaitingRoomRouteArgs>();
       return AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const WaitingRoomScreen(),
+        child: WaitingRoomScreen(
+          key: args.key,
+          contestId: args.contestId,
+        ),
       );
     },
   };
@@ -187,17 +209,60 @@ class CharacterRoute extends PageRouteInfo<void> {
 }
 
 /// generated route for
-/// [CountdownScreen]
-class CountdownRoute extends PageRouteInfo<void> {
-  const CountdownRoute({List<PageRouteInfo>? children})
+/// [ContestListScreen]
+class ContestListRoute extends PageRouteInfo<void> {
+  const ContestListRoute({List<PageRouteInfo>? children})
       : super(
+          ContestListRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'ContestListRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [CountdownScreen]
+class CountdownRoute extends PageRouteInfo<CountdownRouteArgs> {
+  CountdownRoute({
+    Key? key,
+    required int contestId,
+    required int participantId,
+    List<PageRouteInfo>? children,
+  }) : super(
           CountdownRoute.name,
+          args: CountdownRouteArgs(
+            key: key,
+            contestId: contestId,
+            participantId: participantId,
+          ),
           initialChildren: children,
         );
 
   static const String name = 'CountdownRoute';
 
-  static const PageInfo<void> page = PageInfo<void>(name);
+  static const PageInfo<CountdownRouteArgs> page =
+      PageInfo<CountdownRouteArgs>(name);
+}
+
+class CountdownRouteArgs {
+  const CountdownRouteArgs({
+    this.key,
+    required this.contestId,
+    required this.participantId,
+  });
+
+  final Key? key;
+
+  final int contestId;
+
+  final int participantId;
+
+  @override
+  String toString() {
+    return 'CountdownRouteArgs{key: $key, contestId: $contestId, participantId: $participantId}';
+  }
 }
 
 /// generated route for
@@ -367,6 +432,8 @@ class QuizResultRoute extends PageRouteInfo<QuizResultRouteArgs> {
     required List<Question> questions,
     required Map<int, String> answers,
     required int score,
+    required int contestId,
+    Duration totalTime = const Duration(minutes: 3, seconds: 42),
     List<PageRouteInfo>? children,
   }) : super(
           QuizResultRoute.name,
@@ -375,6 +442,8 @@ class QuizResultRoute extends PageRouteInfo<QuizResultRouteArgs> {
             questions: questions,
             answers: answers,
             score: score,
+            contestId: contestId,
+            totalTime: totalTime,
           ),
           initialChildren: children,
         );
@@ -391,6 +460,8 @@ class QuizResultRouteArgs {
     required this.questions,
     required this.answers,
     required this.score,
+    required this.contestId,
+    this.totalTime = const Duration(minutes: 3, seconds: 42),
   });
 
   final Key? key;
@@ -401,24 +472,57 @@ class QuizResultRouteArgs {
 
   final int score;
 
+  final int contestId;
+
+  final Duration totalTime;
+
   @override
   String toString() {
-    return 'QuizResultRouteArgs{key: $key, questions: $questions, answers: $answers, score: $score}';
+    return 'QuizResultRouteArgs{key: $key, questions: $questions, answers: $answers, score: $score, contestId: $contestId, totalTime: $totalTime}';
   }
 }
 
 /// generated route for
 /// [RoomQuizScreen]
-class RoomQuizRoute extends PageRouteInfo<void> {
-  const RoomQuizRoute({List<PageRouteInfo>? children})
-      : super(
+class RoomQuizRoute extends PageRouteInfo<RoomQuizRouteArgs> {
+  RoomQuizRoute({
+    Key? key,
+    required int contestId,
+    required int participantId,
+    List<PageRouteInfo>? children,
+  }) : super(
           RoomQuizRoute.name,
+          args: RoomQuizRouteArgs(
+            key: key,
+            contestId: contestId,
+            participantId: participantId,
+          ),
           initialChildren: children,
         );
 
   static const String name = 'RoomQuizRoute';
 
-  static const PageInfo<void> page = PageInfo<void>(name);
+  static const PageInfo<RoomQuizRouteArgs> page =
+      PageInfo<RoomQuizRouteArgs>(name);
+}
+
+class RoomQuizRouteArgs {
+  const RoomQuizRouteArgs({
+    this.key,
+    required this.contestId,
+    required this.participantId,
+  });
+
+  final Key? key;
+
+  final int contestId;
+
+  final int participantId;
+
+  @override
+  String toString() {
+    return 'RoomQuizRouteArgs{key: $key, contestId: $contestId, participantId: $participantId}';
+  }
 }
 
 /// generated route for
@@ -526,14 +630,38 @@ class SubscriptionRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [WaitingRoomScreen]
-class WaitingRoomRoute extends PageRouteInfo<void> {
-  const WaitingRoomRoute({List<PageRouteInfo>? children})
-      : super(
+class WaitingRoomRoute extends PageRouteInfo<WaitingRoomRouteArgs> {
+  WaitingRoomRoute({
+    Key? key,
+    required int contestId,
+    List<PageRouteInfo>? children,
+  }) : super(
           WaitingRoomRoute.name,
+          args: WaitingRoomRouteArgs(
+            key: key,
+            contestId: contestId,
+          ),
           initialChildren: children,
         );
 
   static const String name = 'WaitingRoomRoute';
 
-  static const PageInfo<void> page = PageInfo<void>(name);
+  static const PageInfo<WaitingRoomRouteArgs> page =
+      PageInfo<WaitingRoomRouteArgs>(name);
+}
+
+class WaitingRoomRouteArgs {
+  const WaitingRoomRouteArgs({
+    this.key,
+    required this.contestId,
+  });
+
+  final Key? key;
+
+  final int contestId;
+
+  @override
+  String toString() {
+    return 'WaitingRoomRouteArgs{key: $key, contestId: $contestId}';
+  }
 }
