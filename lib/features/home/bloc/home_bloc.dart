@@ -4,6 +4,7 @@ import 'package:logi_neko/core/config/logger.dart';
 import 'package:logi_neko/core/exception/exceptions.dart';
 import 'package:logi_neko/features/home/dto/user.dart';
 import 'package:logi_neko/features/home/repository/home_repo.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 abstract class HomeEvent extends Equatable {
   @override
@@ -89,6 +90,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       final user = await _homeRepository.getUserInfo();
       _currentUser = user;
 
+      // Save currentUserId to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('currentUserId', user.id);
+      logger.i('💾 HomeBloc: Saved currentUserId: ${user.id} to SharedPreferences');
+
       logger.i('HomeBloc: Tải thông tin user thành công');
       emit(UserInfoLoaded(user));
 
@@ -120,6 +126,11 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
       final user = await _homeRepository.getUserInfo();
       _currentUser = user;
+
+      // Save currentUserId to SharedPreferences
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('currentUserId', user.id);
+      logger.i('💾 HomeBloc: Updated currentUserId: ${user.id} in SharedPreferences');
 
       logger.i('HomeBloc: Refresh thông tin user thành công');
       emit(UserInfoLoaded(user));
@@ -155,20 +166,6 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     }
   }
 
-  String _getLocalizedErrorMessage(AppException exception) {
-    switch (exception.runtimeType) {
-      case NetworkException:
-        return 'Không có kết nối mạng';
-      case UnauthorizedException:
-        return 'Phiên đăng nhập đã hết hạn';
-      case NotFoundException:
-        return 'Không tìm thấy dữ liệu';
-      case BackendException:
-        return 'Lỗi từ máy chủ';
-      default:
-        return exception.message ?? 'Có lỗi xảy ra';
-    }
-  }
 
   @override
   Future<void> close() {
