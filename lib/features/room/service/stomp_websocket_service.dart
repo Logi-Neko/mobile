@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:stomp_dart_client/stomp.dart';
 import 'package:stomp_dart_client/stomp_config.dart';
 import 'package:stomp_dart_client/stomp_frame.dart';
@@ -14,9 +15,7 @@ class StompWebSocketService {
   Stream<GameEvent> get events => _eventController.stream;
 
   // Use a platform-aware IP address
-  final String _wsUrl = Platform.isAndroid
-      ? 'ws://10.0.2.2:8081'
-    : 'ws://192.168.1.12:8081';
+  final String _wsUrl = dotenv.env['SOCKET_URL'] ?? "";
 
   void connect(int contestId) {
     try {
@@ -32,8 +31,9 @@ class StompWebSocketService {
           },
           onWebSocketError: (dynamic error) {
             print('❌ [STOMP] WebSocket error: $error');
-            _eventController.addError(error);
-          },
+            if (!_eventController.isClosed) {
+              _eventController.addError(error);
+            }          },
           onStompError: (StompFrame frame) {
             print('❌ [STOMP] STOMP error: ${frame.body}');
             _eventController.addError('STOMP error: ${frame.body}');
@@ -105,8 +105,12 @@ class StompWebSocketService {
   }
 
   void dispose() {
-    disconnect();
-    _eventController.close();
+    print('🔌 [STOMP] Disposing StompWebSocketService...');
+    _stompClient?.deactivate();
+    // Thêm kiểm tra trước khi đóng để tránh lỗi
+    if (!_eventController.isClosed) {
+      _eventController.close();
+    }
   }
 
   bool get isConnected => _isConnected;

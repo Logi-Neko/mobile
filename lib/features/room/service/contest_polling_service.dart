@@ -40,6 +40,7 @@ class ContestPollingService {
       switch (contest.status.toLowerCase()) {
         case 'started':
         case 'in_progress':
+        case 'running':  // Thêm case này để xử lý status RUNNING từ backend
           newStatus = ContestStatus.started;
           break;
         case 'ended':

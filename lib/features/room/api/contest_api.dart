@@ -203,11 +203,16 @@ class ContestService {
   }
 
   Future<QuestionResponse> getQuestionById(int id) async {
+    print('📋 [ContestAPI] Fetching question by ID: $id');
     final response = await http.get(Uri.parse("$baseUrl/api/questions/$id"));
+    print('📋 [ContestAPI] Response status: ${response.statusCode}');
+    
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
+      print('📋 [ContestAPI] Question data: ${json["data"]}');
       return QuestionResponse.fromJson(json["data"]);
     } else {
+      print('❌ [ContestAPI] Failed to load question: ${response.body}');
       throw Exception("Failed to load question");
     }
   }
