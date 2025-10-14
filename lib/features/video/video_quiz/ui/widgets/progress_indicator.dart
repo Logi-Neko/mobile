@@ -25,19 +25,19 @@ class GameProgressIndicator extends StatelessWidget {
           GestureDetector(
             onTap: onPrevious,
             child: Container(
-              padding: EdgeInsets.all(8),
+              padding: EdgeInsets.all(5),
               decoration: BoxDecoration(
                 color: onPrevious != null
-                    ? Colors.white.withOpacity(0.3)
-                    : Colors.white.withOpacity(0.1),
-                shape: BoxShape.circle,
+                    ? Colors.white.withOpacity(0.4)
+                    : Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(15),
               ),
               child: Icon(
-                Icons.arrow_back_ios,
+                Icons.arrow_back,
                 color: onPrevious != null
                     ? Colors.white
-                    : Colors.white.withOpacity(0.5),
-                size: 16,
+                    : Colors.white.withOpacity(0.8),
+                size: 28,
               ),
             ),
           ),
@@ -86,19 +86,19 @@ class GameProgressIndicator extends StatelessWidget {
           GestureDetector(
             onTap: onNext,
             child: Container(
-              padding: EdgeInsets.all(8),
+              padding: EdgeInsets.all(5),
               decoration: BoxDecoration(
                 color: onNext != null
-                    ? Colors.white.withOpacity(0.3)
-                    : Colors.white.withOpacity(0.1),
-                shape: BoxShape.circle,
+                    ? Colors.white.withOpacity(0.4)
+                    : Colors.white.withOpacity(0.2),
+                borderRadius: BorderRadius.circular(15),
               ),
               child: Icon(
-                Icons.arrow_forward_ios,
+                Icons.arrow_forward,
                 color: onNext != null
                     ? Colors.white
-                    : Colors.white.withOpacity(0.5),
-                size: 16,
+                    : Colors.white.withOpacity(0.8),
+                size: 28,
               ),
             ),
           ),

@@ -105,12 +105,25 @@ class LessonGridWidget extends StatelessWidget {
               ),
               itemCount: lessons.length,
               itemBuilder: (context, index) {
-                return LessonCard(
-                  lesson: lessons[index],
-                  userIsPremium: userIsPremium,
-                  onTap: onLessonSelected != null
-                      ? () => onLessonSelected!(lessons[index])
-                      : null,
+                return TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0.0, end: 1.0),
+                  duration: Duration(milliseconds: 400 + (index * 100)),
+                  curve: Curves.easeOutBack,
+                  builder: (context, animation, child) {
+                    return Transform.scale(
+                      scale: animation,
+                      child: Opacity(
+                        opacity: animation.clamp(0.0, 1.0),
+                        child: LessonCard(
+                          lesson: lessons[index],
+                          userIsPremium: userIsPremium,
+                          onTap: onLessonSelected != null
+                              ? () => onLessonSelected!(lessons[index])
+                              : null,
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -183,7 +196,7 @@ class LessonGridWidget extends StatelessWidget {
   }
 }
 
-class LessonCard extends StatelessWidget {
+class LessonCard extends StatefulWidget {
   final Lesson lesson;
   final VoidCallback? onTap;
   final bool userIsPremium;
@@ -196,299 +209,459 @@ class LessonCard extends StatelessWidget {
   });
 
   @override
+  State<LessonCard> createState() => _LessonCardState();
+}
+
+class _LessonCardState extends State<LessonCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _bounceController;
+  late Animation<double> _bounceAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _bounceController = AnimationController(
+      duration: const Duration(milliseconds: 150),
+      vsync: this,
+    );
+    _bounceAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.95,
+    ).animate(CurvedAnimation(
+      parent: _bounceController,
+      curve: Curves.easeInOut,
+    ));
+  }
+
+  @override
+  void dispose() {
+    _bounceController.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.1),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
+    return AnimatedBuilder(
+      animation: _bounceAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _bounceAnimation.value,
+          child: GestureDetector(
+            onTapDown: (_) => _bounceController.forward(),
+            onTapUp: (_) {
+              _bounceController.reverse();
+              widget.onTap?.call();
+            },
+            onTapCancel: () => _bounceController.reverse(),
+            child: Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.08),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    flex: 3,
+                    child: _buildPlayfulThumbnail(),
+                  ),
+                  Expanded(
+                    flex: 1,
+                    child: _buildColorfulContent(),
+                  ),
+                ],
+              ),
             ),
-          ],
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 3,
-              child: _buildThumbnail(),
-            ),
-            Expanded(
-              flex: 1,
-              child: _buildContent(),
-            ),
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildThumbnail() {
+  Widget _buildPlayfulThumbnail() {
     return Container(
       width: double.infinity,
       child: Stack(
         children: [
           ClipRRect(
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(12),
-            ),
-            child: lesson.thumbnailUrl != null && lesson.thumbnailUrl!.isNotEmpty
+            borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+            child: widget.lesson.thumbnailUrl != null && widget.lesson.thumbnailUrl!.isNotEmpty
                 ? Image.network(
-              lesson.thumbnailUrl!,
+              widget.lesson.thumbnailUrl!,
               width: double.infinity,
               height: double.infinity,
               fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return _buildPlaceholder();
-              },
+              errorBuilder: (context, error, stackTrace) => _buildColorfulPlaceholder(),
             )
-                : _buildPlaceholder(),
+                : _buildColorfulPlaceholder(),
           ),
 
-          // Play overlay
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.3),
-                borderRadius: const BorderRadius.vertical(
-                  top: Radius.circular(12),
-                ),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.play_circle_filled,
-                  color: Colors.white,
-                  size: 40,
-                ),
+          // Colorful gradient overlay
+          Container(
+            decoration: BoxDecoration(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.transparent,
+                  Colors.black.withOpacity(0.4),
+                ],
               ),
             ),
           ),
 
-          // Order badge
+          // Fun lesson number badge
           Positioned(
-            top: 8,
-            left: 8,
+            top: 12,
+            left: 12,
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.blue,
-                borderRadius: BorderRadius.circular(12),
+                gradient: const LinearGradient(
+                  colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+                ),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFF6366F1).withOpacity(0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: Text(
-                "Bài ${lesson.order}",
+                "Bài ${widget.lesson.order}",
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-
-          if (lesson.isPremium) _buildPremiumBadge(),
-
-          if (lesson.isPremium && !userIsPremium) _buildLockOverlay(),
-
-          Positioned(
-            bottom: 8,
-            right: 8,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.7),
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Text(
-                lesson.formattedDuration,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPlaceholder() {
-    return Container(
-      width: double.infinity,
-      height: double.infinity,
-      color: Colors.grey[200],
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            lesson.mediaType == 'video' ? Icons.play_circle_outline : Icons.article_outlined,
-            size: 40,
-            color: Colors.grey[400],
-          ),
-          const SizedBox(height: 8),
-          Text(
-            lesson.mediaType == 'video' ? "Video" : "Bài học",
-            style: TextStyle(
-              fontSize: 12,
-              color: Colors.grey[600],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildContent() {
-    return Padding(
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              if (lesson.totalVideo > 0)
-                Row(
-                  children: [
-                    Icon(Icons.play_circle_outline, size: 16, color: Colors.grey[600]),
-                    const SizedBox(width: 4),
-                    Text(
-                      "${lesson.totalVideo}",
-                      style: TextStyle(
-                        fontSize: 16,
-                        color: Colors.grey[600],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                  ],
-                ),
-
-              if (lesson.star > 0)
-                Row(
-                  children: [
-                    Icon(Icons.star, size: 16, color: Colors.orange),
-                    const SizedBox(width: 4),
-                    Text(
-                      "${lesson.star}",
-                      style: const TextStyle(
-                        fontSize: 16,
-                        color: Colors.orange,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ],
-                ),
-
-              const Spacer(),
-
-              _buildStatusIndicator(),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildPremiumBadge() {
-    return Positioned(
-      top: 8,
-      right: 8,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.orange,
-          borderRadius: BorderRadius.circular(8),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.star, color: Colors.white, size: 10),
-            SizedBox(width: 2),
-            Text(
-              "Premium",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 8,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLockOverlay() {
-    return Positioned.fill(
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.black.withOpacity(0.6),
-          borderRadius: const BorderRadius.vertical(
-            top: Radius.circular(16),
-          ),
-        ),
-        child: const Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.lock, color: Colors.white, size: 30),
-              SizedBox(height: 4),
-              Text(
-                "Premium",
-                style: TextStyle(
                   color: Colors.white,
                   fontSize: 12,
                   fontWeight: FontWeight.bold,
                 ),
               ),
-            ],
+            ),
           ),
-        ),
+
+          if (widget.lesson.isPremium)
+            Positioned(
+              top: 12,
+              right: 12,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFD93D),
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFFFFD93D).withOpacity(0.3),
+                      blurRadius: 8,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.star,
+                  color: Colors.white,
+                  size: 16,
+                ),
+              ),
+            ),
+
+          if (!widget.lesson.isPremium || widget.userIsPremium)
+            Positioned.fill(
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.9),
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.play_arrow,
+                    color: Color(0xFF6366F1),
+                    size: 32,
+                  ),
+                ),
+              ),
+            ),
+
+          if (widget.lesson.isPremium && !widget.userIsPremium)
+            Positioned.fill(
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.7),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: const Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(Icons.lock, color: Colors.white, size: 32),
+                      SizedBox(height: 8),
+                      Text(
+                        "Premium",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+
+          // Duration badge
+          Positioned(
+            bottom: 12,
+            right: 12,
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+              decoration: BoxDecoration(
+                color: Colors.black.withOpacity(0.8),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                widget.lesson.formattedDuration,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 10,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildStatusIndicator() {
-    if (lesson.isCompleted) {
-      return const Icon(
-        Icons.check_circle,
-        size: 16,
-        color: Colors.green,
-      );
-    } else if (lesson.hasProgress) {
-      return Stack(
-        alignment: Alignment.center,
+  Widget _buildColorfulPlaceholder() {
+    final colors = [
+      [const Color(0xFFFF6B6B), const Color(0xFFFF8E8E)],
+      [const Color(0xFF4ECDC4), const Color(0xFF6EDDD6)],
+      [const Color(0xFF45B7D1), const Color(0xFF6BC5E0)],
+      [const Color(0xFFFFD93D), const Color(0xFFFFE066)],
+      [const Color(0xFF6366F1), const Color(0xFF8B5CF6)],
+    ];
+
+    final colorPair = colors[widget.lesson.order % colors.length];
+
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: colorPair,
+        ),
+      ),
+      child: Stack(
         children: [
-          SizedBox(
-            width: 16,
-            height: 16,
-            child: CircularProgressIndicator(
-              value: lesson.progressPercentage / 100,
-              strokeWidth: 2,
-              backgroundColor: Colors.grey[300],
-              valueColor: const AlwaysStoppedAnimation<Color>(Colors.blue),
-            ),
-          ),
-          Text(
-            "${lesson.star}",
-            style: const TextStyle(
-              fontSize: 8,
-              fontWeight: FontWeight.bold,
-              color: Colors.blue,
+          _buildStarsBackground(),
+
+          Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        blurRadius: 12,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: Icon(
+                    widget.lesson.mediaType == 'video' ? Icons.play_circle_filled : Icons.article,
+                    size: 32,
+                    color: colorPair[0],
+                  ),
+                ),
+              ],
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildStarsBackground() {
+    return Stack(
+      children: [
+        Positioned(
+          top: 20,
+          left: 20,
+          child: Icon(Icons.star, color: Colors.white.withOpacity(0.8), size: 16),
+        ),
+        Positioned(
+          top: 15,
+          right: 30,
+          child: Icon(Icons.star, color: Colors.white.withOpacity(0.5), size: 12),
+        ),
+        Positioned(
+          bottom: 25,
+          left: 15,
+          child: Icon(Icons.star, color: Colors.white.withOpacity(0.4), size: 14),
+        ),
+        Positioned(
+          top: 40,
+          right: 15,
+          child: Icon(Icons.star, color: Colors.white.withOpacity(0.6), size: 10),
+        ),
+        Positioned(
+          bottom: 15,
+          right: 25,
+          child: Icon(Icons.star, color: Colors.white.withOpacity(0.3), size: 18),
+        ),
+        Positioned(
+          top: 60,
+          left: 40,
+          child: Icon(Icons.star, color: Colors.white.withOpacity(0.4), size: 8),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildColorfulContent() {
+    return Padding(
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          // Lesson stats
+          Expanded(
+            child: Row(
+              children: [
+                if (widget.lesson.totalVideo > 0) ...[
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF6366F1).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Icon(
+                      Icons.play_circle_outline,
+                      size: 16,
+                      color: const Color(0xFF6366F1),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    "${widget.lesson.totalVideo}",
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF6366F1),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                ],
+
+                if (widget.lesson.star > 0) ...[
+                  Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFD93D).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: const Icon(
+                      Icons.star,
+                      size: 18,
+                      color: Color(0xFFFFC107),
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    "${widget.lesson.star}",
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: Color(0xFFFFC107),
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
+          // Status indicator
+          _buildPlayfulStatusIndicator(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlayfulStatusIndicator() {
+    if (widget.lesson.isCompleted) {
+      return Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: const Color(0xFF06D6A0),
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF06D6A0).withOpacity(0.3),
+              blurRadius: 4,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: const Icon(
+          Icons.check,
+          size: 16,
+          color: Colors.white,
+        ),
+      );
+    } else if (widget.lesson.hasProgress) {
+      return Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: const Color(0xFF6366F1).withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: SizedBox(
+          width: 16,
+          height: 16,
+          child: CircularProgressIndicator(
+            value: widget.lesson.progressPercentage / 100,
+            strokeWidth: 2,
+            backgroundColor: Colors.grey[300],
+            valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF6366F1)),
+          ),
+        ),
       );
     } else {
-      return Icon(
-        Icons.circle_outlined,
-        size: 16,
-        color: Colors.grey[400],
+      return Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: Colors.grey[100],
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Icon(
+          Icons.play_arrow,
+          size: 16,
+          color: Colors.grey[400],
+        ),
       );
     }
   }

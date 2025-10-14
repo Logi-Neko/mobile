@@ -25,25 +25,10 @@ class LessonHeaderWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header row with back button and menu
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              TextButton.icon(
-                style: TextButton.styleFrom(
-                  backgroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
-                    side: const BorderSide(color: Colors.black),
-                  ),
-                ),
-                onPressed: onBack,
-                icon: const Icon(Icons.arrow_back, color: Colors.black, size: 18),
-                label: const Text(
-                  "Quay lại",
-                  style: TextStyle(color: Colors.black, fontSize: 14),
-                ),
-              ),
+              _buildBackButton(),
               Text(
                 courseName,
                 style: const TextStyle(
@@ -94,11 +79,60 @@ class LessonHeaderWidget extends StatelessWidget {
                 icon: Icons.trending_up,
                 label: "Tiến độ",
                 value: "${(progress * 100).toInt()}%",
-                color: Colors.orange,
+                color: Colors.red,
               ),
             ],
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildBackButton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(15),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(15),
+          onTap: onBack,
+          child: Container(
+            padding: EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 8,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.arrow_back,
+                  color: const Color(0xFF2E3A87),
+                  size: 20,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  "Quay lại",
+                  style: TextStyle(
+                    color: const Color(0xFF2E3A87),
+                    fontSize:  14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -130,15 +164,15 @@ class LessonHeaderWidget extends StatelessWidget {
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(20),
+          color: Colors.white.withOpacity(0.25),
+          borderRadius: BorderRadius.circular(15),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 16),
+            Icon(icon, color: color, size: 24),
             const SizedBox(width: 6),
             Expanded(
               child: Column(
@@ -147,7 +181,7 @@ class LessonHeaderWidget extends StatelessWidget {
                   Text(
                     value,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Colors.black,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -155,8 +189,9 @@ class LessonHeaderWidget extends StatelessWidget {
                   Text(
                     label,
                     style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 10,
+                      color: Colors.black,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

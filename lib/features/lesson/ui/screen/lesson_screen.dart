@@ -2,6 +2,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logi_neko/core/router/app_router.dart';
+import 'package:logi_neko/features/lesson/ui/widgets/lesson_detail_screen.dart';
 import 'package:logi_neko/features/video/video_quiz/ui/screen/screen.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
 import '../../dto/lesson.dart';
@@ -43,7 +44,6 @@ class LessonView extends StatefulWidget {
   final String courseName;
   final String courseDescription;
   final bool userIsPremium;
-
 
   const LessonView({
     super.key,
@@ -92,7 +92,6 @@ class _LessonViewState extends State<LessonView>
               return Column(
                 children: [
                   _buildHeader(state),
-
                   Expanded(
                     child: _buildTabView(state),
                   ),
@@ -218,18 +217,39 @@ class _LessonViewState extends State<LessonView>
       return;
     }
 
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) => LessonDetailScreen(
+          lesson: lesson,
+          userIsPremium: widget.userIsPremium,
+          onStartLearning: () async {
+             _navigateToQuizScreen(lesson);
 
-    showDialog(
-      context: context,
-      builder: (context) {
-        return Dialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: _buildLessonDetailSheet(lesson),
-        );
-      },
-    );
+            return true;
+          },
+        ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(1.0, 0.0);
+          const end = Offset.zero;
+          const curve = Curves.easeOutCubic;
+
+          var tween = Tween(begin: begin, end: end).chain(
+            CurveTween(curve: curve),
+          );
+
+          return SlideTransition(
+            position: animation.drive(tween),
+            child: child,
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 400),
+      ),
+    ).then((result) {
+      if (mounted) {
+        context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
+      }
+    });
   }
 
   void _showAccessDeniedDialog(Lesson lesson) {
@@ -266,188 +286,6 @@ class _LessonViewState extends State<LessonView>
               foregroundColor: Colors.white,
             ),
             child: Text("Nâng cấp"),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLessonDetailSheet(Lesson lesson) {
-    return Container(
-      width: MediaQuery.of(context).size.width * 0.8,
-      height: MediaQuery.of(context).size.height * 0.9,
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Column(
-        children: [
-          Container(
-            width: 40,
-            height: 4,
-            margin: const EdgeInsets.symmetric(vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.grey[300],
-              borderRadius: BorderRadius.circular(2),
-            ),
-          ),
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(15),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          lesson.name,
-                          style: const TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                      if (lesson.isPremium)
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 12,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.orange,
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.star, color: Colors.white, size: 16),
-                              SizedBox(width: 4),
-                              Text(
-                                "Premium",
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    lesson.description,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      color: Colors.grey,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  if (lesson.hasProgress)
-                    Column(
-                      children: [
-                        _buildProgressSection(lesson),
-                        const SizedBox(height: 10),
-                      ],
-                    )
-                  else
-                    const SizedBox(height: 40),
-
-                  if (lesson.totalVideo > 0)
-                    Column(
-                      children: [
-                        Row(
-                          children: [
-                            _buildInfoCard(
-                              icon: Icons.play_circle_outline,
-                              title: "Video",
-                              value: "${lesson.totalVideo}",
-                              color: Colors.blue,
-                            ),
-                            const SizedBox(width: 12),
-                            _buildInfoCard(
-                              icon: Icons.access_time,
-                              title: "Thời lượng",
-                              value: lesson.formattedDuration,
-                              color: Colors.green,
-                            ),
-                            const SizedBox(width: 12),
-                            _buildInfoCard(
-                              icon: Icons.star,
-                              title: "Đánh giá",
-                              value: "${lesson.star}/5",
-                              color: Colors.orange,
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 10),
-                        SizedBox(
-                          width: double.infinity,
-                          child: ElevatedButton(
-                            onPressed: () {
-                              Navigator.pop(context);
-                              _navigateToQuizScreen(lesson);
-                            },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: lesson.isCompleted ? Colors.green : Colors.blue,
-                              foregroundColor: Colors.white,
-                              padding: const EdgeInsets.symmetric(vertical: 12),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                            ),
-                            child: Text(
-                              lesson.isCompleted ? "Học lại" : "Bắt đầu học",
-                              style: const TextStyle(
-                                fontSize: 12,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-                      decoration: BoxDecoration(
-                        color: Colors.grey[100],
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: Colors.grey[300]!),
-                      ),
-                      child: Column(
-                        children: [
-                          Icon(
-                            Icons.video_library_outlined,
-                            color: Colors.grey[400],
-                            size: 32,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "Chưa có video nào",
-                            style: TextStyle(
-                              color: Colors.grey[600],
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                          Text(
-                            "Nội dung đang được cập nhật",
-                            style: TextStyle(
-                              color: Colors.grey[500],
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                ],
-              ),
-            ),
           ),
         ],
       ),
@@ -497,13 +335,12 @@ class _LessonViewState extends State<LessonView>
             minHeight: 8,
           ),
         ),
-
       ],
     );
   }
 
-  void _navigateToQuizScreen(Lesson lesson) {
-    Navigator.push(
+  void _navigateToQuizScreen(Lesson lesson) async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => QuizChoiceScreen(
@@ -511,40 +348,9 @@ class _LessonViewState extends State<LessonView>
           lessonName: lesson.name,
         ),
       ),
-    ).then((_) {
-      if (mounted) {
-        context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
-      }
-    });
-  }
-  Widget _buildInfoCard({
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-  }) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.all(12),
-        decoration: BoxDecoration(
-          color: color.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withOpacity(0.3)),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, color: color, size: 24),
-            const SizedBox(height: 4),
-            Text(
-              value,
-              style: const TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
-        ),
-      ),
     );
+    if (mounted) {
+      context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
+    }
   }
 }
