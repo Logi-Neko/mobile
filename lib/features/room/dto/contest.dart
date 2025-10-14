@@ -60,7 +60,7 @@ class PaginatedResponse {
   final DateTime? joinAt;
 
   Participant({
-    required this.id,
+    required this .id,
     this.accountName,
     required this.score,
     this.joinAt,
