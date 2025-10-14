@@ -53,6 +53,7 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
   bool _ttsInitialized = false;
   bool _isReadingQuestion = false;
   Set<int> _soundPlayedForVideos = {};
+  bool _isNavigating = false;
 
   @override
   void initState() {
@@ -93,7 +94,6 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
         });
       }
     } catch (e) {
-      print('Error initializing TTS: $e');
       if (mounted) {
         setState(() {
           _ttsInitialized = false;
@@ -111,6 +111,14 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
 
   @override
   void dispose() {
+    _isNavigating = true;
+
+    try {
+      context.read<VideoBloc>().setNavigating(true);
+    } catch (e) {
+      print('DEBUG: BLoC already disposed');
+    }
+
     WidgetsBinding.instance.removeObserver(this);
     _ttsService.removeListener(_onTTSStateChanged);
     _isReadingQuestion = false;
@@ -125,6 +133,17 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
     super.dispose();
   }
 
+  Future<void> _cleanupBeforeNavigation() async {
+    if (_isNavigating) return;
+
+    _isNavigating = true;
+    _isReadingQuestion = false;
+
+    await _ttsService.forceStop();
+
+    await Future.delayed(Duration(milliseconds: 200));
+  }
+
   Future<void> _stopTTSAndWait() async {
     await _ttsService.forceStop();
     await Future.delayed(Duration(milliseconds: 150));
@@ -134,7 +153,7 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        await _stopTTSAndWait();
+        await _cleanupBeforeNavigation();
         Navigator.of(context).pop('back');
         return false;
       },
@@ -145,30 +164,39 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
           ),
           child: SafeArea(
             child: BlocConsumer<VideoBloc, VideoState>(
-              listener: (context, state) {
-                print('=== BlocListener State: ${state.runtimeType} ===');
+              listener: (context, state) async {
+                if (_isNavigating && state is! QuizCompleted) {
+                  return;
+                }
 
                 if (state is VideoError) {
-                  _showErrorSnackBar(context, state);
+                  if (!_isNavigating) {
+                    _showErrorSnackBar(context, state);
+                  }
                 } else if (state is QuizCompleted) {
-                  _ttsService.forceStop();
-                  _navigateToResultScreen(state);
+                  if (_isNavigating) {
+                    return;
+                  }
+                  _isNavigating = true;
+                  WidgetsBinding.instance.addPostFrameCallback((_) {
+                    if (mounted) {
+                      _navigateToResultScreen(state);
+                    }
+                  });
+
                 } else if (state is QuestionAnswered && state.isAllAnswered) {
-                  _showCompletionOptions(context, state);
+                  if (!_isNavigating) {
+                    _showCompletionOptions(context, state);
+                  }
                 } else if (state is QuestionAnswered) {
                   final videoId = state.currentVideo.id;
-                  print('TTS: QuestionAnswered - videoId: $videoId');
-                  print('TTS: _soundPlayedForVideos: $_soundPlayedForVideos');
-                  print('TTS: _autoReadEnabled: $_autoReadEnabled, _ttsInitialized: $_ttsInitialized');
 
                   if (_ttsInitialized && _autoReadEnabled && !_soundPlayedForVideos.contains(videoId)) {
                     _soundPlayedForVideos.add(videoId);
                     _ttsService.forceStop();
 
-                    print('TTS: ✅ Playing sound for video $videoId (first time)');
-
                     Future.delayed(Duration(milliseconds: 300), () {
-                      if (mounted && _autoReadEnabled) {
+                      if (mounted && _autoReadEnabled && !_isNavigating) {
                         if (state.isCorrect) {
                           _ttsService.playSuccessSound();
                         } else {
@@ -177,17 +205,31 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
                       }
                     });
                   } else {
-                    print('TTS: ❌ Skipping sound for video $videoId');
                     _ttsService.forceStop();
                   }
                 } else if (state is VideosLoaded) {
-                  print('TTS: VideosLoaded - not playing anything');
                   _ttsService.forceStop();
                 } else {
                   _ttsService.forceStop();
                 }
               },
               builder: (context, state) {
+                if (_isNavigating && state is! VideoLoading && state is! VideoError && state is! QuizCompleted) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(color: Colors.white),
+                        SizedBox(height: 16),
+                        Text(
+                          'Đang xử lý...',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
                 if (state is VideoLoading) {
                   return _buildLoadingWidget();
                 }
@@ -221,7 +263,26 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
                   );
                 }
 
-                return _buildErrorWidget(VideoError('Không có dữ liệu'));
+                if (state is QuizCompleted) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(color: Colors.white),
+                        SizedBox(height: 16),
+                        Text(
+                          'Đang tải kết quả...',
+                          style: TextStyle(color: Colors.white, fontSize: 16),
+                        ),
+                      ],
+                    ),
+                  );
+                }
+
+                // ✅ Default: Show loading thay vì error
+                return Center(
+                  child: CircularProgressIndicator(color: Colors.white),
+                );
               },
             ),
           ),
@@ -231,10 +292,9 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
   }
 
   Future<void> _readQuestion(VideoData video) async {
-    if (!_ttsInitialized || !_autoReadEnabled) return;
+    if (!_ttsInitialized || !_autoReadEnabled || _isNavigating) return;
 
     if (_isReadingQuestion || _ttsService.isSpeaking) {
-      print('Already reading question, skipping...');
       return;
     }
 
@@ -243,11 +303,15 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
     await _ttsService.forceStop();
     await Future.delayed(Duration(milliseconds: 200));
 
+    if (!mounted || _isNavigating) {
+      _isReadingQuestion = false;
+      return;
+    }
+
     final question = video.videoQuestion.question;
     final options = video.videoQuestion.validOptions;
 
     if (question.isNotEmpty && options.isNotEmpty) {
-      print('TTS: Starting to read question');
       await _ttsService.speakVietnameseQuestion(question, options);
     }
 
@@ -258,30 +322,14 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
     return Column(
       children: [
         Container(
-          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+          padding: EdgeInsets.symmetric(horizontal: 20, vertical: 5),
           decoration: BoxDecoration(
             gradient: AppColors.primaryGradient,
           ),
           child: SafeArea(
             child: Row(
               children: [
-                TextButton.icon(
-                  style: TextButton.styleFrom(
-                    backgroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                      side: const BorderSide(color: Colors.black),
-                    ),
-                    minimumSize: Size(0, 36),
-                    padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                  ),
-                  onPressed: () async {
-                    await _stopTTSAndWait();
-                    Navigator.pop(context, 'completed');
-                  },
-                  icon: const Icon(Icons.arrow_back, color: Colors.black, size: 18),
-                  label: const Text("Quay lại", style: TextStyle(color: Colors.black, fontSize: 14)),
-                ),
+                _buildBackButton(),
                 SizedBox(width: 30),
                 Expanded(
                   child: Text(
@@ -302,11 +350,71 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
         ),
         Expanded(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16.0),
+            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 4),
             child: EquationDisplay(videoData: state.currentVideo),
           ),
         )
       ],
+    );
+  }
+
+  Widget _buildBackButton() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(15),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(15),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(15),
+          onTap: () async {
+            if (_isNavigating) {
+              return;
+            }
+            await _ttsService.forceStop();
+            _isReadingQuestion = false;
+
+            await Future.delayed(Duration(milliseconds: 100));
+            if (mounted) {
+              Navigator.pop(context, 'completed');
+            }
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 12,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(
+                  Icons.arrow_back,
+                  color: Color(0xFF2E3A87),
+                  size: 20,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  "Quay lại",
+                  style: TextStyle(
+                    color: Color(0xFF2E3A87),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 
@@ -317,7 +425,9 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
     if (hasQuestion) {
       return ElevatedButton(
         onPressed: () {
-          context.read<VideoBloc>().add(ShowQuestion());
+          if (!_isNavigating) {
+            context.read<VideoBloc>().add(ShowQuestion());
+          }
         },
         style: ElevatedButton.styleFrom(
           backgroundColor: hasAnswered ? Colors.orange : Colors.green,
@@ -419,7 +529,9 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
           SizedBox(height: 16),
           ElevatedButton(
             onPressed: () {
-              context.read<VideoBloc>().add(LoadVideosByLessonId(widget.lessonId));
+              if (!_isNavigating) {
+                context.read<VideoBloc>().add(LoadVideosByLessonId(widget.lessonId));
+              }
             },
             child: Text(retryButtonText),
           ),
@@ -429,6 +541,8 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
   }
 
   void _showErrorSnackBar(BuildContext context, VideoError state) {
+    if (_isNavigating) return;
+
     Color backgroundColor = Colors.red;
     IconData icon = Icons.error;
     String? actionLabel;
@@ -478,21 +592,28 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
   }
 
   void _showCompletionOptions(BuildContext context, QuestionAnswered state) {
+    if (_isNavigating) return;
+
     final videoBloc = context.read<VideoBloc>();
 
-    Future.delayed(Duration(milliseconds: 500), () {
-      if (mounted && _ttsInitialized) {
+    Future.delayed(Duration(milliseconds: 300), () {
+      if (!mounted || _isNavigating) return;
+
+      if (_ttsInitialized && _autoReadEnabled) {
         _ttsService.speakCompletion(
             state.answeredQuestions.values.where((q) => q.isCorrect).length,
             state.videos.length);
       }
 
-      if (mounted) {
-        showDialog(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext dialogContext) {
-            return AlertDialog(
+      if (!mounted || _isNavigating) return;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext dialogContext) {
+          return WillPopScope(
+            onWillPop: () async => false,
+            child: AlertDialog(
               title: Row(
                 children: [
                   Icon(Icons.celebration, color: Colors.amber[600], size: 28),
@@ -507,13 +628,22 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
               actions: [
                 TextButton(
                   onPressed: () {
+                    if (_isNavigating) return;
                     Navigator.of(dialogContext).pop();
                   },
                   child: Text('Xem lại'),
                 ),
                 ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
+                    if (_isNavigating) {
+                      return;
+                    }
                     Navigator.of(dialogContext).pop();
+                    await Future.delayed(Duration(milliseconds: 100));
+
+                    if (!mounted) {
+                      return;
+                    }
                     videoBloc.add(NextVideo());
                   },
                   style: ElevatedButton.styleFrom(
@@ -523,10 +653,10 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
                   child: Text('Xem kết quả'),
                 ),
               ],
-            );
-          },
-        );
-      }
+            ),
+          );
+        },
+      );
     });
   }
 
@@ -544,7 +674,6 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
       padding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
       child: Column(
         children: [
-          // Header with controls
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
@@ -552,17 +681,27 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
                 style: TextButton.styleFrom(
                   backgroundColor: Colors.white,
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(30),
+                    borderRadius: BorderRadius.circular(15),
                     side: const BorderSide(color: Colors.black),
                   ),
                 ),
                 onPressed: () {
-                  _ttsService.forceStop();
-                  _isReadingQuestion = false;
-                  context.read<VideoBloc>().add(HideQuestion());
+                  if (!_isNavigating) {
+                    _ttsService.forceStop();
+                    _isReadingQuestion = false;
+                    context.read<VideoBloc>().add(HideQuestion());
+                  } else {
+                  }
                 },
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                label: const Text("Xem video", style: TextStyle(color: Colors.black)),
+                icon: const Icon(Icons.arrow_back, color: Color(0xFF2E3A87)),
+                label: const Text(
+                  "Xem video",
+                  style: TextStyle(
+                    color: Color(0xFF2E3A87),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
               ),
               Expanded(
                 child: Text(
@@ -578,15 +717,16 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
                       margin: EdgeInsets.only(right: 8),
                       child: IconButton(
                         onPressed: () {
-                          _ttsService.forceStop();
-                          _isReadingQuestion = false;
-                          setState(() {
-                            _autoReadEnabled = !_autoReadEnabled;
-                          });
+                          if (!_isNavigating) {
+                            _ttsService.forceStop();
+                            _isReadingQuestion = false;
+                            setState(() {
+                              _autoReadEnabled = !_autoReadEnabled;
+                            });
 
-                          if (!_autoReadEnabled) {
-                            _soundPlayedForVideos.clear();
-                            print('TTS: Cleared sound history');
+                            if (!_autoReadEnabled) {
+                              _soundPlayedForVideos.clear();
+                            }
                           }
                         },
                         icon: Container(
@@ -600,7 +740,7 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
                           child: Icon(
                             _autoReadEnabled ? Icons.volume_up : Icons.volume_off,
                             color: Colors.white,
-                            size: 20,
+                            size: 28,
                           ),
                         ),
                       ),
@@ -610,6 +750,8 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
                         margin: EdgeInsets.only(right: 8),
                         child: IconButton(
                           onPressed: () async {
+                            if (_isNavigating) return;
+
                             if (_ttsService.isSpeaking) {
                               await _ttsService.forceStop();
                               _isReadingQuestion = false;
@@ -628,7 +770,7 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
                             child: Icon(
                               _ttsService.isSpeaking ? Icons.stop : Icons.play_arrow,
                               color: Colors.white,
-                              size: 20,
+                              size: 28,
                             ),
                           ),
                         ),
@@ -638,13 +780,19 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
                     Container(
                       margin: EdgeInsets.only(right: 8),
                       child: ElevatedButton(
-                        onPressed: () {
+                        onPressed: _isNavigating
+                            ? null
+                            : () {
+                          if (_isNavigating) {
+                            return;
+                          }
                           context.read<VideoBloc>().add(NextVideo());
                         },
                         style: ElevatedButton.styleFrom(
                           backgroundColor: Colors.green,
                           foregroundColor: Colors.white,
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                          disabledBackgroundColor: Colors.grey,
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -657,20 +805,6 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
                       ),
                     ),
                   ],
-                  IconButton(
-                    icon: Container(
-                      padding: EdgeInsets.all(8),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withOpacity(0.3),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(Icons.close, color: Colors.white),
-                    ),
-                    onPressed: () async {
-                      await _stopTTSAndWait();
-                      Navigator.pop(context, 'completed');
-                    },
-                  ),
                 ],
               ),
             ],
@@ -695,8 +829,8 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
                                     ? currentVideo.videoQuestion.question
                                     : 'Hãy chọn đáp án đúng?',
                                 style: TextStyle(
-                                  color: Colors.black87,
-                                  fontSize: 20,
+                                  color: Colors.white,
+                                  fontSize: 18,
                                   fontWeight: FontWeight.w600,
                                 ),
                                 textAlign: TextAlign.center,
@@ -737,9 +871,8 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
                     ),
                   ),
 
-                  SizedBox(height: 10),
+                  SizedBox(height: 5),
 
-                  // Answer options
                   Expanded(
                     child: _buildAnswerOptions(currentVideo, showResult, selectedAnswer, isCorrect),
                   ),
@@ -750,22 +883,25 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
 
           SizedBox(height: 10),
 
-          // Progress indicator
           GameProgressIndicator(
             current: progress['current']!,
             total: progress['total']!,
             onPrevious: context.read<VideoBloc>().canGoPrevious()
                 ? () {
-              _ttsService.forceStop();
-              _isReadingQuestion = false;
-              context.read<VideoBloc>().add(PreviousVideo());
+              if (!_isNavigating) {
+                _ttsService.forceStop();
+                _isReadingQuestion = false;
+                context.read<VideoBloc>().add(PreviousVideo());
+              }
             }
                 : null,
             onNext: context.read<VideoBloc>().canGoNext() || isAllAnswered
                 ? () {
-              _ttsService.forceStop();
-              _isReadingQuestion = false;
-              context.read<VideoBloc>().add(NextVideo());
+              if (!_isNavigating) {
+                _ttsService.forceStop();
+                _isReadingQuestion = false;
+                context.read<VideoBloc>().add(NextVideo());
+              }
             }
                 : null,
           ),
@@ -811,30 +947,38 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
   }
 
   Future<void> _readOption(String option, int index) async {
-    if (_ttsInitialized && _autoReadEnabled) {
+    if (_ttsInitialized && _autoReadEnabled && !_isNavigating) {
       await _ttsService.speakOption(option, index);
     }
   }
 
   void _onAnswerSelected(int index) {
-    _ttsService.forceStop();
-    _isReadingQuestion = false;
-    context.read<VideoBloc>().add(AnswerQuestion(index));
+    if (!_isNavigating) {
+      _ttsService.forceStop();
+      _isReadingQuestion = false;
+      context.read<VideoBloc>().add(AnswerQuestion(index));
+    }
   }
 
-  void _navigateToResultScreen(QuizCompleted state) async {
+  Future<void> _navigateToResultScreen(QuizCompleted state) async {
+    await _cleanupBeforeNavigation();
+
+    if (!mounted) return;
+
     final stats = state.completionStats;
 
-    await _stopTTSAndWait();
-
-    SystemChrome.setPreferredOrientations([
+    await SystemChrome.setPreferredOrientations([
       DeviceOrientation.portraitUp,
       DeviceOrientation.portraitDown,
       DeviceOrientation.landscapeLeft,
       DeviceOrientation.landscapeRight,
     ]);
 
-    final result = await Navigator.pushReplacement(
+    await Future.delayed(Duration(milliseconds: 100));
+
+    if (!mounted) return;
+
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => ResultScreen(
@@ -850,12 +994,14 @@ class _QuizChoiceViewState extends State<QuizChoiceView> with WidgetsBindingObse
       ),
     );
 
-    if (result == 'retry' && mounted) {
+    _isNavigating = false;
+
+    if (!mounted) return;
+
+    if (result == 'retry') {
       context.read<VideoBloc>().add(ResetToFirstVideo());
     } else if (result == 'home' || result == null) {
-      if (mounted) {
-        Navigator.of(context).pop('completed');
-      }
+      Navigator.of(context).pop('completed');
     }
   }
 }

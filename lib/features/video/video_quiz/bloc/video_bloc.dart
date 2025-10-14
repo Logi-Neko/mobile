@@ -1,4 +1,4 @@
-// Enhanced video_bloc.dart với chế độ xem video
+// Enhanced video_bloc.dart với improved state management
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:logi_neko/core/exception/exceptions.dart';
@@ -6,7 +6,6 @@ import 'package:logi_neko/features/video/result/dto/result.dart';
 import '../repository/video_repo.dart';
 import '../dto/video.dart';
 
-// Thêm class để track answered questions
 class AnsweredQuestion extends Equatable {
   final int videoId;
   final int selectedAnswerIndex;
@@ -24,7 +23,7 @@ class AnsweredQuestion extends Equatable {
   List<Object?> get props => [videoId, selectedAnswerIndex, isCorrect, submittedAnswer];
 }
 
-// Enhanced Events
+// Events
 abstract class VideoEvent extends Equatable {
   @override
   List<Object?> get props => [];
@@ -68,9 +67,9 @@ class AnswerQuestion extends VideoEvent {
 }
 
 class ShowQuestion extends VideoEvent {}
-
 class HideQuestion extends VideoEvent {}
 
+// States
 abstract class VideoState extends Equatable {
   @override
   List<Object?> get props => [];
@@ -79,7 +78,6 @@ abstract class VideoState extends Equatable {
 class VideoInitial extends VideoState {}
 class VideoLoading extends VideoState {}
 
-// Thêm state mới cho chế độ chỉ xem video
 class VideoWatchMode extends VideoState {
   final List<VideoData> videos;
   final int currentIndex;
@@ -206,7 +204,6 @@ class QuizCompleted extends VideoState {
     this.resultData,
   });
 
-  // Calculate local results
   Map<String, dynamic> get completionStats {
     int correctAnswers = 0;
     int totalQuestions = videos.length;
@@ -247,9 +244,10 @@ class VideoError extends VideoState {
   List<Object?> get props => [message, errorCode];
 }
 
-// Enhanced VideoBloc
+// Bloc
 class VideoBloc extends Bloc<VideoEvent, VideoState> {
   final VideoRepository _videoRepository;
+  bool _isNavigating = false; // ✅ Track navigation state
 
   VideoBloc(this._videoRepository) : super(VideoInitial()) {
     on<LoadVideosByLessonId>(_onLoadVideosByLessonId);
@@ -261,6 +259,11 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
     on<AnswerQuestion>(_onAnswerQuestion);
     on<ShowQuestion>(_onShowQuestion);
     on<HideQuestion>(_onHideQuestion);
+  }
+
+  // ✅ Method để set navigation state
+  void setNavigating(bool isNavigating) {
+    _isNavigating = isNavigating;
   }
 
   Future<void> _onLoadVideosByLessonId(LoadVideosByLessonId event, Emitter<VideoState> emit) async {
@@ -315,6 +318,8 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
   }
 
   void _onShowQuestion(ShowQuestion event, Emitter<VideoState> emit) {
+    if (_isNavigating) return; // ✅ Skip nếu đang navigate
+
     final currentState = state;
     if (currentState is VideoWatchMode) {
       final isAllAnswered = _checkAllAnswered(currentState.videos, currentState.answeredQuestions);
@@ -345,6 +350,8 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
   }
 
   void _onHideQuestion(HideQuestion event, Emitter<VideoState> emit) {
+    if (_isNavigating) return; // ✅ Skip nếu đang navigate
+
     final currentState = state;
     if (currentState is VideosLoaded || currentState is QuestionAnswered) {
       List<VideoData> videos;
@@ -379,6 +386,8 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
   }
 
   void _onNextVideo(NextVideo event, Emitter<VideoState> emit) {
+    // ✅ Không skip NextVideo vì cần để chuyển sang QuizCompleted
+
     final currentState = state;
 
     if (currentState is VideosLoaded || currentState is QuestionAnswered || currentState is VideoWatchMode) {
@@ -405,6 +414,8 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
       final nextIndex = currentIndex + 1;
 
       if (nextIndex < videos.length) {
+        if (_isNavigating) return; // ✅ Skip emit nếu đang navigate
+
         final nextVideo = videos[nextIndex];
         final progress = _calculateProgress(nextIndex, videos.length);
 
@@ -443,6 +454,7 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
           }
         }
       } else {
+        // ✅ Emit QuizCompleted - không skip vì cần để navigate
         final submittedAnswers = answeredQuestions.map((key, value) => MapEntry(key, value.submittedAnswer));
         emit(QuizCompleted(
           videos: videos,
@@ -453,6 +465,8 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
   }
 
   void _onPreviousVideo(PreviousVideo event, Emitter<VideoState> emit) {
+    if (_isNavigating) return; // ✅ Skip nếu đang navigate
+
     final currentState = state;
 
     if (currentState is VideosLoaded || currentState is QuestionAnswered || currentState is VideoWatchMode) {
@@ -481,7 +495,6 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         final previousVideo = videos[previousIndex];
         final progress = _calculateProgress(previousIndex, videos.length);
 
-        // Kiểm tra current state để quyết định emit state gì
         if (currentState is VideoWatchMode) {
           emit(VideoWatchMode(
             videos: videos,
@@ -493,7 +506,6 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
         } else {
           final isAllAnswered = _checkAllAnswered(videos, answeredQuestions);
 
-          // Kiểm tra xem video trước đó đã được trả lời chưa
           final answeredQuestion = answeredQuestions[previousVideo.id];
           if (answeredQuestion != null) {
             emit(QuestionAnswered(
@@ -522,6 +534,8 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
   }
 
   void _onGoToVideo(GoToVideo event, Emitter<VideoState> emit) {
+    if (_isNavigating) return; // ✅ Skip nếu đang navigate
+
     final currentState = state;
     if (currentState is VideosLoaded || currentState is VideoWatchMode) {
       if (currentState is VideosLoaded) {
@@ -552,6 +566,8 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
   }
 
   void _onResetToFirstVideo(ResetToFirstVideo event, Emitter<VideoState> emit) {
+    if (_isNavigating) return; // ✅ Skip nếu đang navigate
+
     final currentState = state;
     if ((currentState is VideosLoaded || currentState is VideoWatchMode) &&
         _getVideosFromState(currentState).isNotEmpty) {
@@ -588,6 +604,8 @@ class VideoBloc extends Bloc<VideoEvent, VideoState> {
   }
 
   Future<void> _onAnswerQuestion(AnswerQuestion event, Emitter<VideoState> emit) async {
+    if (_isNavigating) return; // ✅ Skip nếu đang navigate
+
     final currentState = state;
     if (currentState is VideosLoaded) {
       final isCorrect = event.selectedAnswerIndex == currentState.currentVideo.videoQuestion.correctAnswerIndex;

@@ -79,7 +79,7 @@ class LessonHeaderWidget extends StatelessWidget {
                 icon: Icons.trending_up,
                 label: "Tiến độ",
                 value: "${(progress * 100).toInt()}%",
-                color: Colors.orange,
+                color: Colors.red,
               ),
             ],
           ),
@@ -110,7 +110,7 @@ class LessonHeaderWidget extends StatelessWidget {
           child: Container(
             padding: EdgeInsets.symmetric(
               horizontal: 16,
-              vertical: 12,
+              vertical: 8,
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -164,15 +164,15 @@ class LessonHeaderWidget extends StatelessWidget {
   }) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.15),
-          borderRadius: BorderRadius.circular(20),
+          color: Colors.white.withOpacity(0.25),
+          borderRadius: BorderRadius.circular(15),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Icon(icon, color: color, size: 16),
+            Icon(icon, color: color, size: 24),
             const SizedBox(width: 6),
             Expanded(
               child: Column(
@@ -181,7 +181,7 @@ class LessonHeaderWidget extends StatelessWidget {
                   Text(
                     value,
                     style: const TextStyle(
-                      color: Colors.white,
+                      color: Colors.black,
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                     ),
@@ -189,8 +189,9 @@ class LessonHeaderWidget extends StatelessWidget {
                   Text(
                     label,
                     style: const TextStyle(
-                      color: Colors.white70,
-                      fontSize: 10,
+                      color: Colors.black,
+                      fontWeight: FontWeight.w500,
+                      fontSize: 12,
                     ),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,

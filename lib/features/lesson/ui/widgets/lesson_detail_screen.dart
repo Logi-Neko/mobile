@@ -2,11 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
 import '../../dto/lesson.dart';
+import '../../repository/lesson_repo.dart';
 
 class LessonDetailScreen extends StatefulWidget {
   final Lesson lesson;
   final bool userIsPremium;
-  final VoidCallback? onStartLearning;
+  final Future<bool> Function()? onStartLearning;
 
   const LessonDetailScreen({
     super.key,
@@ -31,9 +32,15 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
   late Animation<double> _scaleAnimation;
   Animation<double>? _backgroundAnimation;
 
+  late Lesson _currentLesson;
+  bool _isLoadingLesson = false;
+
   @override
   void initState() {
     super.initState();
+
+    // ✅ Initialize current lesson
+    _currentLesson = widget.lesson;
 
     _slideController = AnimationController(
       duration: const Duration(milliseconds: 800),
@@ -72,7 +79,6 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
       CurvedAnimation(parent: _backgroundController, curve: Curves.easeInOut),
     );
 
-    // Start animations
     _slideController.forward();
     _fadeController.forward();
     _backgroundController.repeat(reverse: true);
@@ -93,6 +99,43 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
     super.dispose();
   }
 
+  Future<void> _reloadLessonData() async {
+    if (_isLoadingLesson) return;
+
+    setState(() {
+      _isLoadingLesson = true;
+    });
+    try {
+      final lessonRepo = LessonRepositoryImpl();
+      final updatedLesson = await lessonRepo.getLessonById(_currentLesson.id);
+
+      if (mounted) {
+        setState(() {
+          _currentLesson = updatedLesson;
+          _isLoadingLesson = false;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _isLoadingLesson = false;
+        });
+      }
+    }
+  }
+
+  Future<void> _handleStartLearning() async {
+    HapticFeedback.mediumImpact();
+
+    if (widget.onStartLearning != null) {
+      final shouldReload = await widget.onStartLearning!();
+
+      if (shouldReload && mounted) {
+        await _reloadLessonData();
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -106,21 +149,38 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
               gradient: AppColors.primaryGradient,
             ),
             child: SafeArea(
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: Column(
-                  children: [
-                    _buildHeader(context),
-                    Expanded(
-                      child: FadeTransition(
-                        opacity: _fadeAnimation,
-                        child: ScaleTransition(
-                          scale: _scaleAnimation,
-                          child: _buildMainCard(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+                child: SlideTransition(
+                  position: _slideAnimation,
+                  child: Column(
+                    children: [
+                      _buildHeader(context),
+                      Expanded(
+                        child: Stack(
+                          children: [
+                            FadeTransition(
+                              opacity: _fadeAnimation,
+                              child: ScaleTransition(
+                                scale: _scaleAnimation,
+                                child: _buildMainCard(),
+                              ),
+                            ),
+                            // ✅ Loading overlay khi đang reload
+                            if (_isLoadingLesson)
+                              Container(
+                                color: Colors.black.withOpacity(0.3),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -169,7 +229,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "${widget.lesson.name}",
+                  _currentLesson.name,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 28,
@@ -180,7 +240,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
               ],
             ),
           ),
-          if (widget.lesson.isPremium)
+          if (_currentLesson.isPremium)
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
@@ -225,7 +285,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
             const SizedBox(height: 8),
 
             Text(
-              widget.lesson.description,
+              _currentLesson.description,
               style: const TextStyle(
                 fontSize: 18,
                 color: Colors.white,
@@ -258,46 +318,46 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
                   height: 48,
                   decoration: BoxDecoration(
                     gradient:
-                        _canAccessLesson()
-                            ? (widget.lesson.isCompleted
-                                ? const LinearGradient(
-                                  colors: [
-                                    Color(0xFF06D6A0),
-                                    Color(0xFF38ef7d),
-                                  ],
-                                )
-                                : const LinearGradient(
-                                  colors: [
-                                    Color(0xFF667eea),
-                                    Color(0xFF764ba2),
-                                  ],
-                                ))
-                            : LinearGradient(
-                              colors: [Colors.grey[400]!, Colors.grey[500]!],
-                            ),
-                    borderRadius: BorderRadius.circular(24),
+                    _canAccessLesson()
+                        ? (_currentLesson.isCompleted
+                        ? const LinearGradient(
+                      colors: [
+                        Color(0xFF06D6A0),
+                        Color(0xFF38ef7d),
+                      ],
+                    )
+                        : const LinearGradient(
+                      colors: [
+                        Color(0xFF667eea),
+                        Color(0xFF764ba2),
+                      ],
+                    ))
+                        : LinearGradient(
+                      colors: [Colors.grey[400]!, Colors.grey[500]!],
+                    ),
+                    borderRadius: BorderRadius.circular(15),
                     boxShadow:
-                        _canAccessLesson()
-                            ? [
-                              BoxShadow(
-                                color: (widget.lesson.isCompleted
-                                        ? const Color(0xFF06D6A0)
-                                        : const Color(0xFF667eea))
-                                    .withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ]
-                            : null,
+                    _canAccessLesson()
+                        ? [
+                      BoxShadow(
+                        color: (_currentLesson.isCompleted
+                            ? const Color(0xFF06D6A0)
+                            : const Color(0xFF667eea))
+                            .withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ]
+                        : null,
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Icon(
                         _canAccessLesson()
-                            ? (widget.lesson.isCompleted
-                                ? Icons.replay_rounded
-                                : Icons.play_arrow_rounded)
+                            ? (_currentLesson.isCompleted
+                            ? Icons.replay_rounded
+                            : Icons.play_arrow_rounded)
                             : Icons.lock_rounded,
                         size: 20,
                       ),
@@ -315,7 +375,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
               ),
             ),
 
-             if (!_canAccessLesson()) ...[
+            if (!_canAccessLesson()) ...[
               const SizedBox(height: 12),
               Container(
                 padding: const EdgeInsets.symmetric(
@@ -368,21 +428,21 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
               _buildStatCard(
                 icon: Icons.play_circle_filled,
                 label: "Videos",
-                value: "${widget.lesson.totalVideo}",
+                value: "${_currentLesson.totalVideo}",
                 color: const Color(0xFF667eea),
               ),
               const SizedBox(width: 12),
               _buildStatCard(
                 icon: Icons.star_rounded,
                 label: "Đánh giá",
-                value: "${widget.lesson.star}/5",
+                value: "${_currentLesson.star}/5",
                 color: const Color(0xFFFFD93D),
               ),
               const SizedBox(width: 12),
               _buildStatCard(
                 icon: Icons.schedule_rounded,
                 label: "Thời gian",
-                value: widget.lesson.formattedDuration,
+                value: _currentLesson.formattedDuration,
                 color: const Color(0xFF06D6A0),
               ),
             ],
@@ -464,17 +524,17 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
                 decoration: BoxDecoration(
                   gradient: LinearGradient(
                     colors:
-                        widget.lesson.isCompleted
-                            ? [const Color(0xFF06D6A0), const Color(0xFF38ef7d)]
-                            : [
-                              const Color(0xFF667eea),
-                              const Color(0xFF764ba2),
-                            ],
+                    _currentLesson.isCompleted
+                        ? [const Color(0xFF06D6A0), const Color(0xFF38ef7d)]
+                        : [
+                      const Color(0xFF667eea),
+                      const Color(0xFF764ba2),
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Text(
-                  widget.lesson.progressText,
+                  _currentLesson.progressText,
                   style: const TextStyle(
                     color: Colors.white,
                     fontSize: 12,
@@ -494,10 +554,10 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
             child: ClipRRect(
               borderRadius: BorderRadius.circular(8),
               child: LinearProgressIndicator(
-                value: widget.lesson.progressPercentage / 100,
+                value: _currentLesson.progressPercentage / 100,
                 backgroundColor: Colors.transparent,
                 valueColor: AlwaysStoppedAnimation<Color>(
-                  widget.lesson.isCompleted
+                  _currentLesson.isCompleted
                       ? const Color(0xFF06D6A0)
                       : const Color(0xFF667eea),
                 ),
@@ -511,19 +571,14 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
   }
 
   bool _canAccessLesson() {
-    return widget.lesson.canAccess &&
-        (!widget.lesson.isPremium || widget.userIsPremium);
+    return _currentLesson.canAccess &&
+        (!_currentLesson.isPremium || widget.userIsPremium);
   }
 
   String _getButtonText() {
     if (!_canAccessLesson()) return "Nâng cấp Premium";
-    if (widget.lesson.isCompleted) return "Học lại";
+    if (_currentLesson.isCompleted) return "Học lại";
     return "Bắt đầu học";
-  }
-
-  void _handleStartLearning() {
-    HapticFeedback.mediumImpact();
-    widget.onStartLearning?.call();
   }
 
   void _animateBack(BuildContext context) {

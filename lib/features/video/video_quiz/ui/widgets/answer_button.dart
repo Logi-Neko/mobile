@@ -94,14 +94,6 @@ class AnswerButton extends StatelessWidget {
                   mainAxisAlignment: MainAxisAlignment.center,
                   mainAxisSize: MainAxisSize.min, // QUAN TRỌNG
                   children: [
-                    if (showSpeakerIcon && !showResult) ...[
-                      Icon(
-                        Icons.volume_up,
-                        color: Colors.grey[600],
-                        size: 14,
-                      ),
-                      SizedBox(width: 4),
-                    ],
                     Flexible(
                       child: Text(
                         text,

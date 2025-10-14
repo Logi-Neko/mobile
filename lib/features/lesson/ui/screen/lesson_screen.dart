@@ -45,7 +45,6 @@ class LessonView extends StatefulWidget {
   final String courseDescription;
   final bool userIsPremium;
 
-
   const LessonView({
     super.key,
     required this.courseId,
@@ -93,7 +92,6 @@ class _LessonViewState extends State<LessonView>
               return Column(
                 children: [
                   _buildHeader(state),
-
                   Expanded(
                     child: _buildTabView(state),
                   ),
@@ -219,14 +217,17 @@ class _LessonViewState extends State<LessonView>
       return;
     }
 
-    // Navigate to lesson detail screen with slide transition
     Navigator.push(
       context,
       PageRouteBuilder(
         pageBuilder: (context, animation, secondaryAnimation) => LessonDetailScreen(
           lesson: lesson,
           userIsPremium: widget.userIsPremium,
-          onStartLearning: () => _navigateToQuizScreen(lesson),
+          onStartLearning: () async {
+             _navigateToQuizScreen(lesson);
+
+            return true;
+          },
         ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           const begin = Offset(1.0, 0.0);
@@ -244,8 +245,7 @@ class _LessonViewState extends State<LessonView>
         },
         transitionDuration: const Duration(milliseconds: 400),
       ),
-    ).then((_) {
-      // Refresh data when coming back
+    ).then((result) {
       if (mounted) {
         context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
       }
@@ -335,13 +335,12 @@ class _LessonViewState extends State<LessonView>
             minHeight: 8,
           ),
         ),
-
       ],
     );
   }
 
-  void _navigateToQuizScreen(Lesson lesson) {
-    Navigator.push(
+  void _navigateToQuizScreen(Lesson lesson) async {
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (context) => QuizChoiceScreen(
@@ -349,10 +348,9 @@ class _LessonViewState extends State<LessonView>
           lessonName: lesson.name,
         ),
       ),
-    ).then((_) {
-      if (mounted) {
-        context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
-      }
-    });
+    );
+    if (mounted) {
+      context.read<LessonBloc>().add(LoadLessonsByCourseId(widget.courseId));
+    }
   }
 }

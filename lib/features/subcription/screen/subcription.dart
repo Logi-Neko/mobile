@@ -216,7 +216,7 @@ class SubscriptionScreen extends StatelessWidget {
                       const SizedBox(height: 10),
 
                       Text(
-                        'Truy cập trang web logineko.vn để thanh toán',
+                        'Truy cập trang web logineko.edu.vn để thanh toán',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: isSmallScreen ? 13 : 16,

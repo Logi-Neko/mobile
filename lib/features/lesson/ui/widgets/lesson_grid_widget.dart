@@ -348,7 +348,6 @@ class _LessonCardState extends State<LessonCard>
             ),
           ),
 
-          // Premium star badge
           if (widget.lesson.isPremium)
             Positioned(
               top: 12,
@@ -374,7 +373,6 @@ class _LessonCardState extends State<LessonCard>
               ),
             ),
 
-          // Play button overlay
           if (!widget.lesson.isPremium || widget.userIsPremium)
             Positioned.fill(
               child: Center(
@@ -400,7 +398,6 @@ class _LessonCardState extends State<LessonCard>
               ),
             ),
 
-          // Lock overlay for premium content
           if (widget.lesson.isPremium && !widget.userIsPremium)
             Positioned.fill(
               child: Container(
@@ -476,10 +473,8 @@ class _LessonCardState extends State<LessonCard>
       ),
       child: Stack(
         children: [
-          // Decorative stars background
           _buildStarsBackground(),
 
-          // Central character/icon
           Center(
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
@@ -514,11 +509,10 @@ class _LessonCardState extends State<LessonCard>
   Widget _buildStarsBackground() {
     return Stack(
       children: [
-        // Various positioned stars with different sizes and colors
         Positioned(
           top: 20,
           left: 20,
-          child: Icon(Icons.star, color: Colors.white.withOpacity(0.3), size: 16),
+          child: Icon(Icons.star, color: Colors.white.withOpacity(0.8), size: 16),
         ),
         Positioned(
           top: 15,
@@ -592,16 +586,16 @@ class _LessonCardState extends State<LessonCard>
                     ),
                     child: const Icon(
                       Icons.star,
-                      size: 16,
-                      color: Color(0xFFFFD93D),
+                      size: 18,
+                      color: Color(0xFFFFC107),
                     ),
                   ),
                   const SizedBox(width: 4),
                   Text(
                     "${widget.lesson.star}",
                     style: const TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFFFFD93D),
+                      fontSize: 14,
+                      color: Color(0xFFFFC107),
                       fontWeight: FontWeight.bold,
                     ),
                   ),
