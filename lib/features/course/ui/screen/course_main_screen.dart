@@ -210,10 +210,7 @@ class _CourseViewState extends State<CourseView>
         borderRadius: BorderRadius.circular(15),
         child: InkWell(
           borderRadius: BorderRadius.circular(15),
-          onTap: () => context.router.pushAndPopUntil(
-            const HomeRoute(),
-            predicate: (route) => false,
-          ),
+          onTap: () => context.router.push(const HomeRoute()),
           child: Container(
             padding: EdgeInsets.symmetric(
               horizontal: isSmallScreen ? 12 : 16,

@@ -61,18 +61,25 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       'imagePath': 'lib/shared/assets/images/leaderboard.jpg',
     },
   ];
+  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    _homeBloc = HomeBloc(HomeRepositoryImpl());
-    _homeBloc.add(GetUserInfo());
+    if (!_initialized) {
+      _homeBloc = context.read<HomeBloc>();
+
+      if (_homeBloc.currentUser == null) {
+        _homeBloc.add(GetUserInfo());
+      }
+
+      _initialized = true;
+    }
 
     _setupAnimations();
   }
 
   void _setupAnimations() {
-    // Floating animation cho header
     _floatingController = AnimationController(
       duration: const Duration(seconds: 3),
       vsync: this,
@@ -137,7 +144,6 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
     _pulseController.dispose();
     _sparkleController.dispose();
     _backgroundController.dispose();
-    _homeBloc.close();
     super.dispose();
   }
 
@@ -413,22 +419,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   void _handleCardTap(BuildContext context, int index) {
     switch (index) {
       case 0: // Học tập
-        final userIsPremium = _homeBloc.currentUser?.isPremium ?? false;
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => BlocProvider.value(
-              value: _homeBloc,
-              child: CourseScreen(userIsPremium: userIsPremium),
-            ),
-          ),
+        context.router.push(
+          CourseRoute(userIsPremium: _homeBloc.currentUser?.isPremium ?? false),
         );
         break;
       case 1: // Cuộc thi
-        context.router.pushAndPopUntil(
-          const ContestListRoute(),
-          predicate: (route) => false,
-        );
+        context.router.push(const ContestListRoute());
         break;
       case 2: // Nhân vật
         Navigator.push(
@@ -436,18 +432,9 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           MaterialPageRoute(
             builder: (context) => CharacterScreen(user: _homeBloc.currentUser),
           ),
-        );
-        break;
+        );        break;
       case 3: // Bảng xếp hạng
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => BlocProvider.value(
-              value: _homeBloc,
-              child: LeaderboardScreen(currentUser: _homeBloc.currentUser),
-            ),
-          ),
-        );
+        context.router.push(const LeaderboardRoute());
         break;
     }
   }
