@@ -81,7 +81,22 @@ class ShowCorrectAnswer extends RoomState {
 }
 
 // The quiz has finished
-class QuizFinished extends RoomState {}
+class QuizFinished extends RoomState {
+  final int contestId;
+  final int totalScore;
+  final int totalQuestions;
+  final int correctAnswers;
+  
+  const QuizFinished({
+    required this.contestId,
+    required this.totalScore,
+    required this.totalQuestions,
+    required this.correctAnswers,
+  });
+  
+  @override
+  List<Object?> get props => [contestId, totalScore, totalQuestions, correctAnswers];
+}
 
 // An error occurred
 class RoomError extends RoomState {

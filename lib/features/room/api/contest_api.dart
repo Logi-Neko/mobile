@@ -60,7 +60,7 @@ class ContestService {
       throw Exception('Failed to delete contest');
     }
   }
-  Future<void> joinContest(int contestId, int accountId) async {
+  Future<int?> joinContest(int contestId, int accountId) async {
     final uri = Uri.parse('$baseUrl/api/game/$contestId/join')
         .replace(queryParameters: {'accountId': accountId.toString()});
 
@@ -72,7 +72,34 @@ class ContestService {
     print('🔑 [ContestAPI] Join contest response status: ${response.statusCode}');
     print('🔑 [ContestAPI] Join contest response body: ${response.body}');
 
-    if (response.statusCode != 200) {
+    if (response.statusCode == 200) {
+      try {
+        final jsonData = json.decode(response.body);
+        // Try to extract participantId from response
+        if (jsonData['data'] != null) {
+          // Backend might return participantId in different formats
+          final data = jsonData['data'];
+          int? participantId;
+          
+          // Try different field names
+          if (data['participantId'] != null) {
+            participantId = data['participantId'] as int;
+          } else if (data['id'] != null) {
+            participantId = data['id'] as int;
+          }
+          
+          if (participantId != null) {
+            print('✅ [ContestAPI] Joined contest successfully, participantId: $participantId');
+            return participantId;
+          }
+        }
+        print('⚠️ [ContestAPI] Joined contest but no participantId in response');
+        return null;
+      } catch (e) {
+        print('⚠️ [ContestAPI] Error parsing join response: $e');
+        return null;
+      }
+    } else {
       throw Exception('Failed to join contest: ${response.body}');
     }
   }

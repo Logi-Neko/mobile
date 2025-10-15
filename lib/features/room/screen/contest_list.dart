@@ -75,21 +75,36 @@ class _ContestListScreenState extends State<ContestListScreen> {
 
       await _contestService.joinContest(contestId, accountId);
 
-      final participants = await _contestService.getAllParticipantsInContest(contestId);
-      print('📋 [ContestList] All participants: $participants');
-
-      Participant? participant;
-      if (participants.isNotEmpty) {
-        participant = participants.firstWhere(
-              (p) => p.accountName?.toLowerCase().contains('user') == true ||
-              p.accountName?.toLowerCase().contains('minh') == true,
-          orElse: () => participants.last,
-        );
+      // Try to get participantId from join response
+      final participantId = await _contestService.joinContest(contestId, accountId);
+      
+      int? finalParticipantId = participantId;
+      
+      // If not in response, get from participants list
+      if (finalParticipantId == null) {
+        print('⚠️ [ContestList] No participantId in join response, fetching from participants list...');
+        final participants = await _contestService.getAllParticipantsInContest(contestId);
+        print('📋 [ContestList] All participants after join: ${participants.length} participants');
+        
+        // Find the newest participant (the one we just created)
+        if (participants.isNotEmpty) {
+          // Sort by joinAt to find the most recent
+          participants.sort((a, b) {
+            if (a.joinAt == null) return 1;
+            if (b.joinAt == null) return -1;
+            return b.joinAt!.compareTo(a.joinAt!);
+          });
+          
+          // The first one after sorting is the newest
+          final myParticipant = participants.first;
+          finalParticipantId = myParticipant.id;
+          print('📋 [ContestList] Found newest participant: id=${myParticipant.id}, name=${myParticipant.accountName}, joinAt=${myParticipant.joinAt}');
+        }
       }
 
-      if (participant != null) {
-        await prefs.setInt('participantId_$contestId', participant.id);
-        print('💾 [ContestList] Saved participantId: ${participant.id} for contest: $contestId');
+      if (finalParticipantId != null) {
+        await prefs.setInt('participantId_$contestId', finalParticipantId);
+        print('💾 [ContestList] Saved participantId: $finalParticipantId for contest: $contestId (accountId: $accountId)');
       } else {
         print('❌ [ContestList] Could not find participant after joining');
         _showErrorDialog('Không thể lấy thông tin participant');

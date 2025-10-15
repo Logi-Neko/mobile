@@ -371,7 +371,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
                 ElevatedButton(
                   onPressed: () {
                     context.router.pushAndPopUntil(
-                      const CharacterRoute(),
+                       CharacterRoute(),
                       predicate: (route) => false,
                     );
                   },

@@ -22,15 +22,33 @@ abstract class _$AppRouter extends RootStackRouter {
       );
     },
     CharacterRoute.name: (routeData) {
+      final args = routeData.argsAs<CharacterRouteArgs>(
+          orElse: () => const CharacterRouteArgs());
       return AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const CharacterScreen(),
+        child: CharacterScreen(
+          key: args.key,
+          user: args.user,
+        ),
       );
     },
     ContestListRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
         child: const ContestListScreen(),
+      );
+    },
+    ContestResultRoute.name: (routeData) {
+      final args = routeData.argsAs<ContestResultRouteArgs>();
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: ContestResultScreen(
+          key: args.key,
+          contestId: args.contestId,
+          totalScore: args.totalScore,
+          totalQuestions: args.totalQuestions,
+          correctAnswers: args.correctAnswers,
+        ),
       );
     },
     CountdownRoute.name: (routeData) {
@@ -74,9 +92,14 @@ abstract class _$AppRouter extends RootStackRouter {
       );
     },
     LeaderboardRoute.name: (routeData) {
+      final args = routeData.argsAs<LeaderboardRouteArgs>(
+          orElse: () => const LeaderboardRouteArgs());
       return AutoRoutePage<dynamic>(
         routeData: routeData,
-        child: const LeaderboardScreen(),
+        child: LeaderboardScreen(
+          key: args.key,
+          currentUser: args.currentUser,
+        ),
       );
     },
     LearningReportRoute.name: (routeData) {
@@ -196,16 +219,40 @@ class AuthSelectionRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [CharacterScreen]
-class CharacterRoute extends PageRouteInfo<void> {
-  const CharacterRoute({List<PageRouteInfo>? children})
-      : super(
+class CharacterRoute extends PageRouteInfo<CharacterRouteArgs> {
+  CharacterRoute({
+    Key? key,
+    User? user,
+    List<PageRouteInfo>? children,
+  }) : super(
           CharacterRoute.name,
+          args: CharacterRouteArgs(
+            key: key,
+            user: user,
+          ),
           initialChildren: children,
         );
 
   static const String name = 'CharacterRoute';
 
-  static const PageInfo<void> page = PageInfo<void>(name);
+  static const PageInfo<CharacterRouteArgs> page =
+      PageInfo<CharacterRouteArgs>(name);
+}
+
+class CharacterRouteArgs {
+  const CharacterRouteArgs({
+    this.key,
+    this.user,
+  });
+
+  final Key? key;
+
+  final User? user;
+
+  @override
+  String toString() {
+    return 'CharacterRouteArgs{key: $key, user: $user}';
+  }
 }
 
 /// generated route for
@@ -220,6 +267,59 @@ class ContestListRoute extends PageRouteInfo<void> {
   static const String name = 'ContestListRoute';
 
   static const PageInfo<void> page = PageInfo<void>(name);
+}
+
+/// generated route for
+/// [ContestResultScreen]
+class ContestResultRoute extends PageRouteInfo<ContestResultRouteArgs> {
+  ContestResultRoute({
+    Key? key,
+    required int contestId,
+    required int totalScore,
+    required int totalQuestions,
+    required int correctAnswers,
+    List<PageRouteInfo>? children,
+  }) : super(
+          ContestResultRoute.name,
+          args: ContestResultRouteArgs(
+            key: key,
+            contestId: contestId,
+            totalScore: totalScore,
+            totalQuestions: totalQuestions,
+            correctAnswers: correctAnswers,
+          ),
+          initialChildren: children,
+        );
+
+  static const String name = 'ContestResultRoute';
+
+  static const PageInfo<ContestResultRouteArgs> page =
+      PageInfo<ContestResultRouteArgs>(name);
+}
+
+class ContestResultRouteArgs {
+  const ContestResultRouteArgs({
+    this.key,
+    required this.contestId,
+    required this.totalScore,
+    required this.totalQuestions,
+    required this.correctAnswers,
+  });
+
+  final Key? key;
+
+  final int contestId;
+
+  final int totalScore;
+
+  final int totalQuestions;
+
+  final int correctAnswers;
+
+  @override
+  String toString() {
+    return 'ContestResultRouteArgs{key: $key, contestId: $contestId, totalScore: $totalScore, totalQuestions: $totalQuestions, correctAnswers: $correctAnswers}';
+  }
 }
 
 /// generated route for
@@ -346,16 +446,40 @@ class HomeRoute extends PageRouteInfo<void> {
 
 /// generated route for
 /// [LeaderboardScreen]
-class LeaderboardRoute extends PageRouteInfo<void> {
-  const LeaderboardRoute({List<PageRouteInfo>? children})
-      : super(
+class LeaderboardRoute extends PageRouteInfo<LeaderboardRouteArgs> {
+  LeaderboardRoute({
+    Key? key,
+    User? currentUser,
+    List<PageRouteInfo>? children,
+  }) : super(
           LeaderboardRoute.name,
+          args: LeaderboardRouteArgs(
+            key: key,
+            currentUser: currentUser,
+          ),
           initialChildren: children,
         );
 
   static const String name = 'LeaderboardRoute';
 
-  static const PageInfo<void> page = PageInfo<void>(name);
+  static const PageInfo<LeaderboardRouteArgs> page =
+      PageInfo<LeaderboardRouteArgs>(name);
+}
+
+class LeaderboardRouteArgs {
+  const LeaderboardRouteArgs({
+    this.key,
+    this.currentUser,
+  });
+
+  final Key? key;
+
+  final User? currentUser;
+
+  @override
+  String toString() {
+    return 'LeaderboardRouteArgs{key: $key, currentUser: $currentUser}';
+  }
 }
 
 /// generated route for

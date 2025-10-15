@@ -189,7 +189,7 @@ class QuestionResponse {
       options: (json["options"] as List<dynamic>? ?? [])
           .map((e) => AnswerOptionResponse.fromJson(e as Map<String, dynamic>))
           .toList(),
-      points: json["points"] ?? 100,
+      points: json["points"] ?? 1000,
       timeLimit: json["timeLimit"],
     );
   }

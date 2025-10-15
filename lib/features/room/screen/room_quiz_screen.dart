@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:logi_neko/core/router/app_router.dart';
 import 'package:logi_neko/features/room/bloc/contest_bloc.dart';
 import 'package:logi_neko/features/room/bloc/room_event_bloc.dart';
 import 'package:logi_neko/features/room/bloc/room_state.dart';
@@ -1339,7 +1340,23 @@ class RoomQuizView extends StatelessWidget {
   }
 
   void _navigateToResult(BuildContext context) {
-    Navigator.of(context).popUntil((route) => route.isFirst);
+    final bloc = context.read<RoomBloc>();
+    final state = bloc.state;
+    
+    if (state is QuizFinished) {
+      // Navigate to contest result screen
+      context.router.replace(
+        ContestResultRoute(
+          contestId: state.contestId,
+          totalScore: state.totalScore,
+          totalQuestions: state.totalQuestions,
+          correctAnswers: state.correctAnswers,
+        ),
+      );
+    } else {
+      // Fallback - go home
+      Navigator.of(context).popUntil((route) => route.isFirst);
+    }
   }
 
   void _showLeaderboardModal(BuildContext context, ShowLeaderboard state) {

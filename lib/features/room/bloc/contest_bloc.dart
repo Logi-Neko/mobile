@@ -13,7 +13,6 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
   final StompWebSocketService _stompService;
   StreamSubscription? _webSocketSubscription;
   Timer? _timer;
-  String? _correctAnswerForCurrentQuestion;
   late int _contestId;
   late int _participantId;
   String? _selectedAnswer;
@@ -131,7 +130,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
         
       case 'contest.ended':
         print('🏁 [RoomBloc] Contest ended!');
-        emit(QuizFinished());
+        _handleContestEnded(emit);
         break;
         
       case 'question.ended':
@@ -263,7 +262,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
         }
       } else {
         if (!emit.isDone) {
-          emit(QuizFinished());
+          await _handleContestEnded(emit);
         }
       }
     }
@@ -274,11 +273,8 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       print('🏆 [RoomBloc] Starting _showLeaderboardAndNextQuestion...');
       
       // Get current leaderboard data
-      print('🏆 [RoomBloc] Refreshing leaderboard for contest $_contestId...');
-      await _apiService.refreshLeaderboard(_contestId);
-      print('🏆 [RoomBloc] Leaderboard refresh completed');
       
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 1500));
       print('🏆 [RoomBloc] Getting leaderboard data...');
       final leaderboardData = await _apiService.getLeaderboard(_contestId);
       print('🏆 [RoomBloc] Got leaderboard data: ${leaderboardData.length} entries');
@@ -299,7 +295,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
         print('🏆 [RoomBloc] Emitting ShowLeaderboard state...');
         emit(ShowLeaderboard(
           leaderboardEvent: leaderboardEvent,
-          countdown: 5, // 5 seconds to show leaderboard
+          countdown: 10, // 5 seconds to show leaderboard
         ));
         
         print('🏆 [RoomBloc] Starting leaderboard timer...');
@@ -330,7 +326,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
   }
 
   void _onLeaderboardTimerTicked(
-      LeaderboardTimerTicked event, Emitter<RoomState> emit) {
+      LeaderboardTimerTicked event, Emitter<RoomState> emit) async {
     final currentState = state;
     print('⏰ [RoomBloc] Leaderboard timer ticked - current countdown: ${currentState is ShowLeaderboard ? currentState.countdown : 'N/A'}');
     
@@ -354,7 +350,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
         } else {
           print('⏰ [RoomBloc] All questions done, finishing quiz...');
           if (!emit.isDone) {
-            emit(QuizFinished());
+            await _handleContestEnded(emit);
           }
         }
       }
@@ -570,8 +566,36 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
   Future<void> _revealNextQuestion(Emitter<RoomState> emit) async {
     if (_currentQuestionIndex >= _contestQuestions.length) {
       print('🏁 [RoomBloc] All questions revealed, ending contest');
+      
+      // Calculate correct answers
+      int correctAnswers = 0;
+      for (var entry in _userAnswers.entries) {
+        final questionIndex = entry.key;
+        final userAnswer = entry.value;
+        if (questionIndex < _contestQuestions.length) {
+          // Get the question to check correct answer
+          try {
+            final contestQuestion = _contestQuestions[questionIndex];
+            final question = await _apiService.getQuestionById(contestQuestion.questionId);
+            final correctOption = question.options.firstWhere((opt) => opt.isCorrect, orElse: () => AnswerOptionResponse(id: 0, optionText: '', isCorrect: false, questionId: 0));
+            if (userAnswer == correctOption.optionText) {
+              correctAnswers++;
+            }
+          } catch (e) {
+            print('❌ [RoomBloc] Error checking answer: $e');
+          }
+        }
+      }
+      
+      print('🏁 [RoomBloc] Quiz finished - Score: $_totalScore, Correct: $correctAnswers/${_contestQuestions.length}');
+      
       if (!emit.isDone) {
-        emit(QuizFinished());
+        emit(QuizFinished(
+          contestId: _contestId,
+          totalScore: _totalScore,
+          totalQuestions: _contestQuestions.length,
+          correctAnswers: correctAnswers,
+        ));
       }
       return;
     }
@@ -590,12 +614,6 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       print('📝 [RoomBloc] Fetching question details for question ID: ${contestQuestion.questionId}');
       final question = await _apiService.getQuestionById(contestQuestion.questionId);
       print('📝 [RoomBloc] Loaded question details: ${question.questionText}');
-
-      final correctOption = question.options.firstWhere(
-            (opt) => opt.isCorrect,
-        orElse: () => AnswerOptionResponse(id: 0, optionText: '', isCorrect: false, questionId: 0),
-      );
-      _correctAnswerForCurrentQuestion = correctOption.optionText;
 
       // Create QuestionRevealedEvent manually
       final questionEvent = QuestionRevealedEvent(
@@ -653,6 +671,44 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       print('❌ [RoomBloc] Failed to submit answer: $e');
       // You might want to emit an error state here or show a snackbar
       // For now, we'll just log the error and continue
+    }
+  }
+
+  Future<int> _calculateCorrectAnswers() async {
+    int correctAnswers = 0;
+    for (var entry in _userAnswers.entries) {
+      final questionIndex = entry.key;
+      final userAnswer = entry.value;
+      if (questionIndex < _contestQuestions.length) {
+        try {
+          final contestQuestion = _contestQuestions[questionIndex];
+          final question = await _apiService.getQuestionById(contestQuestion.questionId);
+          final correctOption = question.options.firstWhere(
+            (opt) => opt.isCorrect, 
+            orElse: () => AnswerOptionResponse(id: 0, optionText: '', isCorrect: false, questionId: 0)
+          );
+          if (userAnswer == correctOption.optionText) {
+            correctAnswers++;
+          }
+        } catch (e) {
+          print('❌ [RoomBloc] Error checking answer: $e');
+        }
+      }
+    }
+    return correctAnswers;
+  }
+
+  Future<void> _handleContestEnded(Emitter<RoomState> emit) async {
+    final correctAnswers = await _calculateCorrectAnswers();
+    print('🏁 [RoomBloc] Quiz finished - Score: $_totalScore, Correct: $correctAnswers/${_contestQuestions.length}');
+    
+    if (!emit.isDone) {
+      emit(QuizFinished(
+        contestId: _contestId,
+        totalScore: _totalScore,
+        totalQuestions: _contestQuestions.length,
+        correctAnswers: correctAnswers,
+      ));
     }
   }
 
