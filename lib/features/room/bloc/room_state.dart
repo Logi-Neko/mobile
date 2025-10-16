@@ -53,24 +53,50 @@ class ShowLeaderboard extends RoomState {
 
 // Showing correct answer after question ends
 class ShowCorrectAnswer extends RoomState {
-  final String correctAnswer;
   final String userAnswer;
+  final String correctAnswer;
   final bool isCorrect;
   final int countdown;
+  final String? question;  // Thêm dòng này
+  final List<String>? options;  // Thêm dòng này
 
   const ShowCorrectAnswer({
-    required this.correctAnswer,
     required this.userAnswer,
+    required this.correctAnswer,
     required this.isCorrect,
     required this.countdown,
+    this.question,  // Thêm dòng này
+    this.options,   // Thêm dòng này
   });
 
   @override
-  List<Object?> get props => [correctAnswer, userAnswer, isCorrect, countdown];
+  List<Object?> get props => [
+    userAnswer,
+    correctAnswer,
+    isCorrect,
+    countdown,
+    question,   // Thêm dòng này
+    options,    // Thêm dòng này
+  ];
 }
 
 // The quiz has finished
-class QuizFinished extends RoomState {}
+class QuizFinished extends RoomState {
+  final int contestId;
+  final int totalScore;
+  final int totalQuestions;
+  final int correctAnswers;
+  
+  const QuizFinished({
+    required this.contestId,
+    required this.totalScore,
+    required this.totalQuestions,
+    required this.correctAnswers,
+  });
+  
+  @override
+  List<Object?> get props => [contestId, totalScore, totalQuestions, correctAnswers];
+}
 
 // An error occurred
 class RoomError extends RoomState {

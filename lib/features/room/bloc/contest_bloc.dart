@@ -13,7 +13,6 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
   final StompWebSocketService _stompService;
   StreamSubscription? _webSocketSubscription;
   Timer? _timer;
-
   late int _contestId;
   late int _participantId;
   String? _selectedAnswer;
@@ -63,7 +62,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
           add(GameEventReceived(gameEvent));
         },
         onError: (error) {
-          emit(RoomError('STOMP WebSocket connection error: $error'));
+          print(' WebSocket error caught in listener: $error');
         },
       );
       
@@ -131,7 +130,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
         
       case 'contest.ended':
         print('🏁 [RoomBloc] Contest ended!');
-        emit(QuizFinished());
+        _handleContestEnded(emit);
         break;
         
       case 'question.ended':
@@ -201,6 +200,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
           isSubmitted: currentState.isSubmitted,
         ));
             } else {
+              _timer?.cancel();
               print('⏰ [RoomBloc] Time\'s up! Countdown reached 0');
               
               // Time's up, auto-submit if not already submitted
@@ -241,10 +241,10 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       
       // Call backend to end question and calculate scores
       await _apiService.endQuestion(contestQuestionId);
-      
+
       // Wait a bit for scores to be calculated
       await Future.delayed(const Duration(milliseconds: 1000));
-      
+
       // Don't move to next question here - wait for question.ended event
       // The question.ended event will trigger showing correct answer
       print('✅ [RoomBloc] Question ended API called successfully, waiting for question.ended event...');
@@ -262,7 +262,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
         }
       } else {
         if (!emit.isDone) {
-          emit(QuizFinished());
+          await _handleContestEnded(emit);
         }
       }
     }
@@ -273,11 +273,8 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       print('🏆 [RoomBloc] Starting _showLeaderboardAndNextQuestion...');
       
       // Get current leaderboard data
-      print('🏆 [RoomBloc] Refreshing leaderboard for contest $_contestId...');
-      await _apiService.refreshLeaderboard(_contestId);
-      print('🏆 [RoomBloc] Leaderboard refresh completed');
       
-      await Future.delayed(const Duration(milliseconds: 500));
+      await Future.delayed(const Duration(milliseconds: 1500));
       print('🏆 [RoomBloc] Getting leaderboard data...');
       final leaderboardData = await _apiService.getLeaderboard(_contestId);
       print('🏆 [RoomBloc] Got leaderboard data: ${leaderboardData.length} entries');
@@ -298,7 +295,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
         print('🏆 [RoomBloc] Emitting ShowLeaderboard state...');
         emit(ShowLeaderboard(
           leaderboardEvent: leaderboardEvent,
-          countdown: 5, // 5 seconds to show leaderboard
+          countdown: 10, // 5 seconds to show leaderboard
         ));
         
         print('🏆 [RoomBloc] Starting leaderboard timer...');
@@ -329,7 +326,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
   }
 
   void _onLeaderboardTimerTicked(
-      LeaderboardTimerTicked event, Emitter<RoomState> emit) {
+      LeaderboardTimerTicked event, Emitter<RoomState> emit) async {
     final currentState = state;
     print('⏰ [RoomBloc] Leaderboard timer ticked - current countdown: ${currentState is ShowLeaderboard ? currentState.countdown : 'N/A'}');
     
@@ -353,7 +350,7 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
         } else {
           print('⏰ [RoomBloc] All questions done, finishing quiz...');
           if (!emit.isDone) {
-            emit(QuizFinished());
+            await _handleContestEnded(emit);
           }
         }
       }
@@ -373,14 +370,23 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       // Check if user's answer is correct
       bool isCorrect = correctAnswer == userAnswer;
       
+      // Get current question data
+      final currentState = state;
+      QuestionRevealedEvent? questionEvent;
+      if (currentState is QuestionInProgress) {
+        questionEvent = currentState.questionEvent;
+      }
+      
       print('🎯 [RoomBloc] Correct answer: "$correctAnswer", User answer: "$userAnswer", Is correct: $isCorrect');
       
       // Show correct answer for 3 seconds
       emit(ShowCorrectAnswer(
-        correctAnswer: correctAnswer,
         userAnswer: userAnswer,
+        correctAnswer: correctAnswer,
         isCorrect: isCorrect,
         countdown: 3,
+        question: questionEvent?.question,
+        options: questionEvent?.options,
       ));
       
       print('⏰ [RoomBloc] Emitted ShowCorrectAnswer state, starting timer...');
@@ -509,6 +515,8 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
           userAnswer: currentState.userAnswer,
           isCorrect: currentState.isCorrect,
           countdown: newCountdown,
+          question: currentState.question, // Giữ lại question
+          options: currentState.options,   // Giữ lại options
         ));
       } else {
         print('⏰ [RoomBloc] Correct answer time\'s up! Moving to leaderboard...');
@@ -542,35 +550,52 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       _currentQuestionIndex = 0;
       
       // Start revealing questions one by one using API
-      _startQuestionRevealSequence(emit);
-      
+      await Future.delayed(const Duration(milliseconds: 500));
+      if (!emit.isDone) {
+        await _revealNextQuestion(emit);
+      }
+
     } catch (e) {
       print('❌ [RoomBloc] Failed to load questions: $e');
       emit(RoomError('Failed to load questions: $e'));
     }
   }
 
-  void _startQuestionRevealSequence(Emitter<RoomState> emit) {
-    if (_contestQuestions.isEmpty) {
-      print('❌ [RoomBloc] No contest questions to reveal');
-      emit(RoomError('No contest questions found'));
-      return;
-    }
-    
-    print('🎯 [RoomBloc] Starting question reveal sequence with ${_contestQuestions.length} questions');
-    emit(WaitingForQuestion());
-    
-    // Start revealing first question after 2 seconds
-    _questionRevealTimer = Timer(const Duration(seconds: 2), () {
-      _revealNextQuestion(emit);
-    });
-  }
+
 
   Future<void> _revealNextQuestion(Emitter<RoomState> emit) async {
     if (_currentQuestionIndex >= _contestQuestions.length) {
       print('🏁 [RoomBloc] All questions revealed, ending contest');
+      
+      // Calculate correct answers
+      int correctAnswers = 0;
+      for (var entry in _userAnswers.entries) {
+        final questionIndex = entry.key;
+        final userAnswer = entry.value;
+        if (questionIndex < _contestQuestions.length) {
+          // Get the question to check correct answer
+          try {
+            final contestQuestion = _contestQuestions[questionIndex];
+            final question = await _apiService.getQuestionById(contestQuestion.questionId);
+            final correctOption = question.options.firstWhere((opt) => opt.isCorrect, orElse: () => AnswerOptionResponse(id: 0, optionText: '', isCorrect: false, questionId: 0));
+            if (userAnswer == correctOption.optionText) {
+              correctAnswers++;
+            }
+          } catch (e) {
+            print('❌ [RoomBloc] Error checking answer: $e');
+          }
+        }
+      }
+      
+      print('🏁 [RoomBloc] Quiz finished - Score: $_totalScore, Correct: $correctAnswers/${_contestQuestions.length}');
+      
       if (!emit.isDone) {
-        emit(QuizFinished());
+        emit(QuizFinished(
+          contestId: _contestId,
+          totalScore: _totalScore,
+          totalQuestions: _contestQuestions.length,
+          correctAnswers: correctAnswers,
+        ));
       }
       return;
     }
@@ -586,9 +611,10 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       print('📝 [RoomBloc] Question revealed via API');
       
       // Get question details
+      print('📝 [RoomBloc] Fetching question details for question ID: ${contestQuestion.questionId}');
       final question = await _apiService.getQuestionById(contestQuestion.questionId);
       print('📝 [RoomBloc] Loaded question details: ${question.questionText}');
-      
+
       // Create QuestionRevealedEvent manually
       final questionEvent = QuestionRevealedEvent(
         eventType: 'question.revealed',
@@ -645,6 +671,44 @@ class RoomBloc extends Bloc<RoomEvent, RoomState> {
       print('❌ [RoomBloc] Failed to submit answer: $e');
       // You might want to emit an error state here or show a snackbar
       // For now, we'll just log the error and continue
+    }
+  }
+
+  Future<int> _calculateCorrectAnswers() async {
+    int correctAnswers = 0;
+    for (var entry in _userAnswers.entries) {
+      final questionIndex = entry.key;
+      final userAnswer = entry.value;
+      if (questionIndex < _contestQuestions.length) {
+        try {
+          final contestQuestion = _contestQuestions[questionIndex];
+          final question = await _apiService.getQuestionById(contestQuestion.questionId);
+          final correctOption = question.options.firstWhere(
+            (opt) => opt.isCorrect, 
+            orElse: () => AnswerOptionResponse(id: 0, optionText: '', isCorrect: false, questionId: 0)
+          );
+          if (userAnswer == correctOption.optionText) {
+            correctAnswers++;
+          }
+        } catch (e) {
+          print('❌ [RoomBloc] Error checking answer: $e');
+        }
+      }
+    }
+    return correctAnswers;
+  }
+
+  Future<void> _handleContestEnded(Emitter<RoomState> emit) async {
+    final correctAnswers = await _calculateCorrectAnswers();
+    print('🏁 [RoomBloc] Quiz finished - Score: $_totalScore, Correct: $correctAnswers/${_contestQuestions.length}');
+    
+    if (!emit.isDone) {
+      emit(QuizFinished(
+        contestId: _contestId,
+        totalScore: _totalScore,
+        totalQuestions: _contestQuestions.length,
+        correctAnswers: correctAnswers,
+      ));
     }
   }
 

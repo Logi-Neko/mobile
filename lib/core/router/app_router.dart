@@ -1,15 +1,18 @@
 import 'package:flutter/cupertino.dart';
 import 'package:logi_neko/features/auth/screens/auth_selection.dart';
 import 'package:logi_neko/features/dashboard/ui/screen/learning_report_screen.dart';
+import 'package:logi_neko/features/home/dto/user.dart';
 import 'package:logi_neko/features/home/ui/screen/home_screen.dart';
 import 'package:logi_neko/features/login/screen/login_screen.dart';
 import 'package:logi_neko/features/login/screen/start_screen.dart';
 import 'package:logi_neko/features/login/screen/customer_auth_screen.dart';
+import 'package:logi_neko/features/room/screen/contest_history_screen.dart';
 import 'package:logi_neko/features/room/screen/contest_list.dart';
 import 'package:logi_neko/features/room/screen/waiting_room_screen.dart';
 import 'package:logi_neko/features/room/screen/countdown_screen.dart';
 import 'package:logi_neko/features/room/screen/room_quiz_screen.dart';
 import 'package:logi_neko/features/room/screen/quiz_result_screen.dart';
+import 'package:logi_neko/features/room/screen/contest_result_screen.dart';
 import 'package:logi_neko/features/room/dto/question.dart';
 import 'package:logi_neko/features/character/ui/screen/character_screen.dart';
 import 'package:logi_neko/features/character/ui/screen/my_character_screen.dart';
@@ -47,9 +50,11 @@ class AppRouter extends _$AppRouter {
     AutoRoute(page: CountdownRoute.page, path: '/countdown'),
     AutoRoute(page: RoomQuizRoute.page, path: '/room-quiz'),
     AutoRoute(page: QuizResultRoute.page, path: '/quiz-result'),
+    AutoRoute(page: ContestResultRoute.page, path: '/contest-result'),
     AutoRoute(page: CharacterRoute.page, path: '/character'),
     AutoRoute(page: MyCharacterRoute.page, path: '/my-character'),
     AutoRoute(page: ContestListRoute.page, path: '/contest-list'),
     AutoRoute(page: LeaderboardRoute.page, path: '/leaderboard'),
+    AutoRoute(page: ContestHistoryRoute.page),
   ];
 }

@@ -60,7 +60,7 @@ class ContestService {
       throw Exception('Failed to delete contest');
     }
   }
-  Future<void> joinContest(int contestId, int accountId) async {
+  Future<int?> joinContest(int contestId, int accountId) async {
     final uri = Uri.parse('$baseUrl/api/game/$contestId/join')
         .replace(queryParameters: {'accountId': accountId.toString()});
 
@@ -72,7 +72,34 @@ class ContestService {
     print('🔑 [ContestAPI] Join contest response status: ${response.statusCode}');
     print('🔑 [ContestAPI] Join contest response body: ${response.body}');
 
-    if (response.statusCode != 200) {
+    if (response.statusCode == 200) {
+      try {
+        final jsonData = json.decode(response.body);
+        // Try to extract participantId from response
+        if (jsonData['data'] != null) {
+          // Backend might return participantId in different formats
+          final data = jsonData['data'];
+          int? participantId;
+          
+          // Try different field names
+          if (data['participantId'] != null) {
+            participantId = data['participantId'] as int;
+          } else if (data['id'] != null) {
+            participantId = data['id'] as int;
+          }
+          
+          if (participantId != null) {
+            print('✅ [ContestAPI] Joined contest successfully, participantId: $participantId');
+            return participantId;
+          }
+        }
+        print('⚠️ [ContestAPI] Joined contest but no participantId in response');
+        return null;
+      } catch (e) {
+        print('⚠️ [ContestAPI] Error parsing join response: $e');
+        return null;
+      }
+    } else {
       throw Exception('Failed to join contest: ${response.body}');
     }
   }
@@ -203,11 +230,16 @@ class ContestService {
   }
 
   Future<QuestionResponse> getQuestionById(int id) async {
+    print('📋 [ContestAPI] Fetching question by ID: $id');
     final response = await http.get(Uri.parse("$baseUrl/api/questions/$id"));
+    print('📋 [ContestAPI] Response status: ${response.statusCode}');
+    
     if (response.statusCode == 200) {
       final json = jsonDecode(response.body);
+      print('📋 [ContestAPI] Question data: ${json["data"]}');
       return QuestionResponse.fromJson(json["data"]);
     } else {
+      print('❌ [ContestAPI] Failed to load question: ${response.body}');
       throw Exception("Failed to load question");
     }
   }
@@ -221,6 +253,32 @@ class ContestService {
       return jsonData['data']['leaderboard'] as List<dynamic>;
     } else {
       throw Exception('Failed to get leaderboard: ${response.body}');
+    }
+  }
+
+
+  Future<void> rewardTopFive(int contestId) async {
+    final uri = Uri.parse('$baseUrl/api/contest/$contestId/reward-top-5');
+    final response = await http.post(uri);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to reward top five participants: ${response.body}');
+    }
+    print('🏆 [ContestAPI] Rewarded top five for contest $contestId');
+  }
+
+  Future<List<ContestHistory>> getContestHistory(int accountId) async {
+    final uri = Uri.parse('$baseUrl/api/contest/history/$accountId');
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      final List<dynamic> historyData = jsonData['data'];
+      return historyData
+          .map((json) => ContestHistory.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } else {
+      throw Exception('Failed to load contest history: ${response.body}');
     }
   }
 }

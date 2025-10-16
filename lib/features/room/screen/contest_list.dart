@@ -19,6 +19,7 @@ class ContestListScreen extends StatefulWidget {
 class _ContestListScreenState extends State<ContestListScreen> {
   final ContestService _contestService = ContestService();
   final TextEditingController _searchController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
 
   List<Contest> _contests = [];
   bool _isLoading = false;
@@ -34,7 +35,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
   }
 
   Future<void> _loadContests() async {
-    setState(() => _isLoading = true);
+    if (mounted) setState(() => _isLoading = true);
 
     try {
       final response = await _contestService.getAllContests(
@@ -43,67 +44,80 @@ class _ContestListScreenState extends State<ContestListScreen> {
         size: 10,
       );
 
-      setState(() {
-        _contests = response.content;
-        _totalPages = response.totalPages;
-        _totalElements = response.totalElements;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _contests = response.content;
+          _totalPages = response.totalPages;
+          _totalElements = response.totalElements;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
-      _showErrorDialog('Không thể tải danh sách contest: $e');
+      if (mounted) {
+        setState(() => _isLoading = false);
+        _showErrorDialog('Không thể tải danh sách contest: $e');
+      }
     }
   }
 
   Future<void> _joinContest(int contestId) async {
     setState(() => _isLoading = true);
     try {
-      // Get current logged-in user ID from SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       final accountId = prefs.getInt('currentUserId');
-      
+
       if (accountId == null) {
         _showErrorDialog('Vui lòng đăng nhập để tham gia contest');
         return;
       }
-      
+
       print('🔑 [ContestList] Joining contest $contestId with accountId: $accountId');
-      
+
       await _contestService.joinContest(contestId, accountId);
+
+      // Try to get participantId from join response
+      final participantId = await _contestService.joinContest(contestId, accountId);
       
-      // Get the participant ID after joining
-      final participants = await _contestService.getAllParticipantsInContest(contestId);
-      print('📋 [ContestList] All participants: $participants');
+      int? finalParticipantId = participantId;
       
-      // Find the participant that was just created (usually the last one)
-      // or find by accountName if available
-      Participant? participant;
-      if (participants.isNotEmpty) {
-        // Try to find by accountName first, then fallback to last participant
-        participant = participants.firstWhere(
-          (p) => p.accountName?.toLowerCase().contains('user') == true || 
-                 p.accountName?.toLowerCase().contains('minh') == true,
-          orElse: () => participants.last,
-        );
+      // If not in response, get from participants list
+      if (finalParticipantId == null) {
+        print('⚠️ [ContestList] No participantId in join response, fetching from participants list...');
+        final participants = await _contestService.getAllParticipantsInContest(contestId);
+        print('📋 [ContestList] All participants after join: ${participants.length} participants');
+        
+        // Find the newest participant (the one we just created)
+        if (participants.isNotEmpty) {
+          // Sort by joinAt to find the most recent
+          participants.sort((a, b) {
+            if (a.joinAt == null) return 1;
+            if (b.joinAt == null) return -1;
+            return b.joinAt!.compareTo(a.joinAt!);
+          });
+          
+          // The first one after sorting is the newest
+          final myParticipant = participants.first;
+          finalParticipantId = myParticipant.id;
+          print('📋 [ContestList] Found newest participant: id=${myParticipant.id}, name=${myParticipant.accountName}, joinAt=${myParticipant.joinAt}');
+        }
       }
-      
-      if (participant != null) {
-        // Save participant ID for later use
-        await prefs.setInt('participantId_$contestId', participant.id);
-        print('💾 [ContestList] Saved participantId: ${participant.id} for contest: $contestId');
+
+      if (finalParticipantId != null) {
+        await prefs.setInt('participantId_$contestId', finalParticipantId);
+        print('💾 [ContestList] Saved participantId: $finalParticipantId for contest: $contestId (accountId: $accountId)');
       } else {
         print('❌ [ContestList] Could not find participant after joining');
         _showErrorDialog('Không thể lấy thông tin participant');
         return;
       }
-      
+
       _showSuccessSnackBar('Đã tham gia contest thành công!');
       context.router.push(WaitingRoomRoute(contestId: contestId));
     } catch (e) {
       print('❌ [ContestList] Error joining contest: $e');
       _showErrorDialog('Không thể tham gia contest: $e');
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -111,12 +125,34 @@ class _ContestListScreenState extends State<ContestListScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Lỗi'),
-        content: Text(message),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.error.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.error_outline, color: AppColors.error, size: 24),
+            ),
+            const SizedBox(width: 12),
+            const Text('Lỗi', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
+        content: Text(
+          message,
+          style: const TextStyle(color: AppColors.textSecondary, fontSize: 14),
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Đóng'),
+            style: TextButton.styleFrom(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              backgroundColor: AppColors.error.withOpacity(0.1),
+            ),
+            child: const Text('Đóng', style: TextStyle(color: AppColors.error, fontWeight: FontWeight.w600)),
           ),
         ],
       ),
@@ -126,9 +162,31 @@ class _ContestListScreenState extends State<ContestListScreen> {
   void _showSuccessSnackBar(String message) {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text(message),
+        content: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(6),
+              decoration: const BoxDecoration(
+                color: Colors.white24,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check_circle, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Text(
+                message,
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500),
+              ),
+            ),
+          ],
+        ),
         backgroundColor: AppColors.success,
         behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        margin: const EdgeInsets.all(16),
+        elevation: 6,
+        duration: const Duration(seconds: 3),
       ),
     );
   }
@@ -170,41 +228,70 @@ class _ContestListScreenState extends State<ContestListScreen> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 20),
+      padding: const EdgeInsets.fromLTRB(12, 12, 20, 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.7),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x08000000),
+            blurRadius: 10,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
       child: Row(
         children: [
-          // Nút back
-          IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary),
-            onPressed: () => context.router.back(),
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              shape: BoxShape.circle,
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x0A000000),
+                  blurRadius: 8,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+            child: IconButton(
+              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
+              onPressed: () => context.router.back(),
+            ),
           ),
-          const SizedBox(width: 8),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  'Quản lý Contest',
+                  'Danh sách Contest',
                   style: TextStyle(
-                    fontSize: 20, // nhỏ lại
+                    fontSize: 18,
                     fontWeight: FontWeight.bold,
                     color: AppColors.textPrimary,
+                    letterSpacing: -0.5,
                   ),
-                  textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 2),
                 Text(
-                  '$_totalElements cuộc thi',
+                  '$_totalElements cuộc thi có sẵn',
                   style: const TextStyle(
                     fontSize: 12,
                     color: AppColors.textSecondary,
+                    fontWeight: FontWeight.w500,
                   ),
-                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.history_rounded, color: AppColors.textPrimary),
+                  onPressed: () {
+                    context.router.push(const ContestHistoryRoute());
+                  },
+                  tooltip: 'Lịch sử thi đấu',
                 ),
               ],
             ),
           ),
-          const SizedBox(width: 48), // để cân bằng với icon back bên trái
         ],
       ),
     );
@@ -212,22 +299,37 @@ class _ContestListScreenState extends State<ContestListScreen> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: AppColors.cardShadow,
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x0A000000),
+              blurRadius: 16,
+              offset: Offset(0, 4),
+            ),
+          ],
         ),
         child: TextField(
           controller: _searchController,
+          style: const TextStyle(fontSize: 14, color: AppColors.textPrimary),
           decoration: InputDecoration(
-            hintText: 'Tìm kiếm contest...',
-            hintStyle: const TextStyle(color: AppColors.textLight),
-            prefixIcon: const Icon(Icons.search, color: AppColors.primaryPurple),
+            hintText: 'Tìm kiếm contest theo tên...',
+            hintStyle: TextStyle(color: AppColors.textLight.withOpacity(0.7), fontSize: 14),
+            prefixIcon: Container(
+              margin: const EdgeInsets.all(12),
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                gradient: AppColors.primaryGradient,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: const Icon(Icons.search_rounded, color: Colors.white, size: 18),
+            ),
             suffixIcon: _searchController.text.isNotEmpty
                 ? IconButton(
-              icon: const Icon(Icons.clear, color: AppColors.textLight),
+              icon: const Icon(Icons.clear_rounded, color: AppColors.textLight, size: 20),
               onPressed: () {
                 _searchController.clear();
                 setState(() {
@@ -239,11 +341,11 @@ class _ContestListScreenState extends State<ContestListScreen> {
             )
                 : null,
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 16),
+            contentPadding: const EdgeInsets.symmetric(vertical: 14, horizontal: 8),
           ),
           onSubmitted: (value) {
             setState(() {
-              _searchKeyword = value;
+              _searchKeyword = value.trim();
               _currentPage = 0;
             });
             _loadContests();
@@ -255,163 +357,131 @@ class _ContestListScreenState extends State<ContestListScreen> {
 
   Widget _buildContestList() {
     return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
+      controller: _scrollController,
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
       itemCount: _contests.length,
       itemBuilder: (context, index) {
-        final contest = _contests[index];
-        return _buildContestCard(contest);
+        return _buildContestCard(_contests[index], index);
       },
     );
   }
 
-  Widget _buildContestCard(Contest contest) {
+  Widget _buildContestCard(Contest contest, int index) {
     final bool isJoinable = contest.status.toUpperCase() == 'OPEN';
-    final Gradient buttonGradient = isJoinable
-        ? AppColors.primaryGradient
-        : const LinearGradient(colors: [Color(0xFF94A3B8), Color(0xFF64748B)]);
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [Colors.white, Color(0xFFFAFAFA)],
-        ),
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x0F000000),
-            blurRadius: 24,
-            offset: Offset(0, 8),
+    return TweenAnimationBuilder(
+      duration: Duration(milliseconds: 300 + (index * 50)),
+      tween: Tween<double>(begin: 0, end: 1),
+      curve: Curves.easeOutCubic,
+      builder: (context, double value, child) {
+        return Transform.translate(
+          offset: Offset(0, 20 * (1 - value)),
+          child: Opacity(
+            opacity: value,
+            child: child,
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
+        );
+      },
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 12),
+        decoration: BoxDecoration(
+          color: Colors.white,
           borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            // Navigate to contest detail screen
-          },
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Icon with fixed size
-                    Container(
-                      width: 60,
-                      height: 60,
-                      decoration: BoxDecoration(
-                        gradient: _getStatusGradient(contest.status),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
+          boxShadow: const [
+            BoxShadow(
+              color: Color(0x08000000),
+              blurRadius: 20,
+              offset: Offset(0, 4),
+            ),
+          ],
+        ),
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            borderRadius: BorderRadius.circular(20),
+            onTap: () {},
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 56,
+                        height: 56,
+                        decoration: BoxDecoration(
+                          gradient: _getStatusGradient(contest.status),
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: _getStatusGradient(contest.status).colors.first.withOpacity(0.3),
+                              blurRadius: 12,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
                         child: Icon(
                           _getStatusIcon(contest.status),
                           color: Colors.white,
-                          size: 30,
+                          size: 28,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 16),
-                    // Content
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  contest.title,
-                                  style: const TextStyle(
-                                    fontSize: 18,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.textPrimary,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              contest.title,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                                letterSpacing: -0.3,
                               ),
-                              const SizedBox(width: 8),
-                              _buildStatusBadge(contest.status),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            contest.description,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
-                              height: 1.4,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 8,
-                            runSpacing: 8,
-                            children: [
-                              _buildInfoChip(
-                                Icons.qr_code_rounded,
-                                contest.code,
-                                AppColors.primaryPurple,
-                              ),
-                              _buildInfoChip(
-                                Icons.calendar_today_rounded,
-                                _formatDate(contest.startTime),
-                                AppColors.primaryBlue,
-                              ),
-                            ],
-                          ),
-                        ],
+                            const SizedBox(height: 4),
+                            _buildStatusBadge(contest.status),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                // Join Button
-                Container(
-                  width: double.infinity,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(12),
-                    gradient: buttonGradient,
+                    ],
                   ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(12),
-                      onTap: isJoinable ? () => _joinContest(contest.id) : null,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          const Icon(
-                            Icons.login_rounded,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            isJoinable ? 'Tham gia' : 'Đã đóng/Đang diễn ra',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 15,
-                            ),
-                          ),
-                        ],
+                  const SizedBox(height: 12),
+                  Text(
+                    contest.description,
+                    style: const TextStyle(
+                      fontSize: 13,
+                      color: AppColors.textSecondary,
+                      height: 1.5,
+                    ),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 12),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: [
+                      _buildInfoChip(
+                        Icons.qr_code_scanner_rounded,
+                        contest.code,
+                        AppColors.primaryPurple,
                       ),
-                    ),
+                      _buildInfoChip(
+                        Icons.calendar_today_rounded,
+                        _formatDate(contest.startTime),
+                        AppColors.primaryBlue,
+                      ),
+                    ],
                   ),
-                ),
-              ],
+                  const SizedBox(height: 14),
+                  _buildJoinButton(isJoinable, contest.id),
+                ],
+              ),
             ),
           ),
         ),
@@ -419,64 +489,128 @@ class _ContestListScreenState extends State<ContestListScreen> {
     );
   }
 
-  Widget _buildStatusBadge(String status) {
-    Color color;
-    String text;
+  Widget _buildJoinButton(bool isJoinable, int contestId) {
+    return Container(
+      width: double.infinity,
+      height: 46,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(14),
+        gradient: isJoinable
+            ? AppColors.primaryGradient
+            : LinearGradient(colors: [Colors.grey.shade300, Colors.grey.shade400]),
+        boxShadow: isJoinable
+            ? [
+          BoxShadow(
+            color: AppColors.primaryPurple.withOpacity(0.3),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ]
+            : null,
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: isJoinable ? () => _joinContest(contestId) : null,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                isJoinable ? Icons.login_rounded : Icons.lock_rounded,
+                color: Colors.white,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                isJoinable ? 'Tham gia ngay' : 'Không khả dụng',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                  letterSpacing: 0.3,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-    switch (status.toUpperCase()) {
-      case 'OPEN':
-        color = AppColors.success;
-        text = 'Mở';
-        break;
-      case 'RUNNING':
-        color = AppColors.primaryBlue;
-        text = 'Đang diễn ra';
-        break;
-      case 'CLOSED':
-        color = AppColors.textLight;
-        text = 'Đã đóng';
-        break;
-      default:
-        color = AppColors.textLight;
-        text = status;
-    }
+  Widget _buildStatusBadge(String status) {
+    final Map<String, Map<String, dynamic>> statusConfig = {
+      'OPEN': {
+        'color': AppColors.success,
+        'text': 'Đang mở',
+        'icon': Icons.circle,
+      },
+      'RUNNING': {
+        'color': AppColors.primaryBlue,
+        'text': 'Đang diễn ra',
+        'icon': Icons.circle,
+      },
+      'CLOSED': {
+        'color': AppColors.textLight,
+        'text': 'Đã kết thúc',
+        'icon': Icons.circle,
+      },
+    };
+
+    final config = statusConfig[status.toUpperCase()] ?? statusConfig['CLOSED']!;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: color.withOpacity(0.3)),
+        color: (config['color'] as Color).withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: (config['color'] as Color).withOpacity(0.3), width: 1),
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: color,
-        ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(
+            config['icon'] as IconData,
+            size: 8,
+            color: config['color'] as Color,
+          ),
+          const SizedBox(width: 6),
+          Text(
+            config['text'] as String,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: config['color'] as Color,
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildInfoChip(IconData icon, String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.1),
-        borderRadius: BorderRadius.circular(12),
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: color.withOpacity(0.2), width: 1),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
           Icon(icon, size: 14, color: color),
           const SizedBox(width: 6),
-          Text(
-            text,
-            style: TextStyle(
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-              color: color,
+          Flexible(
+            child: Text(
+              text,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: color,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -499,9 +633,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
           colors: [Color(0xFF94A3B8), Color(0xFF64748B)],
         );
       default:
-        return const LinearGradient(
-          colors: [Color(0xFFC084FC), Color(0xFFF472B6)],
-        );
+        return AppColors.primaryGradient;
     }
   }
 
@@ -510,7 +642,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
       case 'OPEN':
         return Icons.lock_open_rounded;
       case 'RUNNING':
-        return Icons.play_circle_rounded;
+        return Icons.play_circle_filled_rounded;
       case 'CLOSED':
         return Icons.lock_rounded;
       default:
@@ -519,98 +651,139 @@ class _ContestListScreenState extends State<ContestListScreen> {
   }
 
   String _formatDate(DateTime date) {
-    return '${date.day}/${date.month}/${date.year}';
+    return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
   }
 
   Widget _buildPagination() {
     return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        boxShadow: [
+      padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.9),
+        boxShadow: const [
           BoxShadow(
-            color: Color(0x0A000000),
-            blurRadius: 10,
-            offset: Offset(0, -5),
+            color: Color(0x08000000),
+            blurRadius: 12,
+            offset: Offset(0, -3),
           ),
         ],
       ),
-      child: SingleChildScrollView(
-        scrollDirection: Axis.horizontal,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            IconButton(
-              icon: const Icon(Icons.chevron_left_rounded),
-              onPressed: _currentPage > 0
-                  ? () {
-                setState(() => _currentPage--);
-                _loadContests();
-              }
-                  : null,
-              color: AppColors.primaryPurple,
-            ),
-            ...List.generate(
-              _totalPages > 5 ? 5 : _totalPages,
-                  (index) {
-                int pageNum;
-                if (_totalPages <= 5) {
-                  pageNum = index;
-                } else if (_currentPage < 3) {
-                  pageNum = index;
-                } else if (_currentPage > _totalPages - 3) {
-                  pageNum = _totalPages - 5 + index;
-                } else {
-                  pageNum = _currentPage - 2 + index;
-                }
+      child: SafeArea(
+        top: false,
+        child: SingleChildScrollView(
+          scrollDirection: Axis.horizontal,
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              _buildPaginationButton(
+                icon: Icons.chevron_left_rounded,
+                enabled: _currentPage > 0,
+                onTap: () {
+                  setState(() => _currentPage--);
+                  _loadContests();
+                },
+              ),
+              const SizedBox(width: 8),
+              ..._buildPageNumbers(),
+              const SizedBox(width: 8),
+              _buildPaginationButton(
+                icon: Icons.chevron_right_rounded,
+                enabled: _currentPage < _totalPages - 1,
+                onTap: () {
+                  setState(() => _currentPage++);
+                  _loadContests();
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
 
-                return Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  child: InkWell(
-                    onTap: () {
-                      setState(() => _currentPage = pageNum);
-                      _loadContests();
-                    },
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        gradient: _currentPage == pageNum
-                            ? AppColors.primaryGradient
-                            : null,
-                        color: _currentPage == pageNum
-                            ? null
-                            : AppColors.surfaceLight,
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Center(
-                        child: Text(
-                          '${pageNum + 1}',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w600,
-                            fontSize: 13,
-                            color: _currentPage == pageNum
-                                ? Colors.white
-                                : AppColors.textSecondary,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
+  Widget _buildPaginationButton({
+    required IconData icon,
+    required bool enabled,
+    required VoidCallback onTap,
+  }) {
+    return Container(
+      width: 36,
+      height: 36,
+      decoration: BoxDecoration(
+        gradient: enabled ? AppColors.primaryGradient : null,
+        color: enabled ? null : AppColors.surfaceLight,
+        borderRadius: BorderRadius.circular(10),
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(10),
+          onTap: enabled ? onTap : null,
+          child: Icon(
+            icon,
+            color: enabled ? Colors.white : AppColors.textLight,
+            size: 20,
+          ),
+        ),
+      ),
+    );
+  }
+
+  List<Widget> _buildPageNumbers() {
+    List<Widget> pages = [];
+    int displayPages = _totalPages > 5 ? 5 : _totalPages;
+
+    for (int i = 0; i < displayPages; i++) {
+      int pageNum;
+      if (_totalPages <= 5) {
+        pageNum = i;
+      } else if (_currentPage < 3) {
+        pageNum = i;
+      } else if (_currentPage > _totalPages - 3) {
+        pageNum = _totalPages - 5 + i;
+      } else {
+        pageNum = _currentPage - 2 + i;
+      }
+
+      pages.add(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 3),
+          child: _buildPageNumberButton(pageNum),
+        ),
+      );
+    }
+
+    return pages;
+  }
+
+  Widget _buildPageNumberButton(int pageNum) {
+    final isSelected = _currentPage == pageNum;
+
+    return InkWell(
+      onTap: () {
+        setState(() => _currentPage = pageNum);
+        _loadContests();
+      },
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          gradient: isSelected ? AppColors.primaryGradient : null,
+          color: isSelected ? null : AppColors.surfaceLight,
+          borderRadius: BorderRadius.circular(10),
+          border: isSelected
+              ? null
+              : Border.all(color: AppColors.textLight.withOpacity(0.3)),
+        ),
+        child: Center(
+          child: Text(
+            '${pageNum + 1}',
+            style: TextStyle(
+              fontWeight: FontWeight.w600,
+              fontSize: 13,
+              color: isSelected ? Colors.white : AppColors.textSecondary,
             ),
-            IconButton(
-              icon: const Icon(Icons.chevron_right_rounded),
-              onPressed: _currentPage < _totalPages - 1
-                  ? () {
-                setState(() => _currentPage++);
-                _loadContests();
-              }
-                  : null,
-              color: AppColors.primaryPurple,
-            ),
-          ],
+          ),
         ),
       ),
     );
@@ -622,21 +795,25 @@ class _ContestListScreenState extends State<ContestListScreen> {
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Container(
-            padding: const EdgeInsets.all(20),
+            width: 80,
+            height: 80,
             decoration: BoxDecoration(
               gradient: AppColors.primaryGradient,
               shape: BoxShape.circle,
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: Color(0x33C084FC),
-                  blurRadius: 30,
-                  offset: Offset(0, 10),
+                  color: AppColors.primaryPurple.withOpacity(0.3),
+                  blurRadius: 24,
+                  offset: const Offset(0, 8),
                 ),
               ],
             ),
-            child: const CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              strokeWidth: 3,
+            child: const Padding(
+              padding: EdgeInsets.all(20),
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                strokeWidth: 3,
+              ),
             ),
           ),
           const SizedBox(height: 24),
@@ -645,7 +822,8 @@ class _ContestListScreenState extends State<ContestListScreen> {
             style: TextStyle(
               fontSize: 15,
               color: AppColors.textSecondary,
-              fontWeight: FontWeight.w500,
+              fontWeight: FontWeight.w600,
+              letterSpacing: 0.3,
             ),
           ),
         ],
@@ -655,37 +833,48 @@ class _ContestListScreenState extends State<ContestListScreen> {
 
   Widget _buildEmptyState() {
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
         padding: const EdgeInsets.all(32),
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              padding: const EdgeInsets.all(32),
+              width: 120,
+              height: 120,
               decoration: BoxDecoration(
                 gradient: AppColors.primaryGradient,
                 shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primaryPurple.withOpacity(0.3),
+                    blurRadius: 30,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
               ),
               child: const Icon(
                 Icons.inbox_rounded,
-                size: 64,
+                size: 60,
                 color: Colors.white,
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 28),
             const Text(
               'Chưa có contest nào',
               style: TextStyle(
-                fontSize: 22,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textPrimary,
+                letterSpacing: -0.5,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Hãy tạo contest đầu tiên của bạn',
-              style: TextStyle(
-                fontSize: 15,
+            Text(
+              _searchKeyword.isNotEmpty
+                  ? 'Không tìm thấy kết quả phù hợp'
+                  : 'Danh sách contest đang trống',
+              style: const TextStyle(
+                fontSize: 14,
                 color: AppColors.textSecondary,
               ),
               textAlign: TextAlign.center,
@@ -699,6 +888,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
   @override
   void dispose() {
     _searchController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 }

@@ -22,7 +22,8 @@ class CountdownScreen extends StatefulWidget {
   State<CountdownScreen> createState() => _CountdownScreenState();
 }
 
-class _CountdownScreenState extends State<CountdownScreen> {
+class _CountdownScreenState extends State<CountdownScreen>
+    with TickerProviderStateMixin {
   int _countdown = 5;
   Timer? _timer;
   Timer? _timeoutTimer;
@@ -34,17 +35,55 @@ class _CountdownScreenState extends State<CountdownScreen> {
   String _statusMessage = 'Chuẩn bị bắt đầu!';
   final ContestService _contestService = ContestService();
 
+  // Animation controllers
+  late AnimationController _progressController;
+  late AnimationController _pulseController;
+  late Animation<double> _progressAnimation;
+  late Animation<double> _pulseAnimation;
+
   @override
   void initState() {
     super.initState();
+
+    // Progress animation - smooth 60fps
+    _progressController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1000),
+    );
+
+    // Pulse animation for loading state
+    _pulseController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat(reverse: true);
+
+    _pulseAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
+      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+    );
+
+    _progressAnimation = Tween<double>(begin: 0.0, end: 0.2).animate(
+      CurvedAnimation(parent: _progressController, curve: Curves.easeOut),
+    );
+
     _startCountdown();
   }
 
   void _startCountdown() {
+    _progressController.forward();
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (_countdown > 1) {
         setState(() {
           _countdown--;
+          final progress = (6 - _countdown) / 5;
+          _progressAnimation = Tween<double>(
+            begin: progress - 0.2,
+            end: progress,
+          ).animate(CurvedAnimation(
+            parent: _progressController,
+            curve: Curves.easeOut,
+          ));
+          _progressController.reset();
+          _progressController.forward();
         });
       } else {
         timer.cancel();
@@ -54,104 +93,67 @@ class _CountdownScreenState extends State<CountdownScreen> {
   }
 
   void _connectToWebSocket() {
-    print('🚀 [CountdownScreen] Starting STOMP WebSocket connection for contest ${widget.contestId}');
     setState(() {
       _isWaitingForContestStart = true;
-      _statusMessage = 'Đang chờ contest bắt đầu...';
+      _statusMessage = 'Đang kết nối...';
     });
 
     _stompService = StompWebSocketService();
     _stompService!.connect(widget.contestId);
 
     _webSocketSubscription = _stompService!.events.listen(
-      (gameEvent) {
-        print('🎯 [CountdownScreen] Received STOMP event: ${gameEvent.eventType}');
+          (gameEvent) {
         if (gameEvent.eventType == 'contest.started') {
-          print('🎉 [CountdownScreen] Contest started via STOMP! Navigating to quiz...');
           _navigateToQuiz();
         }
       },
       onError: (error) {
-        print('❌ [CountdownScreen] STOMP WebSocket error: $error');
-        print('🔄 [CountdownScreen] Falling back to polling service...');
         _startPollingFallback();
       },
     );
 
-    // Try to start the contest automatically
     _tryStartContest();
 
-    // Always start polling fallback after 2 seconds regardless of WebSocket status
     _timeoutTimer = Timer(const Duration(seconds: 2), () {
       if (_isWaitingForContestStart && _pollingService == null) {
-        print('⏰ [CountdownScreen] Starting polling fallback (2s timeout)...');
         _startPollingFallback();
       }
     });
   }
 
   void _startPollingFallback() {
-    print('🔄 [CountdownScreen] Starting polling fallback for contest ${widget.contestId}');
     setState(() {
-      _statusMessage = 'Đang kiểm tra trạng thái contest...';
+      _statusMessage = 'Đang kiểm tra...';
     });
 
     _pollingService = ContestPollingService();
     _pollingService!.startPolling(widget.contestId);
 
     _pollingSubscription = _pollingService!.statusStream.listen(
-      (status) {
-        print('🔄 [CountdownScreen] Polling status: $status');
+          (status) {
         if (status == ContestStatus.started) {
-          print('🎉 [CountdownScreen] Contest started via polling! Navigating to quiz...');
           _navigateToQuiz();
         }
-      },
-      onError: (error) {
-        print('❌ [CountdownScreen] Polling error: $error');
-        setState(() {
-          _statusMessage = 'Lỗi kiểm tra trạng thái: $error';
-        });
       },
     );
   }
 
   Future<void> _tryStartContest() async {
     try {
-      print('🎯 [CountdownScreen] Attempting to start contest ${widget.contestId}');
       setState(() {
-        _statusMessage = 'Đang khởi động contest...';
+        _statusMessage = 'Đang khởi động...';
       });
-      
+
       await _contestService.startContest(widget.contestId);
-      print('✅ [CountdownScreen] Contest started successfully');
-      
+
       setState(() {
-        _statusMessage = 'Contest đã bắt đầu! Đang chờ câu hỏi...';
+        _statusMessage = 'Sẵn sàng!';
       });
     } catch (e) {
       final errorMessage = e.toString();
-      print('⚠️ [CountdownScreen] Failed to start contest: $e');
-      
-      // Check if contest is already running
       if (errorMessage.contains('RUNNING') || errorMessage.contains('already')) {
-        print('ℹ️ [CountdownScreen] Contest is already running, proceeding...');
         setState(() {
-          _statusMessage = 'Contest đã bắt đầu! Đang chờ câu hỏi...';
-        });
-      } else {
-        print('❌ [CountdownScreen] Unexpected error starting contest: $e');
-        setState(() {
-          _statusMessage = 'Lỗi khởi động contest. Đang thử lại...';
-        });
-        
-        // Try again after 2 seconds
-        Timer(const Duration(seconds: 2), () {
-          if (mounted) {
-            setState(() {
-              _statusMessage = 'Đang chờ contest bắt đầu...';
-            });
-          }
+          _statusMessage = 'Sẵn sàng!';
         });
       }
     }
@@ -163,7 +165,7 @@ class _CountdownScreenState extends State<CountdownScreen> {
       _stompService?.disconnect();
       _pollingSubscription?.cancel();
       _pollingService?.dispose();
-      
+
       context.router.replaceAll([
         RoomQuizRoute(
           contestId: widget.contestId,
@@ -181,6 +183,8 @@ class _CountdownScreenState extends State<CountdownScreen> {
     _stompService?.dispose();
     _pollingSubscription?.cancel();
     _pollingService?.dispose();
+    _progressController.dispose();
+    _pulseController.dispose();
     super.dispose();
   }
 
@@ -188,28 +192,25 @@ class _CountdownScreenState extends State<CountdownScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        decoration: const BoxDecoration(
+        decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
             colors: [
-              AppColors.gradientStart,
-              AppColors.gradientMiddle,
+              AppColors.gradientStart.withOpacity(0.9),
+              AppColors.gradientMiddle.withOpacity(0.95),
               AppColors.gradientEnd,
             ],
-            stops: [0.0, 0.5, 1.0],
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
+          child: Center(
             child: LayoutBuilder(
               builder: (context, constraints) {
-                // Responsive layout for mobile
-                if (constraints.maxWidth < 600) {
-                  return _buildMobileLayout();
-                }
-                return _buildDesktopLayout();
+                final isMobile = constraints.maxWidth < 600;
+                return isMobile
+                    ? _buildMobileLayout()
+                    : _buildDesktopLayout();
               },
             ),
           ),
@@ -222,237 +223,268 @@ class _CountdownScreenState extends State<CountdownScreen> {
     return Column(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        ShaderMask(
-          shaderCallback: (bounds) => const LinearGradient(
-            colors: [Colors.white, Colors.white70],
-          ).createShader(bounds),
-          child: Text(
-            _statusMessage,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 28,
-              fontWeight: FontWeight.bold,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        const SizedBox(height: 40),
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.white.withOpacity(0.2),
-            borderRadius: BorderRadius.circular(30),
-            border: Border.all(
-              color: Colors.white.withOpacity(0.3),
-              width: 1,
-            ),
-          ),
-          child: Text(
-            _isWaitingForContestStart 
-                ? 'Đang kết nối với server...'
-                : 'Trò chơi sẽ bắt đầu trong...',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-            textAlign: TextAlign.center,
-          ),
-        ),
-        const SizedBox(height: 40),
-        Container(
-          width: 200,
-          height: 200,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Colors.white, Colors.grey.shade50],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.gradientMiddle.withOpacity(0.4),
-                blurRadius: 30,
-                offset: const Offset(0, 15),
-              ),
-              BoxShadow(
-                color: Colors.white.withOpacity(0.8),
-                blurRadius: 10,
-                offset: const Offset(-5, -5),
-              ),
-            ],
-          ),
-          child: Center(
-            child: _isWaitingForContestStart
-                ? const CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(AppColors.gradientStart),
-                    strokeWidth: 4,
-                  )
-                : ShaderMask(
-                    shaderCallback: (bounds) => const LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        AppColors.gradientStart,
-                        AppColors.gradientMiddle,
-                      ],
-                    ).createShader(bounds),
-                    child: Text(
-                      '$_countdown',
-                      style: const TextStyle(
-                        fontSize: 80,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ),
-          ),
-        ),
-        const SizedBox(height: 40),
-        if (!_isWaitingForContestStart)
-          Container(
-            width: 200,
-            height: 10,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.2),
-              borderRadius: BorderRadius.circular(5),
-            ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(5),
-              child: LinearProgressIndicator(
-                value: (5 - _countdown) / 5,
-                backgroundColor: Colors.transparent,
-                valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-              ),
-            ),
-          ),
+        _buildStatusMessage(),
+        const SizedBox(height: 60),
+        _buildCountdownCircle(220),
+        const SizedBox(height: 60),
+        if (!_isWaitingForContestStart) _buildProgressBar(280),
       ],
     );
   }
 
   Widget _buildDesktopLayout() {
     return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Expanded(
-          flex: 1,
+        Flexible(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
-            crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              ShaderMask(
-                shaderCallback: (bounds) => const LinearGradient(
-                  colors: [Colors.white, Colors.white70],
-                ).createShader(bounds),
-                child: Text(
-                  _statusMessage,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
+              _buildStatusMessage(),
               const SizedBox(height: 40),
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 15),
-                decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.2),
-                  borderRadius: BorderRadius.circular(30),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Text(
-                  _isWaitingForContestStart 
-                      ? 'Đang kết nối với server...'
-                      : 'Trò chơi sẽ bắt đầu trong...',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w500,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ),
-              const SizedBox(height: 40),
-              if (!_isWaitingForContestStart)
-                Container(
-                  width: 250,
-                  height: 12,
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(6),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: (5 - _countdown) / 5,
-                      backgroundColor: Colors.transparent,
-                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
-                    ),
-                  ),
-                ),
+              if (!_isWaitingForContestStart) _buildProgressBar(350),
             ],
           ),
         ),
-        const SizedBox(width: 40),
-        Expanded(
-          flex: 1,
-          child: Center(
-            child: Container(
-              width: 250,
-              height: 250,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.white, Colors.grey.shade50],
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: AppColors.gradientMiddle.withOpacity(0.4),
-                    blurRadius: 30,
-                    offset: const Offset(0, 15),
-                  ),
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.8),
-                    blurRadius: 10,
-                    offset: const Offset(-5, -5),
-                  ),
+        const SizedBox(width: 100),
+        _buildCountdownCircle(300),
+      ],
+    );
+  }
+
+  Widget _buildStatusMessage() {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 600),
+      tween: Tween(begin: 0.0, end: 1.0),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) {
+        return Opacity(
+          opacity: value,
+          child: Transform.translate(
+            offset: Offset(0, 30 * (1 - value)),
+            child: child,
+          ),
+        );
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        decoration: BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Colors.white.withOpacity(0.15),
+              Colors.white.withOpacity(0.05),
+            ],
+          ),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: Colors.white.withOpacity(0.2),
+            width: 1.5,
+          ),
+        ),
+        child: Text(
+          _statusMessage,
+          style: const TextStyle(
+            color: Colors.white,
+            fontSize: 28,
+            fontWeight: FontWeight.w700,
+            letterSpacing: 0.5,
+            shadows: [
+              Shadow(
+                color: Color(0x40000000),
+                blurRadius: 10,
+                offset: Offset(0, 2),
+              ),
+            ],
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCountdownCircle(double size) {
+    return TweenAnimationBuilder<double>(
+      duration: const Duration(milliseconds: 900),
+      tween: Tween(begin: 0.0, end: 1.0),
+      curve: Curves.elasticOut,
+      builder: (context, value, child) {
+        return Transform.scale(
+          scale: value,
+          child: child,
+        );
+      },
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: const RadialGradient(
+            colors: [
+              Colors.white,
+              Color(0xFFFAFAFA),
+            ],
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.white.withOpacity(0.6),
+              blurRadius: 50,
+              spreadRadius: 10,
+            ),
+            BoxShadow(
+              color: AppColors.gradientMiddle.withOpacity(0.4),
+              blurRadius: 80,
+              offset: const Offset(0, 25),
+            ),
+          ],
+        ),
+        child: Center(
+          child: _isWaitingForContestStart
+              ? _buildPulsingLoader()
+              : _buildAnimatedCountdown(size),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPulsingLoader() {
+    return AnimatedBuilder(
+      animation: _pulseAnimation,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _pulseAnimation.value,
+          child: Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  AppColors.gradientStart,
+                  AppColors.gradientMiddle,
                 ],
               ),
-              child: Center(
-                child: _isWaitingForContestStart
-                    ? const CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.gradientStart),
-                        strokeWidth: 4,
-                      )
-                    : ShaderMask(
-                        shaderCallback: (bounds) => const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [
-                            AppColors.gradientStart,
-                            AppColors.gradientMiddle,
-                          ],
-                        ).createShader(bounds),
-                        child: Text(
-                          '$_countdown',
-                          style: const TextStyle(
-                            fontSize: 100,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                          ),
-                        ),
-                      ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: CircularProgressIndicator(
+                strokeWidth: 4,
+                valueColor: AlwaysStoppedAnimation<Color>(
+                  Colors.white.withOpacity(0.9),
+                ),
               ),
             ),
           ),
+        );
+      },
+    );
+  }
+
+  Widget _buildAnimatedCountdown(double size) {
+    return TweenAnimationBuilder<double>(
+      key: ValueKey(_countdown),
+      duration: const Duration(milliseconds: 700),
+      tween: Tween(begin: 1.4, end: 1.0),
+      curve: Curves.elasticOut,
+      builder: (context, scale, child) {
+        return Transform.scale(
+          scale: scale,
+          child: ShaderMask(
+            shaderCallback: (bounds) => LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.gradientStart,
+                AppColors.gradientMiddle,
+                AppColors.gradientEnd,
+              ],
+            ).createShader(bounds),
+            child: Text(
+              '$_countdown',
+              style: TextStyle(
+                fontSize: size * 0.45,
+                fontWeight: FontWeight.w900,
+                color: Colors.white,
+                height: 1.0,
+                shadows: const [
+                  Shadow(
+                    color: Color(0x30000000),
+                    blurRadius: 20,
+                    offset: Offset(0, 5),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildProgressBar(double width) {
+    return Container(
+      width: width,
+      height: 10,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.3),
+          width: 1,
         ),
-      ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(12),
+        child: AnimatedBuilder(
+          animation: _progressAnimation,
+          builder: (context, child) {
+            return Stack(
+              children: [
+                // Background shimmer effect
+                Positioned.fill(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        begin: Alignment.centerLeft,
+                        end: Alignment.centerRight,
+                        colors: [
+                          Colors.white.withOpacity(0.1),
+                          Colors.white.withOpacity(0.2),
+                          Colors.white.withOpacity(0.1),
+                        ],
+                        stops: const [0.0, 0.5, 1.0],
+                      ),
+                    ),
+                  ),
+                ),
+                // Progress fill
+                FractionallySizedBox(
+                  alignment: Alignment.centerLeft,
+                  widthFactor: _progressAnimation.value,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Colors.white,
+                          Color(0xFFFAFAFA),
+                        ],
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.white.withOpacity(0.6),
+                          blurRadius: 15,
+                          spreadRadius: 2,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            );
+          },
+        ),
+      ),
     );
   }
 }

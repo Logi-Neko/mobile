@@ -1,3 +1,5 @@
+import 'dart:core';
+
 class Contest {
   final int id;
   final String code;
@@ -17,12 +19,15 @@ class Contest {
 
   factory Contest.fromJson(Map<String, dynamic> json) {
     return Contest(
-      id: json['id'],
-      code: json['code'],
-      title: json['title'],
-      description: json['description'],
-      status: json['status'],
-      startTime: DateTime.parse(json['startTime']),
+      id: json['id'] ?? 0,
+      code: json['code'] ?? '',
+      title: json['title'] ?? '',
+      description: json['description'] ?? '',
+      status: json['status'] ?? 'UNKNOWN',
+      // Thêm kiểm tra null trước khi parse DateTime
+      startTime: json['startTime'] != null
+          ? DateTime.tryParse(json['startTime']) ?? DateTime.now()
+          : DateTime.now(),
     );
   }
 }
@@ -44,16 +49,19 @@ class PaginatedResponse {
 
   factory PaginatedResponse.fromJson(Map<String, dynamic> json) {
     return PaginatedResponse(
-      content: (json['content'] as List)
+      // Thêm kiểm tra null cho danh sách content
+      content: (json['content'] as List<dynamic>? ?? [])
           .map((item) => Contest.fromJson(item))
           .toList(),
-      totalPages: json['totalPages'] as int? ?? 0,
-      totalElements: json['totalElements'] as int? ?? 0,
-      currentPage: json['currentPage'] as int? ?? 0,
-      pageSize: json['pageSize'] as int? ?? 0,
+      totalPages: json['totalPages'] ?? 0,
+      totalElements: json['totalElements'] ?? 0,
+      currentPage: json['currentPage'] ?? 0,
+      pageSize: json['pageSize'] ?? 0,
     );
   }
-}class Participant {
+}
+
+class Participant {
   final int id;
   final String? accountName;
   final int score;
@@ -67,33 +75,35 @@ class PaginatedResponse {
   });
 
   factory Participant.fromJson(Map<String, dynamic> json) {
-    // Try multiple possible field names for account name
-    String? accountName = json['accountName']?.toString() ?? 
-                         json['username']?.toString() ?? 
-                         json['fullName']?.toString() ?? 
-                         json['name']?.toString();
-    
-    // Handle special cases
-    if (accountName == null || accountName.isEmpty || accountName.toLowerCase() == 'system') {
-      // Try to get user info from nested object or use ID
+    String? accountName = json['accountName']?.toString() ??
+        json['username']?.toString() ??
+        json['fullName']?.toString() ??
+        json['name']?.toString();
+
+    if (accountName == null ||
+        accountName.isEmpty ||
+        accountName.toLowerCase() == 'system') {
       if (json['account'] != null) {
         final account = json['account'] as Map<String, dynamic>;
-        accountName = account['username']?.toString() ?? 
-                     account['fullName']?.toString() ?? 
-                     account['name']?.toString();
+        accountName = account['username']?.toString() ??
+            account['fullName']?.toString() ??
+            account['name']?.toString();
       }
-      
-      // Final fallback
-      if (accountName == null || accountName.isEmpty || accountName.toLowerCase() == 'system') {
+
+      if (accountName == null ||
+          accountName.isEmpty ||
+          accountName.toLowerCase() == 'system') {
         accountName = 'User ${json['id']?.toString() ?? 'Unknown'}';
       }
     }
-    
+
     return Participant(
       id: int.tryParse(json['id']?.toString() ?? '') ?? 0,
       accountName: accountName,
       score: int.tryParse(json['score']?.toString() ?? '') ?? 0,
-      joinAt: json['joinAt'] != null ? DateTime.tryParse(json['joinAt'].toString()) : null,
+      joinAt: json['joinAt'] != null
+          ? DateTime.tryParse(json['joinAt'].toString())
+          : null,
     );
   }
 
@@ -106,6 +116,7 @@ class PaginatedResponse {
     };
   }
 }
+
 class ContestQuestionResponse {
   final int id;
   final int contestId;
@@ -121,13 +132,15 @@ class ContestQuestionResponse {
 
   factory ContestQuestionResponse.fromJson(Map<String, dynamic> json) {
     return ContestQuestionResponse(
-      id: json["id"],
-      contestId: json["contestId"],
-      questionId: json["questionId"],
-      index: json["index"],
+      // Thêm ?? 0 để xử lý null
+      id: json["id"] ?? 0,
+      contestId: json["contestId"] ?? 0,
+      questionId: json["questionId"] ?? 0,
+      index: json["index"] ?? 0,
     );
   }
 }
+
 class AnswerOptionResponse {
   final int id;
   final String optionText;
@@ -143,10 +156,12 @@ class AnswerOptionResponse {
 
   factory AnswerOptionResponse.fromJson(Map<String, dynamic> json) {
     return AnswerOptionResponse(
-      id: json["id"],
-      optionText: json["optionText"],
-      isCorrect: json["isCorrect"],
-      questionId: json["questionId"],
+      // Thêm các giá trị mặc định để xử lý null
+      id: json["id"] ?? 0,
+      optionText: json["optionText"] ?? '',
+      isCorrect: json["isCorrect"] ?? false,
+      // ĐÂY LÀ CHỖ SỬA QUAN TRỌNG NHẤT
+      questionId: json["questionId"] ?? 0,
     );
   }
 }
@@ -168,13 +183,41 @@ class QuestionResponse {
 
   factory QuestionResponse.fromJson(Map<String, dynamic> json) {
     return QuestionResponse(
-      id: json["id"],
-      questionText: json["questionText"],
-      options: (json["options"] as List<dynamic>)
-          .map((e) => AnswerOptionResponse.fromJson(e))
+      // Thêm các giá trị mặc định để xử lý null
+      id: json["id"] ?? 0,
+      questionText: json["questionText"] ?? 'N/A',
+      options: (json["options"] as List<dynamic>? ?? [])
+          .map((e) => AnswerOptionResponse.fromJson(e as Map<String, dynamic>))
           .toList(),
-      points: json["points"],
+      points: json["points"] ?? 1000,
       timeLimit: json["timeLimit"],
+    );
+  }
+}
+class ContestHistory {
+  final int contestId;
+  final String contestTitle;
+  final DateTime startTime;
+  final int score;
+  final int rank;
+
+  ContestHistory({
+    required this.contestId,
+    required this.contestTitle,
+    required this.startTime,
+    required this.score,
+    required this.rank,
+  });
+
+  factory ContestHistory.fromJson(Map<String, dynamic> json) {
+    return ContestHistory(
+      contestId: json['contestId'] ?? 0,
+      contestTitle: json['contestTitle'] ?? 'Unknown Contest',
+      startTime: json['startTime'] != null
+          ? DateTime.parse(json['startTime'])
+          : DateTime.now(),
+      score: json['score'] ?? 0,
+      rank: json['rank'] ?? 0,
     );
   }
 }

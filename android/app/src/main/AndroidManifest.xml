@@ -6,7 +6,8 @@
     <application
         android:label="logi_neko"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher" >
+<!--        android:enableOnBackInvokedCallback="true">-->
 
         <!-- Thêm metadata cho Google Play Services -->
         <meta-data
