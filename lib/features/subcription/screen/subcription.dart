@@ -45,11 +45,9 @@ class SubscriptionScreen extends StatelessWidget {
                                 side: const BorderSide(color: Colors.black),
                               ),
                             ),
-                            onPressed: () => context.router.pushAndPopUntil(
+                            onPressed: () => context.router.push(
                               const HomeRoute(),
-                              predicate: (route) => false,
-                            ),
-                            icon: const Icon(Icons.arrow_back, color: Colors.black),
+                            ),                            icon: const Icon(Icons.arrow_back, color: Colors.black),
                             label: const Text("Quay lại", style: TextStyle(color: Colors.black)),
                           ),
                         ),
@@ -216,7 +214,7 @@ class SubscriptionScreen extends StatelessWidget {
                       const SizedBox(height: 10),
 
                       Text(
-                        'Truy cập trang web logineko.vn để thanh toán',
+                        'Truy cập trang web logineko.edu.vn để thanh toán',
                         style: TextStyle(
                           color: Colors.white,
                           fontSize: isSmallScreen ? 13 : 16,

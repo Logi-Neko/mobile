@@ -4,8 +4,11 @@ import 'package:logi_neko/core/config/logger.dart';
 import 'package:logi_neko/core/exception/exceptions.dart';
 import 'package:logi_neko/features/home/dto/user.dart';
 import 'package:logi_neko/features/home/repository/home_repo.dart';
+import 'package:logi_neko/features/home/dto/update_age_request.dart';
+import 'package:logi_neko/features/home/api/user_api.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+// Events
 abstract class HomeEvent extends Equatable {
   @override
   List<Object?> get props => [];
@@ -13,15 +16,13 @@ abstract class HomeEvent extends Equatable {
 
 class GetUserInfo extends HomeEvent {}
 
-class RefreshUserInfo extends HomeEvent {}
+class UpdateUserAge extends HomeEvent {
+  final String dateOfBirth;
 
-class UpdateUserInfo extends HomeEvent {
-  final Map<String, dynamic> userData;
-
-  UpdateUserInfo(this.userData);
+  UpdateUserAge(this.dateOfBirth);
 
   @override
-  List<Object?> get props => [userData];
+  List<Object?> get props => [dateOfBirth];
 }
 
 class ClearError extends HomeEvent {}
@@ -68,20 +69,27 @@ class HomeError extends HomeState {
 class HomeBloc extends Bloc<HomeEvent, HomeState> {
   final HomeRepository _homeRepository;
   User? _currentUser;
+  bool _hasLoaded = false; // Flag để track đã load chưa
 
   HomeBloc(this._homeRepository) : super(HomeInitial()) {
     on<GetUserInfo>(_onGetUserInfo);
-    on<RefreshUserInfo>(_onRefreshUserInfo);
+    on<UpdateUserAge>(_onUpdateUserAge);
     on<ClearError>(_onClearError);
   }
 
-  // Getter để lấy user hiện tại
+  // Getters
   User? get currentUser => _currentUser;
   bool get hasUser => _currentUser != null;
   String get userName => _currentUser?.fullName ?? 'User';
   String get userEmail => _currentUser?.email ?? '';
 
   Future<void> _onGetUserInfo(GetUserInfo event, Emitter<HomeState> emit) async {
+    if (_hasLoaded && _currentUser != null) {
+      logger.i('HomeBloc: Dữ liệu đã load, không load lại');
+      emit(UserInfoLoaded(_currentUser!));
+      return;
+    }
+
     emit(HomeLoading());
 
     try {
@@ -89,17 +97,17 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
       final user = await _homeRepository.getUserInfo();
       _currentUser = user;
+      _hasLoaded = true; // Đánh dấu đã load
 
-      // Save currentUserId to SharedPreferences
       final prefs = await SharedPreferences.getInstance();
       await prefs.setInt('currentUserId', user.id);
-      logger.i('💾 HomeBloc: Saved currentUserId: ${user.id} to SharedPreferences');
+      logger.i('HomeBloc: Saved userId: ${user.id}');
 
       logger.i('HomeBloc: Tải thông tin user thành công');
       emit(UserInfoLoaded(user));
 
     } on NotFoundException catch (e) {
-      logger.e('HomeBloc: Không tìm thấy thông tin user - ${e.message}');
+      logger.e('HomeBloc: Không tìm thấy user - ${e.message}');
       emit(HomeError('Không tìm thấy thông tin người dùng', errorCode: e.errorCode));
 
     } on NetworkException catch (e) {
@@ -112,49 +120,39 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
     } catch (e) {
       logger.e('HomeBloc: Lỗi không xác định - $e');
-      emit(HomeError('Có lỗi không xác định xảy ra khi tải thông tin người dùng'));
+      emit(HomeError('Có lỗi xảy ra khi tải thông tin'));
     }
   }
 
-  Future<void> _onRefreshUserInfo(RefreshUserInfo event, Emitter<HomeState> emit) async {
-    if (_currentUser == null) {
-      emit(HomeLoading());
-    }
+  Future<void> _onUpdateUserAge(UpdateUserAge event, Emitter<HomeState> emit) async {
+    if (_currentUser == null) return;
+
+    emit(UserInfoUpdating(_currentUser!));
 
     try {
-      logger.i('HomeBloc: Đang refresh thông tin user...');
+      logger.i('HomeBloc: Đang cập nhật ngày sinh...');
 
-      final user = await _homeRepository.getUserInfo();
-      _currentUser = user;
+      final request = UpdateAgeRequest(dateOfBirth: event.dateOfBirth);
+      final response = await UserApi.updateUserAge(request);
 
-      // Save currentUserId to SharedPreferences
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setInt('currentUserId', user.id);
-      logger.i('💾 HomeBloc: Updated currentUserId: ${user.id} in SharedPreferences');
-
-      logger.i('HomeBloc: Refresh thông tin user thành công');
-      emit(UserInfoLoaded(user));
-
-    } on NotFoundException catch (e) {
-      logger.e('HomeBloc: Không tìm thấy thông tin user khi refresh - ${e.message}');
-      emit(HomeError('Không tìm thấy thông tin người dùng', errorCode: e.errorCode));
+      if (response.isSuccess && response.hasData) {
+        _currentUser = response.data!;
+        logger.i('HomeBloc: Cập nhật ngày sinh thành công');
+        emit(UserInfoLoaded(_currentUser!));
+      } else {
+        logger.e('HomeBloc: Cập nhật thất bại - ${response.message}');
+        emit(HomeError(response.message ?? 'Cập nhật thất bại'));
+      }
 
     } on NetworkException catch (e) {
-      logger.e('HomeBloc: Lỗi mạng khi refresh - ${e.message}');
-      emit(HomeError('Không có kết nối mạng', errorCode: e.errorCode));
-
-    } on UnauthorizedException catch (e) {
-      logger.e('HomeBloc: Lỗi xác thực khi refresh - ${e.message}');
-      emit(HomeError('Phiên đăng nhập đã hết hạn', errorCode: e.errorCode));
-
-    } on AppException catch (e) {
-      logger.e('HomeBloc: Lỗi app khi refresh - ${e.message}');
-      final errorMessage = ExceptionHelper.getLocalizedErrorMessage(e);
-      emit(HomeError(errorMessage, errorCode: e.errorCode));
+      logger.e('HomeBloc: Lỗi mạng khi cập nhật - ${e.message}');
+      emit(HomeError('Không có kết nối mạng'));
+      emit(UserInfoLoaded(_currentUser!));
 
     } catch (e) {
-      logger.e('HomeBloc: Lỗi không xác định khi refresh - $e');
-      emit(HomeError('Có lỗi không xác định xảy ra khi làm mới thông tin'));
+      logger.e('HomeBloc: Lỗi cập nhật - $e');
+      emit(HomeError('Có lỗi xảy ra khi cập nhật'));
+      emit(UserInfoLoaded(_currentUser!));
     }
   }
 
@@ -166,6 +164,12 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     }
   }
 
+  // Reset khi logout
+  void reset() {
+    _currentUser = null;
+    _hasLoaded = false;
+    emit(HomeInitial());
+  }
 
   @override
   Future<void> close() {

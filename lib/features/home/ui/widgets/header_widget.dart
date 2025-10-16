@@ -1,5 +1,3 @@
-// lib/features/home/presentation/widgets/header_widget.dart
-
 import 'package:flutter/material.dart';
 import 'package:logi_neko/core/router/app_router.dart';
 import 'package:logi_neko/features/home/dto/user.dart';
@@ -37,7 +35,7 @@ class HeaderWidget extends StatelessWidget {
   }
 
   Widget _buildUserInfo(BuildContext context, double screenWidth) {
-    final isSmallScreen = screenWidth < 750;
+    final isSmallScreen = screenWidth < 800;
 
     return Expanded(
       flex: 2,
@@ -61,7 +59,7 @@ class HeaderWidget extends StatelessWidget {
                 const Color(0xFF5C6BC0).withOpacity(0.8),
               ],
             ),
-            borderRadius: BorderRadius.circular(25),
+            borderRadius: BorderRadius.circular(15),
             boxShadow: [
               BoxShadow(
                 color: const Color(0xFF5C6BC0).withOpacity(0.3),
@@ -74,8 +72,8 @@ class HeaderWidget extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               Container(
-                width: isSmallScreen ? 32 : 40,
-                height: isSmallScreen ? 32 : 40,
+                width: isSmallScreen ? 36 : 40,
+                height: isSmallScreen ? 36 : 40,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   gradient: LinearGradient(
@@ -139,17 +137,15 @@ class HeaderWidget extends StatelessWidget {
                         ],
                       ],
                     ),
-                    if (!isSmallScreen) ...[
                       const SizedBox(height: 2),
                       Text(
-                        user?.displayAge ?? 'Chưa cập nhật',
+                        user?.displayAge ?? '',
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
                           fontWeight: FontWeight.w500,
                         ),
                       ),
-                    ],
                   ],
                 ),
               ),
@@ -161,7 +157,7 @@ class HeaderWidget extends StatelessWidget {
   }
 
   Widget _buildRightSection(BuildContext context, double screenWidth) {
-    final isVerySmallScreen = screenWidth < 750;
+    final isVerySmallScreen = screenWidth < 800;
 
     return Expanded(
       flex: 4,
@@ -192,7 +188,7 @@ class HeaderWidget extends StatelessWidget {
     return Container(
       padding: EdgeInsets.symmetric(
           horizontal: isVerySmallScreen ? 10 : 12,
-          vertical: isVerySmallScreen ? 8 : 10
+          vertical: 12
       ),
       decoration: BoxDecoration(
         gradient: LinearGradient(
@@ -201,7 +197,7 @@ class HeaderWidget extends StatelessWidget {
             const Color(0xFFFF8C42).withOpacity(0.8),
           ],
         ),
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(15),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -224,7 +220,7 @@ class HeaderWidget extends StatelessWidget {
             user?.starDisplay ?? '0',
             style: TextStyle(
               color: Colors.white,
-              fontSize: isVerySmallScreen ? 12 : 14,
+              fontSize: 14,
               fontWeight: FontWeight.bold,
             ),
           ),
@@ -237,20 +233,19 @@ class HeaderWidget extends StatelessWidget {
     return GestureDetector(
         onTap: () {
           if (user?.id != null) {
-            context.router.pushAndPopUntil(
+            context.router.push(
               LearningReportRoute(accountId: user!.id),
-              predicate: (route) => false,
             );
           }
         },
         child: Container(
           padding: EdgeInsets.symmetric(
               horizontal: isVerySmallScreen ? 10 : 12,
-              vertical: isVerySmallScreen ? 8 : 10
+              vertical: 12
           ),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(15),
             border: Border.all(color: const Color(0xFF9575CD), width: 1.5),
           ),
           child: Row(
@@ -271,10 +266,10 @@ class HeaderWidget extends StatelessWidget {
               ),
               SizedBox(width: isVerySmallScreen ? 6 : 8),
               Text(
-                isVerySmallScreen ? "PH" : "Phụ huynh",
+                "Phụ huynh",
                 style: TextStyle(
                   color: Color(0xFF5C6BC0),
-                  fontSize: isVerySmallScreen ? 12 : 14,
+                  fontSize: 13,
                   fontWeight: FontWeight.w600,
                 ),
               ),
@@ -287,15 +282,12 @@ class HeaderWidget extends StatelessWidget {
   Widget _buildPremiumContainer(BuildContext context, bool isVerySmallScreen) {
     return GestureDetector(
       onTap: () {
-        context.router.pushAndPopUntil(
-          const SubscriptionRoute(),
-          predicate: (route) => false,
-        );
+        context.router.push(const SubscriptionRoute());
       },
       child: Container(
         padding: EdgeInsets.symmetric(
             horizontal: isVerySmallScreen ? 10 : 12,
-            vertical: isVerySmallScreen ? 8 : 10
+            vertical: 12
         ),
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -304,7 +296,7 @@ class HeaderWidget extends StatelessWidget {
               Colors.deepOrange.shade600,
             ],
           ),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(15),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -327,7 +319,7 @@ class HeaderWidget extends StatelessWidget {
               'Premium',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: isVerySmallScreen ? 12 : 14,
+                fontSize: 13,
                 fontWeight: FontWeight.bold,
               ),
             ),
@@ -345,7 +337,7 @@ class HeaderWidget extends StatelessWidget {
       child: Container(
         padding: EdgeInsets.symmetric(
             horizontal: isVerySmallScreen ? 10 : 12,
-            vertical: isVerySmallScreen ? 8 : 10
+            vertical: 12
         ),
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -354,7 +346,7 @@ class HeaderWidget extends StatelessWidget {
               const Color(0xFF7B1FA2),
             ],
           ),
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(15),
         ),
         child: Row(
           mainAxisSize: MainAxisSize.min,
@@ -377,7 +369,7 @@ class HeaderWidget extends StatelessWidget {
               isVerySmallScreen ? "BST" : "Bộ sưu tập",
               style: TextStyle(
                 color: Colors.white,
-                fontSize: isVerySmallScreen ? 12 : 14,
+                fontSize: 13,
                 fontWeight: FontWeight.bold,
               ),
             ),

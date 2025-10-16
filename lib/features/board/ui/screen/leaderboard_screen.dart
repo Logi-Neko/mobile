@@ -99,9 +99,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         children: [
           // Back button with fun design
           GestureDetector(
-            onTap: () => context.router.pushAndPopUntil(
+            onTap: () => context.router.push(
               const HomeRoute(),
-              predicate: (route) => false,
             ),
             child: Container(
               width: 45,

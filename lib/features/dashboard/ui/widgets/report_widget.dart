@@ -9,10 +9,7 @@ import '../../dto/report.dart';
 class ReportHeader extends StatelessWidget {
   final VoidCallback? onBackPressed;
 
-  const ReportHeader({
-    Key? key,
-    this.onBackPressed,
-  }) : super(key: key);
+  const ReportHeader({Key? key, this.onBackPressed}) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -21,10 +18,7 @@ class ReportHeader extends StatelessWidget {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => context.router.pushAndPopUntil(
-              const HomeRoute(),
-              predicate: (route) => false,
-            ),
+            onTap: () => context.router.push(const HomeRoute()),
             child: Container(
               width: 40,
               height: 40,
@@ -74,11 +68,7 @@ class ReportHeader extends StatelessWidget {
               borderRadius: BorderRadius.circular(12),
               color: Colors.white.withOpacity(0.2),
             ),
-            child: const Icon(
-              Icons.more_vert,
-              color: Colors.white,
-              size: 18,
-            ),
+            child: const Icon(Icons.more_vert, color: Colors.white, size: 18),
           ),
         ],
       ),
@@ -89,10 +79,8 @@ class ReportHeader extends StatelessWidget {
 class StudyTimeCard extends StatefulWidget {
   final int totalStudyTimeMinutes;
 
-  const StudyTimeCard({
-    Key? key,
-    required this.totalStudyTimeMinutes,
-  }) : super(key: key);
+  const StudyTimeCard({Key? key, required this.totalStudyTimeMinutes})
+    : super(key: key);
 
   @override
   State<StudyTimeCard> createState() => _StudyTimeCardState();
@@ -110,13 +98,12 @@ class _StudyTimeCardState extends State<StudyTimeCard>
       duration: const Duration(milliseconds: 1500),
       vsync: this,
     );
-    _animation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _animationController,
-      curve: Curves.easeInOutSine,
-    ));
+    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(
+        parent: _animationController,
+        curve: Curves.easeInOutSine,
+      ),
+    );
     _animationController.repeat(reverse: true);
   }
 
@@ -141,10 +128,7 @@ class _StudyTimeCardState extends State<StudyTimeCard>
             gradient: const LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [
-                Color(0xFFFF6B6B),
-                Color(0xFFFF8E53),
-              ],
+              colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
             ),
             boxShadow: [
               BoxShadow(
@@ -200,7 +184,10 @@ class _StudyTimeCardState extends State<StudyTimeCard>
 
                     // "hôm nay"
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
                         borderRadius: BorderRadius.circular(12),
                         color: Colors.white.withOpacity(0.2),
@@ -222,7 +209,9 @@ class _StudyTimeCardState extends State<StudyTimeCard>
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  color: Colors.white.withOpacity(0.15 + 0.1 * _animation.value),
+                  color: Colors.white.withOpacity(
+                    0.15 + 0.1 * _animation.value,
+                  ),
                   border: Border.all(
                     color: Colors.white.withOpacity(0.3),
                     width: 1,
@@ -244,7 +233,6 @@ class _StudyTimeCardState extends State<StudyTimeCard>
     );
   }
 }
-
 
 class CourseReportCard extends StatelessWidget {
   final Course course;
@@ -291,11 +279,7 @@ class CourseReportCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                child: Icon(
-                  course.courseIcon,
-                  color: Colors.white,
-                  size: 24,
-                ),
+                child: Icon(course.courseIcon, color: Colors.white, size: 24),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -334,10 +318,10 @@ class CourseReportCard extends StatelessWidget {
 
           if (lessons.isNotEmpty) ...[
             const SizedBox(height: 16),
-            ...lessons.map((lesson) => LessonItem(
-              lesson: lesson,
-              courseColor: course.courseColor,
-            )),
+            ...lessons.map(
+              (lesson) =>
+                  LessonItem(lesson: lesson, courseColor: course.courseColor),
+            ),
           ],
         ],
       ),
@@ -368,11 +352,7 @@ class InfoChip extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(
-            icon,
-            size: 14,
-            color: color,
-          ),
+          Icon(icon, size: 14, color: color),
           const SizedBox(width: 4),
           Text(
             text,
@@ -392,11 +372,8 @@ class LessonItem extends StatelessWidget {
   final Lesson lesson;
   final Color courseColor;
 
-  const LessonItem({
-    Key? key,
-    required this.lesson,
-    required this.courseColor,
-  }) : super(key: key);
+  const LessonItem({Key? key, required this.lesson, required this.courseColor})
+    : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -406,10 +383,7 @@ class LessonItem extends StatelessWidget {
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(16),
         color: courseColor.withOpacity(0.05),
-        border: Border.all(
-          color: courseColor.withOpacity(0.2),
-          width: 1,
-        ),
+        border: Border.all(color: courseColor.withOpacity(0.2), width: 1),
       ),
       child: Row(
         children: [
@@ -463,11 +437,7 @@ class LessonItem extends StatelessWidget {
                 const SizedBox(height: 6),
                 Row(
                   children: [
-                    Icon(
-                      Icons.schedule,
-                      size: 14,
-                      color: Colors.grey[500],
-                    ),
+                    Icon(Icons.schedule, size: 14, color: Colors.grey[500]),
                     const SizedBox(width: 4),
                     Text(
                       DateFormat('HH:mm').format(lesson.updatedAt),
@@ -577,10 +547,7 @@ class ErrorState extends StatelessWidget {
               const SizedBox(height: 8),
               Text(
                 details!,
-                style: TextStyle(
-                  fontSize: 14,
-                  color: Colors.grey[600],
-                ),
+                style: TextStyle(fontSize: 14, color: Colors.grey[600]),
                 textAlign: TextAlign.center,
               ),
             ],
@@ -591,17 +558,17 @@ class ErrorState extends StatelessWidget {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF667EEA),
                   foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 12,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 child: const Text(
                   'Thử lại',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                 ),
               ),
             ],
@@ -817,7 +784,9 @@ class QuickDateButtons extends StatelessWidget {
                 label: 'Hôm qua',
                 isSelected: _isYesterday(currentFromDate, currentToDate),
                 onTap: () {
-                  final yesterday = DateTime.now().subtract(const Duration(days: 1));
+                  final yesterday = DateTime.now().subtract(
+                    const Duration(days: 1),
+                  );
                   onDateRangeSelected(yesterday, yesterday);
                 },
               ),
@@ -854,7 +823,8 @@ class QuickDateButtons extends StatelessWidget {
 
   bool _isYesterday(DateTime from, DateTime to) {
     final yesterday = DateTime.now().subtract(const Duration(days: 1));
-    return DateUtils.isSameDay(from, yesterday) && DateUtils.isSameDay(to, yesterday);
+    return DateUtils.isSameDay(from, yesterday) &&
+        DateUtils.isSameDay(to, yesterday);
   }
 
   bool _isLastWeek(DateTime from, DateTime to) {
@@ -867,7 +837,8 @@ class QuickDateButtons extends StatelessWidget {
     final now = DateTime.now();
     final firstDayOfMonth = DateTime(now.year, now.month, 1);
     final lastDayOfMonth = DateTime(now.year, now.month + 1, 0);
-    return DateUtils.isSameDay(from, firstDayOfMonth) && DateUtils.isSameDay(to, lastDayOfMonth);
+    return DateUtils.isSameDay(from, firstDayOfMonth) &&
+        DateUtils.isSameDay(to, lastDayOfMonth);
   }
 }
 
@@ -891,24 +862,18 @@ class _QuickDateButton extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         decoration: BoxDecoration(
           borderRadius: BorderRadius.circular(20),
-          color: isSelected
-              ? const Color(0xFF667EEA)
-              : const Color(0xFFF3F4F6),
-          border: isSelected
-              ? null
-              : Border.all(
-            color: Colors.grey.withOpacity(0.3),
-            width: 1,
-          ),
+          color: isSelected ? const Color(0xFF667EEA) : const Color(0xFFF3F4F6),
+          border:
+              isSelected
+                  ? null
+                  : Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
         ),
         child: Text(
           label,
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,
-            color: isSelected
-                ? Colors.white
-                : const Color(0xFF6B7280),
+            color: isSelected ? Colors.white : const Color(0xFF6B7280),
           ),
         ),
       ),

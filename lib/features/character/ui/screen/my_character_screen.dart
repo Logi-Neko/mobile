@@ -47,7 +47,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
       });
 
       final response = await CharacterAccountApi.getAllAccountCharacters();
-      
+
       if (response.isSuccess && response.hasData) {
         setState(() {
           _allCharacters = response.data!;
@@ -56,7 +56,8 @@ class _MyCharacterViewState extends State<MyCharacterView> {
         });
       } else {
         setState(() {
-          _errorMessage = response.message ?? 'Không thể tải bộ sưu tập nhân vật';
+          _errorMessage =
+              response.message ?? 'Không thể tải bộ sưu tập nhân vật';
           _isLoading = false;
         });
       }
@@ -70,9 +71,10 @@ class _MyCharacterViewState extends State<MyCharacterView> {
 
   void _applyFilter() {
     if (_allCharacters == null) return;
-    
+
     if (_showFavoritesOnly) {
-      _filteredCharacters = _allCharacters!.where((character) => character.isFavorite).toList();
+      _filteredCharacters =
+          _allCharacters!.where((character) => character.isFavorite).toList();
     } else {
       _filteredCharacters = List.from(_allCharacters!);
     }
@@ -87,14 +89,16 @@ class _MyCharacterViewState extends State<MyCharacterView> {
 
   void _refreshCharacterInList(AccountCharacterDto updatedCharacter) {
     if (_allCharacters == null) return;
-    
+
     setState(() {
       // Update the character in the main list
-      final index = _allCharacters!.indexWhere((c) => c.character.id == updatedCharacter.character.id);
+      final index = _allCharacters!.indexWhere(
+        (c) => c.character.id == updatedCharacter.character.id,
+      );
       if (index != -1) {
         _allCharacters![index] = updatedCharacter;
       }
-      
+
       // Reapply filter to update the displayed list
       _applyFilter();
     });
@@ -108,14 +112,12 @@ class _MyCharacterViewState extends State<MyCharacterView> {
         child: SafeArea(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 10),
-          child: Column(
-            children: [
-              _buildHeader(context),
-              Expanded(
-                child: _buildContent(),
-              ),
-            ],
-          ),
+            child: Column(
+              children: [
+                _buildHeader(context),
+                Expanded(child: _buildContent()),
+              ],
+            ),
           ),
         ),
       ),
@@ -131,8 +133,12 @@ class _MyCharacterViewState extends State<MyCharacterView> {
             icon: const Icon(Icons.collections, size: 18),
             label: const Text('Tất cả'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: !_showFavoritesOnly ? const Color(0xFF9C27B0) : Colors.grey[300],
-              foregroundColor: !_showFavoritesOnly ? Colors.white : Colors.grey[600],
+              backgroundColor:
+                  !_showFavoritesOnly
+                      ? const Color(0xFF9C27B0)
+                      : Colors.grey[300],
+              foregroundColor:
+                  !_showFavoritesOnly ? Colors.white : Colors.grey[600],
               padding: const EdgeInsets.symmetric(vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -148,8 +154,12 @@ class _MyCharacterViewState extends State<MyCharacterView> {
             icon: const Icon(Icons.favorite, size: 18),
             label: const Text('Yêu thích'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: _showFavoritesOnly ? const Color(0xFFFF9800) : Colors.grey[300],
-              foregroundColor: _showFavoritesOnly ? Colors.white : Colors.grey[600],
+              backgroundColor:
+                  _showFavoritesOnly
+                      ? const Color(0xFFFF9800)
+                      : Colors.grey[300],
+              foregroundColor:
+                  _showFavoritesOnly ? Colors.white : Colors.grey[600],
               padding: const EdgeInsets.symmetric(vertical: 10),
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(10),
@@ -169,9 +179,8 @@ class _MyCharacterViewState extends State<MyCharacterView> {
         children: [
           // Back button
           GestureDetector(
-            onTap: () => context.router.pushAndPopUntil(
+            onTap: () => context.router.push(
               const HomeRoute(),
-              predicate: (route) => false,
             ),
             child: Container(
               width: 40,
@@ -191,9 +200,9 @@ class _MyCharacterViewState extends State<MyCharacterView> {
               ),
             ),
           ),
-          
+
           const SizedBox(width: 12),
-          
+
           // Title
           const Expanded(
             child: Text(
@@ -205,7 +214,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
               ),
             ),
           ),
-          
+
           // Character count
           if (_filteredCharacters != null)
             Container(
@@ -217,11 +226,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.collections,
-                    color: Colors.white,
-                    size: 16,
-                  ),
+                  const Icon(Icons.collections, color: Colors.white, size: 16),
                   const SizedBox(width: 4),
                   Text(
                     '${_filteredCharacters!.length}',
@@ -266,10 +271,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
           SizedBox(height: 16),
           Text(
             'Đang tải bộ sưu tập...',
-            style: TextStyle(
-              fontSize: 16,
-              color: Colors.white70,
-            ),
+            style: TextStyle(fontSize: 16, color: Colors.white70),
           ),
         ],
       ),
@@ -290,11 +292,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
             ),
             child: Column(
               children: [
-                const Icon(
-                  Icons.error_outline,
-                  color: Colors.white,
-                  size: 48,
-                ),
+                const Icon(Icons.error_outline, color: Colors.white, size: 48),
                 const SizedBox(height: 16),
                 const Text(
                   'Có lỗi xảy ra',
@@ -308,10 +306,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
                 Text(
                   _errorMessage!,
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
+                  style: const TextStyle(fontSize: 14, color: Colors.white70),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
@@ -362,10 +357,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
                 const Text(
                   'Hãy mở khóa nhân vật đầu tiên của bạn!',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.white70,
-                  ),
+                  style: TextStyle(fontSize: 14, color: Colors.white70),
                 ),
                 const SizedBox(height: 20),
                 ElevatedButton(
@@ -391,15 +383,27 @@ class _MyCharacterViewState extends State<MyCharacterView> {
 
   Widget _buildCharacterCollection() {
     // Group characters by rarity
-    final commonCharacters = _filteredCharacters!.where((c) => c.character.rarity == CharacterRarity.common).toList();
-    final rareCharacters = _filteredCharacters!.where((c) => c.character.rarity == CharacterRarity.rare).toList();
-    final epicCharacters = _filteredCharacters!.where((c) => c.character.rarity == CharacterRarity.epic).toList();
-    final legendaryCharacters = _filteredCharacters!.where((c) => c.character.rarity == CharacterRarity.legendary).toList();
+    final commonCharacters =
+        _filteredCharacters!
+            .where((c) => c.character.rarity == CharacterRarity.common)
+            .toList();
+    final rareCharacters =
+        _filteredCharacters!
+            .where((c) => c.character.rarity == CharacterRarity.rare)
+            .toList();
+    final epicCharacters =
+        _filteredCharacters!
+            .where((c) => c.character.rarity == CharacterRarity.epic)
+            .toList();
+    final legendaryCharacters =
+        _filteredCharacters!
+            .where((c) => c.character.rarity == CharacterRarity.legendary)
+            .toList();
 
     return Container(
       decoration: BoxDecoration(
         color: Color(0xFFFFF8DC), // Cream background
-        borderRadius: BorderRadius.circular(12)
+        borderRadius: BorderRadius.circular(12),
       ),
       child: RefreshIndicator(
         onRefresh: _loadMyCharacters,
@@ -410,14 +414,14 @@ class _MyCharacterViewState extends State<MyCharacterView> {
             children: [
               // Collection stats
               _buildCollectionStats(),
-              
+
               const SizedBox(height: 16),
-              
+
               // Filter buttons
               _buildFilterButtons(),
-              
+
               const SizedBox(height: 20),
-              
+
               // Character sections by rarity
               if (legendaryCharacters.isNotEmpty) ...[
                 _buildRaritySection(
@@ -427,7 +431,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
                 ),
                 const SizedBox(height: 20),
               ],
-              
+
               if (epicCharacters.isNotEmpty) ...[
                 _buildRaritySection(
                   'Sử Thi',
@@ -436,7 +440,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
                 ),
                 const SizedBox(height: 20),
               ],
-              
+
               if (rareCharacters.isNotEmpty) ...[
                 _buildRaritySection(
                   'Hiếm',
@@ -445,7 +449,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
                 ),
                 const SizedBox(height: 20),
               ],
-              
+
               if (commonCharacters.isNotEmpty) ...[
                 _buildRaritySection(
                   'Thường',
@@ -462,9 +466,10 @@ class _MyCharacterViewState extends State<MyCharacterView> {
 
   Widget _buildCollectionStats() {
     final totalCharacters = _allCharacters?.length ?? 0;
-    final favoriteCharacters = _allCharacters?.where((c) => c.isFavorite).length ?? 0;
+    final favoriteCharacters =
+        _allCharacters?.where((c) => c.isFavorite).length ?? 0;
     final displayedCharacters = _filteredCharacters?.length ?? 0;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
@@ -475,9 +480,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
           ],
         ),
         borderRadius: BorderRadius.circular(15),
-        border: Border.all(
-          color: const Color(0xFF9C27B0).withOpacity(0.3),
-        ),
+        border: Border.all(color: const Color(0xFF9C27B0).withOpacity(0.3)),
       ),
       child: Row(
         children: [
@@ -494,10 +497,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
                 ),
                 const Text(
                   'Tổng nhân vật',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 11, color: Colors.grey),
                 ),
               ],
             ),
@@ -520,10 +520,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
                 ),
                 const Text(
                   'Yêu thích',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 11, color: Colors.grey),
                 ),
               ],
             ),
@@ -546,10 +543,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
                 ),
                 const Text(
                   'Hiển thị',
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: Colors.grey,
-                  ),
+                  style: TextStyle(fontSize: 11, color: Colors.grey),
                 ),
               ],
             ),
@@ -559,7 +553,11 @@ class _MyCharacterViewState extends State<MyCharacterView> {
     );
   }
 
-  Widget _buildRaritySection(String title, List<AccountCharacterDto> characters, Color themeColor) {
+  Widget _buildRaritySection(
+    String title,
+    List<AccountCharacterDto> characters,
+    Color themeColor,
+  ) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -595,9 +593,9 @@ class _MyCharacterViewState extends State<MyCharacterView> {
             ],
           ),
         ),
-        
+
         const SizedBox(height: 12),
-        
+
         // Character grid
         GridView.builder(
           shrinkWrap: true,
@@ -618,9 +616,12 @@ class _MyCharacterViewState extends State<MyCharacterView> {
     );
   }
 
-  Widget _buildCharacterCard(AccountCharacterDto accountCharacter, Color themeColor) {
+  Widget _buildCharacterCard(
+    AccountCharacterDto accountCharacter,
+    Color themeColor,
+  ) {
     final character = accountCharacter.character;
-    
+
     return GestureDetector(
       onTap: () => _showCharacterDetail(accountCharacter),
       child: Container(
@@ -668,9 +669,9 @@ class _MyCharacterViewState extends State<MyCharacterView> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 6),
-                  
+
                   // Character name
                   Text(
                     character.name,
@@ -686,7 +687,7 @@ class _MyCharacterViewState extends State<MyCharacterView> {
                 ],
               ),
             ),
-            
+
             // Favorite indicator
             if (accountCharacter.isFavorite)
               Positioned(
@@ -716,10 +717,11 @@ class _MyCharacterViewState extends State<MyCharacterView> {
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => _CharacterDetailModal(
-        accountCharacter: accountCharacter,
-        onFavoriteChanged: _refreshCharacterInList,
-      ),
+      builder:
+          (context) => _CharacterDetailModal(
+            accountCharacter: accountCharacter,
+            onFavoriteChanged: _refreshCharacterInList,
+          ),
     );
   }
 }
@@ -765,17 +767,17 @@ class _CharacterDetailModalState extends State<_CharacterDetailModal> {
         setState(() {
           accountCharacter = response.data!;
         });
-        
+
         // Notify parent to refresh the list
         widget.onFavoriteChanged(accountCharacter);
-        
+
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                accountCharacter.isFavorite 
-                  ? 'Đã thêm vào yêu thích' 
-                  : 'Đã bỏ khỏi yêu thích',
+                accountCharacter.isFavorite
+                    ? 'Đã thêm vào yêu thích'
+                    : 'Đã bỏ khỏi yêu thích',
               ),
               backgroundColor: Colors.green,
             ),
@@ -808,17 +810,21 @@ class _CharacterDetailModalState extends State<_CharacterDetailModal> {
     });
 
     try {
-      final response = await CharacterAccountApi.chooseCharacter(accountCharacter.id);
+      final response = await CharacterAccountApi.chooseCharacter(
+        accountCharacter.id,
+      );
 
       if (response.isSuccess) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Đã chọn ${accountCharacter.character.name} làm nhân vật chính'),
+              content: Text(
+                'Đã chọn ${accountCharacter.character.name} làm nhân vật chính',
+              ),
               backgroundColor: Colors.green,
             ),
           );
-          
+
           // Close the modal
           Navigator.of(context).pop();
         }
@@ -844,7 +850,7 @@ class _CharacterDetailModalState extends State<_CharacterDetailModal> {
   @override
   Widget build(BuildContext context) {
     final character = accountCharacter.character;
-    
+
     return Container(
       height: MediaQuery.of(context).size.height * 0.8,
       decoration: const BoxDecoration(
@@ -866,7 +872,7 @@ class _CharacterDetailModalState extends State<_CharacterDetailModal> {
               borderRadius: BorderRadius.circular(2),
             ),
           ),
-          
+
           // Content
           Expanded(
             child: SingleChildScrollView(
@@ -906,28 +912,28 @@ class _CharacterDetailModalState extends State<_CharacterDetailModal> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 16),
-                  
+
                   // Choose character button
                   Container(
                     width: double.infinity,
                     margin: const EdgeInsets.symmetric(horizontal: 20),
                     child: ElevatedButton.icon(
                       onPressed: _isChoosingCharacter ? null : _chooseCharacter,
-                      icon: _isChoosingCharacter
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                              ),
-                            )
-                          : const Icon(
-                              Icons.star,
-                              color: Colors.white,
-                            ),
+                      icon:
+                          _isChoosingCharacter
+                              ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                              : const Icon(Icons.star, color: Colors.white),
                       label: Text(
                         _isChoosingCharacter
                             ? 'Đang chọn...'
@@ -947,9 +953,9 @@ class _CharacterDetailModalState extends State<_CharacterDetailModal> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Character name with favorite icon
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -965,17 +971,13 @@ class _CharacterDetailModalState extends State<_CharacterDetailModal> {
                       ),
                       if (accountCharacter.isFavorite) ...[
                         const SizedBox(width: 8),
-                        const Icon(
-                          Icons.favorite,
-                          color: Colors.red,
-                          size: 20,
-                        ),
+                        const Icon(Icons.favorite, color: Colors.red, size: 20),
                       ],
                     ],
                   ),
-                  
+
                   const SizedBox(height: 12),
-                  
+
                   // Description
                   Text(
                     character.description,
@@ -986,32 +988,39 @@ class _CharacterDetailModalState extends State<_CharacterDetailModal> {
                     ),
                     textAlign: TextAlign.center,
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Favorite toggle button
                   Container(
                     width: double.infinity,
                     margin: const EdgeInsets.symmetric(horizontal: 20),
                     child: ElevatedButton.icon(
                       onPressed: _isUpdatingFavorite ? null : _toggleFavorite,
-                      icon: _isUpdatingFavorite
-                          ? const SizedBox(
-                              width: 16,
-                              height: 16,
-                              child: CircularProgressIndicator(
-                                strokeWidth: 2,
-                                valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      icon:
+                          _isUpdatingFavorite
+                              ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                ),
+                              )
+                              : Icon(
+                                accountCharacter.isFavorite
+                                    ? Icons.favorite
+                                    : Icons.favorite_border,
+                                color: Colors.white,
                               ),
-                            )
-                          : Icon(
-                              accountCharacter.isFavorite ? Icons.favorite : Icons.favorite_border,
-                              color: Colors.white,
-                            ),
                       label: Text(
                         _isUpdatingFavorite
                             ? 'Đang cập nhật...'
-                            : (accountCharacter.isFavorite ? 'Bỏ yêu thích' : 'Thêm yêu thích'),
+                            : (accountCharacter.isFavorite
+                                ? 'Bỏ yêu thích'
+                                : 'Thêm yêu thích'),
                         style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
@@ -1019,7 +1028,10 @@ class _CharacterDetailModalState extends State<_CharacterDetailModal> {
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: accountCharacter.isFavorite ? Colors.red : Colors.pink,
+                        backgroundColor:
+                            accountCharacter.isFavorite
+                                ? Colors.red
+                                : Colors.pink,
                         padding: const EdgeInsets.symmetric(vertical: 12),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(12),
@@ -1027,9 +1039,9 @@ class _CharacterDetailModalState extends State<_CharacterDetailModal> {
                       ),
                     ),
                   ),
-                  
+
                   const SizedBox(height: 20),
-                  
+
                   // Character info
                   Container(
                     padding: const EdgeInsets.all(16),
@@ -1039,11 +1051,20 @@ class _CharacterDetailModalState extends State<_CharacterDetailModal> {
                     ),
                     child: Column(
                       children: [
-                        _buildInfoRow('Độ hiếm', _getRarityText(character.rarity)),
+                        _buildInfoRow(
+                          'Độ hiếm',
+                          _getRarityText(character.rarity),
+                        ),
                         const SizedBox(height: 8),
-                        _buildInfoRow('Sao yêu cầu', '${character.starRequired}'),
+                        _buildInfoRow(
+                          'Sao yêu cầu',
+                          '${character.starRequired}',
+                        ),
                         const SizedBox(height: 8),
-                        _buildInfoRow('Mở khóa lúc', _formatDate(accountCharacter.unlockedAt)),
+                        _buildInfoRow(
+                          'Mở khóa lúc',
+                          _formatDate(accountCharacter.unlockedAt),
+                        ),
                         if (character.isPremium) ...[
                           const SizedBox(height: 8),
                           _buildInfoRow('Loại', 'Premium'),
@@ -1064,13 +1085,7 @@ class _CharacterDetailModalState extends State<_CharacterDetailModal> {
     return Row(
       mainAxisAlignment: MainAxisAlignment.spaceBetween,
       children: [
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            color: Colors.grey,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 14, color: Colors.grey)),
         Text(
           value,
           style: const TextStyle(

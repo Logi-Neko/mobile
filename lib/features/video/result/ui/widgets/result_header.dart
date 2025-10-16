@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
 
 class ResultHeader extends StatelessWidget {
-  const ResultHeader({super.key});
+  const ResultHeader({super.key}); // ✅ Xóa callback, dùng Navigator.pop trực tiếp
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +17,7 @@ class ResultHeader extends StatelessWidget {
           Row(
             children: [
               IconButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(context, 'completed'), // ✅ Trả về 'completed'
                 icon: const Icon(Icons.arrow_back, color: Colors.white),
               ),
               const Spacer(),
