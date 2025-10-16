@@ -7,6 +7,8 @@ import 'package:logi_neko/core/router/app_router.dart';
 import 'package:logi_neko/core/services/google_sign_in_service.dart';
 import 'package:logi_neko/features/auth/repository/auth_repository.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:logi_neko/features/home/bloc/home_bloc.dart';
+import 'package:logi_neko/features/home/repository/home_repo.dart';
 import 'features/auth/bloc/auth_bloc.dart';
 
 final _appRouter = AppRouter();
@@ -37,6 +39,10 @@ class MyApp extends StatelessWidget {
       providers: [
         BlocProvider<AuthBloc>(
           create: (_) => AuthBloc(authRepository: AuthRepository()),
+        ),
+        BlocProvider<HomeBloc>(
+          create: (context) => HomeBloc(HomeRepositoryImpl())
+            ..add(GetUserInfo()),
         ),
       ],
       child: MaterialApp.router(

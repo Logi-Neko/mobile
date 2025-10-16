@@ -1,4 +1,8 @@
+import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:logi_neko/core/router/app_router.dart';
+import 'package:logi_neko/features/home/ui/screen/home_screen.dart';
 import 'package:logi_neko/features/video/video_quiz/dto/video.dart';
 import '../widgets/result_header.dart';
 import '../widgets/result_score.dart';
@@ -42,7 +46,6 @@ class _ResultScreenState extends State<ResultScreen> {
       onWillPop: () async {
         if (_isNavigating) return false;
         _isNavigating = true;
-        // ✅ Return 'completed' để trigger reload ở LessonScreen
         Navigator.of(context).pop('completed');
         return false;
       },
@@ -148,13 +151,6 @@ class _ResultScreenState extends State<ResultScreen> {
   }
 
   void _onHome(BuildContext context) {
-    if (_isNavigating) return;
-    _isNavigating = true;
-
-    Future.delayed(Duration(milliseconds: 100), () {
-      if (mounted) {
-        Navigator.of(context).popUntil((route) => route.isFirst);
-      }
-    });
+    context.router.push(const HomeRoute());
   }
 }

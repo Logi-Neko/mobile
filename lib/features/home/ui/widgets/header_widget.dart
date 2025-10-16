@@ -233,9 +233,8 @@ class HeaderWidget extends StatelessWidget {
     return GestureDetector(
         onTap: () {
           if (user?.id != null) {
-            context.router.pushAndPopUntil(
+            context.router.push(
               LearningReportRoute(accountId: user!.id),
-              predicate: (route) => false,
             );
           }
         },
@@ -283,10 +282,7 @@ class HeaderWidget extends StatelessWidget {
   Widget _buildPremiumContainer(BuildContext context, bool isVerySmallScreen) {
     return GestureDetector(
       onTap: () {
-        context.router.pushAndPopUntil(
-          const SubscriptionRoute(),
-          predicate: (route) => false,
-        );
+        context.router.push(const SubscriptionRoute());
       },
       child: Container(
         padding: EdgeInsets.symmetric(

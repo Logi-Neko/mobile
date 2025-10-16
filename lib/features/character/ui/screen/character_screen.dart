@@ -113,9 +113,8 @@ class CharacterView extends StatelessWidget {
       child: Row(
         children: [
           GestureDetector(
-            onTap: () => context.router.pushAndPopUntil(
+            onTap: () => context.router.push(
               const HomeRoute(),
-              predicate: (route) => false,
             ),
             child: Container(
               width: 40,

@@ -84,10 +84,10 @@ class LessonGridWidget extends StatelessWidget {
           crossAxisCount = 4;
           childAspectRatio = 1.0;
         } else if (constraints.maxWidth > 600) {
-          crossAxisCount = 3;
+          crossAxisCount = 4;
           childAspectRatio = 0.85;
         } else {
-          crossAxisCount = 2;
+          crossAxisCount = 3;
           childAspectRatio = 1.0;
         }
 
