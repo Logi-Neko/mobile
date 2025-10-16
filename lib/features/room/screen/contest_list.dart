@@ -281,6 +281,14 @@ class _ContestListScreenState extends State<ContestListScreen> {
                     fontWeight: FontWeight.w500,
                   ),
                 ),
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(Icons.history_rounded, color: AppColors.textPrimary),
+                  onPressed: () {
+                    context.router.push(const ContestHistoryRoute());
+                  },
+                  tooltip: 'Lịch sử thi đấu',
+                ),
               ],
             ),
           ),

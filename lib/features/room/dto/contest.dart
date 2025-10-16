@@ -194,3 +194,30 @@ class QuestionResponse {
     );
   }
 }
+class ContestHistory {
+  final int contestId;
+  final String contestTitle;
+  final DateTime startTime;
+  final int score;
+  final int rank;
+
+  ContestHistory({
+    required this.contestId,
+    required this.contestTitle,
+    required this.startTime,
+    required this.score,
+    required this.rank,
+  });
+
+  factory ContestHistory.fromJson(Map<String, dynamic> json) {
+    return ContestHistory(
+      contestId: json['contestId'] ?? 0,
+      contestTitle: json['contestTitle'] ?? 'Unknown Contest',
+      startTime: json['startTime'] != null
+          ? DateTime.parse(json['startTime'])
+          : DateTime.now(),
+      score: json['score'] ?? 0,
+      rank: json['rank'] ?? 0,
+    );
+  }
+}

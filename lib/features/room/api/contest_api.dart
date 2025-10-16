@@ -255,4 +255,30 @@ class ContestService {
       throw Exception('Failed to get leaderboard: ${response.body}');
     }
   }
+
+
+  Future<void> rewardTopFive(int contestId) async {
+    final uri = Uri.parse('$baseUrl/api/contest/$contestId/reward-top-5');
+    final response = await http.post(uri);
+
+    if (response.statusCode != 200) {
+      throw Exception('Failed to reward top five participants: ${response.body}');
+    }
+    print('🏆 [ContestAPI] Rewarded top five for contest $contestId');
+  }
+
+  Future<List<ContestHistory>> getContestHistory(int accountId) async {
+    final uri = Uri.parse('$baseUrl/api/contest/history/$accountId');
+    final response = await http.get(uri);
+
+    if (response.statusCode == 200) {
+      final jsonData = json.decode(response.body);
+      final List<dynamic> historyData = jsonData['data'];
+      return historyData
+          .map((json) => ContestHistory.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } else {
+      throw Exception('Failed to load contest history: ${response.body}');
+    }
+  }
 }

@@ -32,6 +32,12 @@ abstract class _$AppRouter extends RootStackRouter {
         ),
       );
     },
+    ContestHistoryRoute.name: (routeData) {
+      return AutoRoutePage<dynamic>(
+        routeData: routeData,
+        child: const ContestHistoryScreen(),
+      );
+    },
     ContestListRoute.name: (routeData) {
       return AutoRoutePage<dynamic>(
         routeData: routeData,
@@ -253,6 +259,20 @@ class CharacterRouteArgs {
   String toString() {
     return 'CharacterRouteArgs{key: $key, user: $user}';
   }
+}
+
+/// generated route for
+/// [ContestHistoryScreen]
+class ContestHistoryRoute extends PageRouteInfo<void> {
+  const ContestHistoryRoute({List<PageRouteInfo>? children})
+      : super(
+          ContestHistoryRoute.name,
+          initialChildren: children,
+        );
+
+  static const String name = 'ContestHistoryRoute';
+
+  static const PageInfo<void> page = PageInfo<void>(name);
 }
 
 /// generated route for
