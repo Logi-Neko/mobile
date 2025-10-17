@@ -32,7 +32,7 @@ class SendFriendRequestDialog extends StatelessWidget {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text(
-                state.message,
+                "Đã gửi lời mời kết bạn thành công",
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.w600,

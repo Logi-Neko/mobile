@@ -173,9 +173,6 @@ class _EquationDisplayState extends State<EquationDisplay> {
   }
 
   Widget _buildVideoPlayer() {
-    final videoSize = _controller!.value.size;
-    final aspectRatio = videoSize.width / videoSize.height;
-
     return GestureDetector(
       onTap: _toggleControls,
       child: Container(
@@ -185,7 +182,7 @@ class _EquationDisplayState extends State<EquationDisplay> {
           children: [
             Center(
               child: AspectRatio(
-                aspectRatio: aspectRatio,
+                aspectRatio: 16 / 9,
                 child: VideoPlayer(_controller!),
               ),
             ),

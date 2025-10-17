@@ -40,8 +40,12 @@ class LoginScreen extends StatelessWidget {
                     child: Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.15),
-                        borderRadius: BorderRadius.circular(16),
+                        gradient: LinearGradient(
+                          colors: [Color(0xFF0D47A1), Color(0xFF002171)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                        borderRadius: BorderRadius.circular(15),
                         border: Border.all(
                           color: Colors.white.withValues(alpha: 0.3),
                           width: 1,
@@ -57,7 +61,7 @@ class LoginScreen extends StatelessWidget {
                       child: const Icon(
                         Icons.arrow_back_ios_new_rounded,
                         color: Colors.white,
-                        size: 22,
+                        size: 24,
                       ),
                     ),
                   ),

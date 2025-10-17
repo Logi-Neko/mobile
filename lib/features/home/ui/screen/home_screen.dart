@@ -215,10 +215,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                               },
                             ),
                             const SizedBox(height: 18),
-                            // Animated Content
-                            Expanded(
-                              child: _buildContent(context, state),
-                            ),
+                            if (state is! HomeError) ...[
+                              const SizedBox(height: 18),
+                              Expanded(
+                                child: _buildContent(context, state),
+                              ),
+                            ],
                           ],
                         );
                       },
