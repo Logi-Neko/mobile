@@ -1,6 +1,7 @@
 import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:logi_neko/core/router/app_router.dart';
+import 'package:logi_neko/shared/color/app_color.dart';
 import '../widgets/subcription_card.dart';
 
 @RoutePage()
@@ -15,13 +16,12 @@ class SubscriptionScreen extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
+            colors: [
+              Color(0xFF0D47A1),
+              Color(0xFF002171),
+            ],
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFE691F7),
-              Color(0xFF9C64F7),
-              Color(0xFF4A90E2),
-            ],
           ),
         ),
         child: SafeArea(
@@ -41,13 +41,13 @@ class SubscriptionScreen extends StatelessWidget {
                             style: TextButton.styleFrom(
                               backgroundColor: Colors.white,
                               shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(30),
-                                side: const BorderSide(color: Colors.black),
+                                borderRadius: BorderRadius.circular(15),
                               ),
                             ),
                             onPressed: () => context.router.push(
                               const HomeRoute(),
-                            ),                            icon: const Icon(Icons.arrow_back, color: Colors.black),
+                            ),
+                            icon: const Icon(Icons.arrow_back, color: Colors.black),
                             label: const Text("Quay lại", style: TextStyle(color: Colors.black)),
                           ),
                         ),
@@ -87,11 +87,7 @@ class SubscriptionScreen extends StatelessWidget {
                         width: 280,
                         padding: const EdgeInsets.all(20),
                         decoration: BoxDecoration(
-                          gradient: const LinearGradient(
-                            colors: [Color(0xFF7B68EE), Color(0xFF4A90E2)],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                          ),
+                          gradient: AppColors.primaryGradient,
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: const Column(

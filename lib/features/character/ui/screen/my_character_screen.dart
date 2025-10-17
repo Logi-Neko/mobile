@@ -187,7 +187,14 @@ class _MyCharacterViewState extends State<MyCharacterView> {
               height: 40,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                color: Colors.white.withOpacity(0.2),
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF0D47A1),
+                    Color(0xFF002171),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 border: Border.all(
                   color: Colors.white.withOpacity(0.3),
                   width: 1,
