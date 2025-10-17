@@ -166,7 +166,6 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
                                 child: _buildMainCard(),
                               ),
                             ),
-                            // ✅ Loading overlay khi đang reload
                             if (_isLoadingLesson)
                               Container(
                                 color: Colors.black.withOpacity(0.3),
@@ -196,10 +195,17 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
       child: Row(
         children: [
           Container(
-            width: 48,
-            height: 48,
+            width: 45,
+            height: 45,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF0D47A1),
+                  Color(0xFF002171),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: Colors.white.withOpacity(0.2)),
               boxShadow: [
@@ -232,7 +238,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
                   _currentLesson.name,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 28,
+                    fontSize: 24,
                     fontWeight: FontWeight.bold,
                     letterSpacing: -0.5,
                   ),
@@ -288,17 +294,17 @@ class _LessonDetailScreenState extends State<LessonDetailScreen>
               _currentLesson.description,
               style: const TextStyle(
                 fontSize: 18,
-                color: Colors.white,
+                color: Color(0xFF002171),
                 height: 1.4,
               ),
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             _buildProgressSection(),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             _buildStatsSection(),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             SizedBox(
               width: double.infinity,
               height: 40,

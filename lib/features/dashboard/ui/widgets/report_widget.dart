@@ -43,11 +43,15 @@ class ReportHeader extends StatelessWidget {
           GestureDetector(
             onTap: () => context.router.push(const HomeRoute()),
             child: Container(
-              width: 40,
-              height: 40,
+              width: 50,
+              height: 50,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(12),
-                color: Colors.white.withOpacity(0.2),
+                gradient: LinearGradient(
+                  colors: [Color(0xFF0D47A1), Color(0xFF002171)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 border: Border.all(
                   color: Colors.white.withOpacity(0.3),
                   width: 1,
@@ -56,7 +60,7 @@ class ReportHeader extends StatelessWidget {
               child: const Icon(
                 Icons.arrow_back_ios_new,
                 color: Colors.white,
-                size: 18,
+                size: 24,
               ),
             ),
           ),
@@ -68,7 +72,7 @@ class ReportHeader extends StatelessWidget {
                 const Text(
                   'Báo cáo học tập',
                   style: TextStyle(
-                    fontSize: 22,
+                    fontSize: 20,
                     fontWeight: FontWeight.bold,
                     color: Colors.white,
                   ),
@@ -85,28 +89,25 @@ class ReportHeader extends StatelessWidget {
             ),
           ),
           Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
               color: Colors.white.withOpacity(0.15),
-              border: Border.all(
-                color: Colors.black38,
-                width: 2,
-              ),
+              border: Border.all(color: Color(0xFF0D47A1), width: 2),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
               children: [
                 const Icon(
                   Icons.timer_outlined,
-                  color: Colors.black87,
+                  color: Color(0xFF002171),
                   size: 18,
                 ),
                 const SizedBox(width: 6),
                 Text(
                   formattedTime,
                   style: const TextStyle(
-                    color: Colors.black87,
+                    color: Color(0xFF002171),
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
                   ),
@@ -210,7 +211,7 @@ class CourseReportCard extends StatelessWidget {
           if (lessons.isNotEmpty) ...[
             const SizedBox(height: 16),
             ...lessons.map(
-                  (lesson) =>
+              (lesson) =>
                   LessonItem(lesson: lesson, courseColor: course.courseColor),
             ),
           ],
@@ -264,7 +265,7 @@ class LessonItem extends StatelessWidget {
   final Color courseColor;
 
   const LessonItem({Key? key, required this.lesson, required this.courseColor})
-      : super(key: key);
+    : super(key: key);
 
   String _formatLessonDuration(int seconds) {
     final minutes = seconds ~/ 60;
@@ -768,9 +769,9 @@ class _QuickDateButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(10),
           color: isSelected ? const Color(0xFF667EEA) : const Color(0xFFF3F4F6),
           border:
-          isSelected
-              ? null
-              : Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
+              isSelected
+                  ? null
+                  : Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
         ),
         child: Text(
           label,

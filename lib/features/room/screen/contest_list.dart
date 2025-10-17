@@ -196,15 +196,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [
-              Color(0xFFF8FAFC),
-              Color(0xFFEEF2FF),
-              Color(0xFFFCE7F3),
-            ],
-          ),
+          gradient: AppColors.primaryGradient,
         ),
         child: SafeArea(
           child: Column(
@@ -228,47 +220,67 @@ class _ContestListScreenState extends State<ContestListScreen> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(12, 12, 20, 12),
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.7),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x08000000),
-            blurRadius: 10,
-            offset: Offset(0, 2),
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 12,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: Row(
         children: [
+          // Back button
           Container(
             decoration: BoxDecoration(
-              color: Colors.white,
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF0D47A1),
+                    Color(0xFF002171),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
               shape: BoxShape.circle,
-              boxShadow: const [
+              boxShadow: [
                 BoxShadow(
-                  color: Color(0x0A000000),
-                  blurRadius: 8,
-                  offset: Offset(0, 2),
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 6,
+                  offset: const Offset(0, 1),
                 ),
               ],
             ),
             child: IconButton(
-              icon: const Icon(Icons.arrow_back_ios_new_rounded, color: AppColors.textPrimary, size: 20),
-              onPressed: () => context.router.back(),
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+              onPressed: () => context.router.push(const HomeRoute()),
+              iconSize: 24,
+              padding: const EdgeInsets.all(8),
+              constraints: const BoxConstraints(
+                minWidth: 40,
+                minHeight: 40,
+              ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
+
+          // Title and subtitle
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 const Text(
                   'Danh sách Contest',
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
+                    color: Colors.black,
                     letterSpacing: -0.5,
                   ),
                 ),
@@ -277,19 +289,50 @@ class _ContestListScreenState extends State<ContestListScreen> {
                   '$_totalElements cuộc thi có sẵn',
                   style: const TextStyle(
                     fontSize: 12,
-                    color: AppColors.textSecondary,
+                    color: Colors.black87,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
-                const SizedBox(width: 8),
-                IconButton(
-                  icon: const Icon(Icons.history_rounded, color: AppColors.textPrimary),
-                  onPressed: () {
-                    context.router.push(const ContestHistoryRoute());
-                  },
-                  tooltip: 'Lịch sử thi đấu',
+              ],
+            ),
+          ),
+
+          // History button
+          Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF0D47A1),
+                  Color(0xFF002171),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              shape: BoxShape.circle,
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF667EEA).withOpacity(0.25),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
                 ),
               ],
+            ),
+            child: IconButton(
+              icon: const Icon(
+                Icons.history_rounded,
+                color: Colors.white,
+                size: 24,
+              ),
+              onPressed: () {
+                context.router.push(const ContestHistoryRoute());
+              },
+              tooltip: 'Lịch sử thi đấu',
+              iconSize: 20,
+              padding: const EdgeInsets.all(10),
+              constraints: const BoxConstraints(
+                minWidth: 44,
+                minHeight: 44,
+              ),
             ),
           ),
         ],
@@ -299,7 +342,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -358,7 +401,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
   Widget _buildContestList() {
     return ListView.builder(
       controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
       itemCount: _contests.length,
       itemBuilder: (context, index) {
         return _buildContestCard(_contests[index], index);

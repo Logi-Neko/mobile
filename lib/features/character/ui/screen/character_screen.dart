@@ -120,8 +120,15 @@ class CharacterView extends StatelessWidget {
               width: 40,
               height: 40,
               decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    Color(0xFF0D47A1),
+                    Color(0xFF002171),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
                 borderRadius: BorderRadius.circular(12),
-                color: Colors.white.withOpacity(0.2),
                 border: Border.all(
                   color: Colors.white.withOpacity(0.3),
                   width: 1,
@@ -153,8 +160,15 @@ class CharacterView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.4),
-              borderRadius: BorderRadius.circular(15),
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF0D47A1),
+                  Color(0xFF002171),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(10),
             ),
             child: Row(
               mainAxisSize: MainAxisSize.min,
@@ -164,7 +178,7 @@ class CharacterView extends StatelessWidget {
                 Text(
                   '$userStars',
                   style: const TextStyle(
-                    color: Colors.black87,
+                    color: Colors.white,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),

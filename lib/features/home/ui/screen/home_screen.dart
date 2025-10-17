@@ -434,7 +434,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
           ),
         );        break;
       case 3: // Bảng xếp hạng
-        context.router.push(const LeaderboardRoute());
+        context.router.push(LeaderboardRoute());
         break;
     }
   }

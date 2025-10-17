@@ -262,7 +262,7 @@ class _LearningReportPageContentState extends State<_LearningReportPageContent>
                   ),
                 ],
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 8),
               if (state.groupedLessons.isNotEmpty) ...[
                 Center(
                   child: const Text(
