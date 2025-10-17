@@ -8,11 +8,34 @@ import '../../dto/report.dart';
 
 class ReportHeader extends StatelessWidget {
   final VoidCallback? onBackPressed;
+  final int totalStudyTimeMinutes;
 
-  const ReportHeader({Key? key, this.onBackPressed}) : super(key: key);
+  const ReportHeader({
+    Key? key,
+    this.onBackPressed,
+    this.totalStudyTimeMinutes = 0,
+  }) : super(key: key);
+
+  String _formatTime(int seconds) {
+    final totalMinutes = (seconds / 60).ceil(); // Làm tròn lên
+
+    if (totalMinutes < 60) {
+      return '${totalMinutes}m';
+    } else {
+      final hours = totalMinutes ~/ 60;
+      final remainingMinutes = totalMinutes % 60;
+      if (remainingMinutes == 0) {
+        return '${hours}h';
+      } else {
+        return '${hours}h ${remainingMinutes}m';
+      }
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final formattedTime = _formatTime(totalStudyTimeMinutes);
+
     return Container(
       padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Row(
@@ -62,174 +85,37 @@ class ReportHeader extends StatelessWidget {
             ),
           ),
           Container(
-            width: 40,
-            height: 40,
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
             decoration: BoxDecoration(
               borderRadius: BorderRadius.circular(12),
-              color: Colors.white.withOpacity(0.2),
+              color: Colors.white.withOpacity(0.15),
+              border: Border.all(
+                color: Colors.black38,
+                width: 2,
+              ),
             ),
-            child: const Icon(Icons.more_vert, color: Colors.white, size: 18),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(
+                  Icons.timer_outlined,
+                  color: Colors.black87,
+                  size: 18,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  formattedTime,
+                  style: const TextStyle(
+                    color: Colors.black87,
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
-    );
-  }
-}
-
-class StudyTimeCard extends StatefulWidget {
-  final int totalStudyTimeMinutes;
-
-  const StudyTimeCard({Key? key, required this.totalStudyTimeMinutes})
-    : super(key: key);
-
-  @override
-  State<StudyTimeCard> createState() => _StudyTimeCardState();
-}
-
-class _StudyTimeCardState extends State<StudyTimeCard>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _animationController;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _animationController = AnimationController(
-      duration: const Duration(milliseconds: 1500),
-      vsync: this,
-    );
-    _animation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(
-        parent: _animationController,
-        curve: Curves.easeInOutSine,
-      ),
-    );
-    _animationController.repeat(reverse: true);
-  }
-
-  @override
-  void dispose() {
-    _animationController.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final hours = widget.totalStudyTimeMinutes ~/ 60;
-    final minutes = widget.totalStudyTimeMinutes % 60;
-
-    return AnimatedBuilder(
-      animation: _animation,
-      builder: (context, child) {
-        return Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(20),
-            gradient: const LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Color(0xFFFF6B6B), Color(0xFFFF8E53)],
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFFFF6B6B).withOpacity(0.25),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // Icon
-                    Container(
-                      padding: const EdgeInsets.all(6),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(8),
-                        color: Colors.white.withOpacity(0.2),
-                      ),
-                      child: const Icon(
-                        Icons.timer_outlined,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    // Text "Tổng thời gian học"
-                    const Text(
-                      'Tổng thời gian học',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-
-                    // Số giờ học
-                    Text(
-                      '${hours}h ${minutes}m',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 28,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: -0.5,
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-
-                    // "hôm nay"
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: Colors.white.withOpacity(0.2),
-                      ),
-                      child: const Text(
-                        'hôm nay',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(16),
-                  color: Colors.white.withOpacity(
-                    0.15 + 0.1 * _animation.value,
-                  ),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
-                    width: 1,
-                  ),
-                ),
-                child: Transform.scale(
-                  scale: 1.0 + 0.05 * _animation.value,
-                  child: const Icon(
-                    Icons.trending_up,
-                    color: Colors.white,
-                    size: 28,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        );
-      },
     );
   }
 }
@@ -245,6 +131,11 @@ class CourseReportCard extends StatelessWidget {
     required this.lessons,
     required this.studyTimeMinutes,
   }) : super(key: key);
+
+  String _formatStudyTime(int seconds) {
+    final totalMinutes = (seconds / 60).ceil(); // Làm tròn lên
+    return '${totalMinutes}m';
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -299,7 +190,7 @@ class CourseReportCard extends StatelessWidget {
                       children: [
                         InfoChip(
                           icon: Icons.access_time,
-                          text: '${studyTimeMinutes}p',
+                          text: _formatStudyTime(studyTimeMinutes),
                           color: course.courseColor,
                         ),
                         const SizedBox(width: 8),
@@ -319,7 +210,7 @@ class CourseReportCard extends StatelessWidget {
           if (lessons.isNotEmpty) ...[
             const SizedBox(height: 16),
             ...lessons.map(
-              (lesson) =>
+                  (lesson) =>
                   LessonItem(lesson: lesson, courseColor: course.courseColor),
             ),
           ],
@@ -373,7 +264,20 @@ class LessonItem extends StatelessWidget {
   final Color courseColor;
 
   const LessonItem({Key? key, required this.lesson, required this.courseColor})
-    : super(key: key);
+      : super(key: key);
+
+  String _formatLessonDuration(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+
+    if (minutes == 0) {
+      return '${remainingSeconds}s';
+    } else if (remainingSeconds == 0) {
+      return '${minutes}m';
+    } else {
+      return '${minutes}m ${remainingSeconds}s';
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -455,7 +359,7 @@ class LessonItem extends StatelessWidget {
                     ),
                     const SizedBox(width: 4),
                     Text(
-                      lesson.formattedDuration,
+                      _formatLessonDuration(lesson.duration),
                       style: TextStyle(
                         color: Colors.grey[600],
                         fontSize: 12,
@@ -655,7 +559,7 @@ class DateRangeSelector extends StatelessWidget {
               size: 20,
             ),
           ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 8),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -673,7 +577,7 @@ class DateRangeSelector extends StatelessWidget {
                   Text(
                     DateFormat('dd/MM/yyyy').format(fromDate),
                     style: const TextStyle(
-                      fontSize: 16,
+                      fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF1F2937),
                     ),
@@ -685,7 +589,7 @@ class DateRangeSelector extends StatelessWidget {
                       Text(
                         '${DateFormat('dd/MM/yyyy').format(fromDate)} - ${DateFormat('dd/MM/yyyy').format(toDate)}',
                         style: const TextStyle(
-                          fontSize: 16,
+                          fontSize: 14,
                           fontWeight: FontWeight.bold,
                           color: Color(0xFF1F2937),
                         ),
@@ -744,9 +648,9 @@ class QuickDateButtons extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(15),
         color: Colors.white,
         boxShadow: [
           BoxShadow(
@@ -769,7 +673,7 @@ class QuickDateButtons extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Wrap(
-            spacing: 8,
+            spacing: 4,
             runSpacing: 8,
             children: [
               _QuickDateButton(
@@ -859,14 +763,14 @@ class _QuickDateButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(10),
           color: isSelected ? const Color(0xFF667EEA) : const Color(0xFFF3F4F6),
           border:
-              isSelected
-                  ? null
-                  : Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
+          isSelected
+              ? null
+              : Border.all(color: Colors.grey.withOpacity(0.3), width: 1),
         ),
         child: Text(
           label,

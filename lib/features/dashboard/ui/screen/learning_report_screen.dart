@@ -46,7 +46,7 @@ class _LearningReportPageContentState extends State<_LearningReportPageContent>
   late AnimationController _fadeAnimationController;
   late Animation<double> _backgroundAnimation;
   late Animation<double> _fadeAnimation;
-
+  int totalStudyTime = 0;
   int get accountId => widget.accountId ?? 1;
 
   @override
@@ -125,48 +125,49 @@ class _LearningReportPageContentState extends State<_LearningReportPageContent>
           _buildAnimatedBackground(),
 
           SafeArea(
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: Column(
-                children: [
-                  const ReportHeader(),
-
-                  Expanded(
-                    child: BlocConsumer<ReportBloc, ReportState>(
-                      listener: (context, state) {
-                        if (state is ReportError) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(
-                              content: Text(state.message),
-                              backgroundColor: Colors.red,
-                              behavior: SnackBarBehavior.floating,
-                              margin: const EdgeInsets.all(16),
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(12),
-                              ),
+            child: Column(
+              children: [
+                ReportHeader(totalStudyTimeMinutes: totalStudyTime),
+                Expanded(
+                  child: BlocConsumer<ReportBloc, ReportState>(
+                    listener: (context, state) {
+                      if (state is ReportLoaded) {
+                        setState(() {
+                          totalStudyTime = state.totalStudyTime;
+                        });
+                      }
+                      if (state is ReportError) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text(state.message),
+                            backgroundColor: Colors.red,
+                            behavior: SnackBarBehavior.floating,
+                            margin: const EdgeInsets.all(16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                          );
-                        }
-                      },
-                      builder: (context, state) {
-                        if (state is ReportLoading) {
-                          return const LoadingState();
-                        } else if (state is ReportLoaded) {
-                          return _buildLoadedContent(state);
-                        } else if (state is ReportError) {
-                          return ErrorState(
-                            message: state.message,
-                            details: state.details,
-                            onRetry: () => _loadTodayReport(),
-                          );
-                        } else {
-                          return const LoadingState();
-                        }
-                      },
-                    ),
+                          ),
+                        );
+                      }
+                    },
+                    builder: (context, state) {
+                      if (state is ReportLoading) {
+                        return const LoadingState();
+                      } else if (state is ReportLoaded) {
+                        return _buildLoadedContent(state);
+                      } else if (state is ReportError) {
+                        return ErrorState(
+                          message: state.message,
+                          details: state.details,
+                          onRetry: () => _loadTodayReport(),
+                        );
+                      } else {
+                        return const LoadingState();
+                      }
+                    },
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -234,113 +235,107 @@ class _LearningReportPageContentState extends State<_LearningReportPageContent>
       },
       child: SingleChildScrollView(
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: const EdgeInsets.fromLTRB(16, 0, 16, 80),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 16),
-
-            Row(
-              children: [
-                Expanded(
-                  flex: 5,
-                  child: DateRangeSelector(
-                    fromDate: fromDate,
-                    toDate: toDate,
-                    onTap: _selectDateRange,
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 80),
+        child: FadeTransition(
+          opacity: _fadeAnimation,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Expanded(
+                    flex: 5,
+                    child: DateRangeSelector(
+                      fromDate: fromDate,
+                      toDate: toDate,
+                      onTap: _selectDateRange,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    flex: 6,
+                    child: QuickDateButtons(
+                      currentFromDate: fromDate,
+                      currentToDate: toDate,
+                      onDateRangeSelected: _loadDateRangeReport,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 16),
+              if (state.groupedLessons.isNotEmpty) ...[
+                Center(
+                  child: const Text(
+                    'Tiến độ học tập',
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.white,
+                    ),
+                    textAlign: TextAlign.center,
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  flex: 6,
-                  child: QuickDateButtons(
-                    currentFromDate: fromDate,
-                    currentToDate: toDate,
-                    onDateRangeSelected: _loadDateRangeReport,
+                const SizedBox(height: 12),
+                ...state.groupedLessons.entries.map((entry) {
+                  final course = entry.key;
+                  final lessons = entry.value;
+                  final studyTime = lessons.fold(0, (sum, lesson) => sum + lesson.duration);
+
+                  return CourseReportCard(
+                    course: course,
+                    lessons: lessons,
+                    studyTimeMinutes: studyTime,
+                  );
+                }),
+              ] else ...[
+                Container(
+                  padding: const EdgeInsets.all(32),
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    color: Colors.white.withOpacity(0.1),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1,
+                    ),
+                  ),
+                  child: Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(20),
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(16),
+                          color: Colors.white.withOpacity(0.1),
+                        ),
+                        child: const Icon(
+                          Icons.school_outlined,
+                          color: Colors.white,
+                          size: 48,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Chưa có dữ liệu học tập',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Hãy bắt đầu học để xem báo cáo chi tiết',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.white.withOpacity(0.8),
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
                   ),
                 ),
               ],
-            ),
-
-
-            const SizedBox(height: 20),
-
-            StudyTimeCard(
-              totalStudyTimeMinutes: state.totalStudyTime,
-            ),
-
-            const SizedBox(height: 18),
-
-            if (state.groupedLessons.isNotEmpty) ...[
-              const Text(
-                'Khóa học hôm nay',
-                style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(height: 16),
-
-              ...state.groupedLessons.entries.map((entry) {
-                final course = entry.key;
-                final lessons = entry.value;
-                final studyTime = lessons.fold(0, (sum, lesson) => sum + lesson.duration);
-
-                return CourseReportCard(
-                  course: course,
-                  lessons: lessons,
-                  studyTimeMinutes: studyTime,
-                );
-              }),
-            ] else ...[
-              Container(
-                padding: const EdgeInsets.all(32),
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(20),
-                  color: Colors.white.withOpacity(0.1),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.2),
-                    width: 1,
-                  ),
-                ),
-                child: Column(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(16),
-                        color: Colors.white.withOpacity(0.1),
-                      ),
-                      child: const Icon(
-                        Icons.school_outlined,
-                        color: Colors.white,
-                        size: 48,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const Text(
-                      'Chưa có dữ liệu học tập',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Hãy bắt đầu học để xem báo cáo chi tiết',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.white.withOpacity(0.8),
-                      ),
-                      textAlign: TextAlign.center,
-                    ),
-                  ],
-                ),
-              ),
             ],
-          ],
+          ),
         ),
       ),
     );

@@ -4,6 +4,7 @@ import 'package:auto_route/auto_route.dart';
 import 'package:logi_neko/features/home/dto/user.dart';
 import 'package:logi_neko/features/home/dto/update_age_request.dart';
 import 'package:logi_neko/features/home/api/user_api.dart';
+import 'package:logi_neko/features/home/bloc/home_bloc.dart';
 import 'package:logi_neko/features/auth/bloc/auth_bloc.dart';
 import 'package:logi_neko/core/storage/token_storage.dart';
 import 'package:logi_neko/core/router/app_router.dart';
@@ -94,9 +95,9 @@ class UserDetailDialog extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                const Text(
                   'Thông tin chi tiết',
-                  style: const TextStyle(
+                  style: TextStyle(
                     color: Colors.white,
                     fontSize: 18,
                     fontWeight: FontWeight.bold,
@@ -332,7 +333,8 @@ class UserDetailDialog extends StatelessWidget {
         borderRadius: BorderRadius.circular(25),
         boxShadow: [
           BoxShadow(
-            color: (user.isPremium ? Colors.amber.shade200 : Colors.grey.shade300).withOpacity(0.5),
+            color: (user.isPremium ? Colors.amber.shade200 : Colors.grey.shade300)
+                .withOpacity(0.5),
             blurRadius: 10,
             offset: const Offset(0, 3),
           ),
@@ -366,7 +368,6 @@ class UserDetailDialog extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Logout Button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -401,7 +402,6 @@ class UserDetailDialog extends StatelessWidget {
 
           const SizedBox(height: 12),
 
-          // Close Button
           SizedBox(
             width: double.infinity,
             child: ElevatedButton(
@@ -464,7 +464,6 @@ class UserDetailDialog extends StatelessWidget {
   }
 
   Future<void> _updateBirthday(BuildContext context, DateTime newDate) async {
-    // Show loading
     showDialog(
       context: context,
       barrierDismissible: false,
@@ -483,45 +482,75 @@ class UserDetailDialog extends StatelessWidget {
     );
 
     try {
-      final request = UpdateAgeRequest(
-        dateOfBirth: "${newDate.year}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}",
-      );
+      final dateString =
+          "${newDate.year}-${newDate.month.toString().padLeft(2, '0')}-${newDate.day.toString().padLeft(2, '0')}";
 
+      final request = UpdateAgeRequest(dateOfBirth: dateString);
       final response = await UserApi.updateUserAge(request);
 
       // Hide loading
-      Navigator.of(context).pop();
+      if (context.mounted) Navigator.of(context).pop();
 
       if (response.isSuccess) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: const Row(
-              children: [
-                Icon(Icons.check_circle, color: Colors.white, size: 20),
-                SizedBox(width: 8),
-                Text('Cập nhật ngày sinh thành công! 🎉'),
-              ],
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white, size: 20),
+                  SizedBox(width: 8),
+                  Text('Cập nhật ngày sinh thành công! 🎉'),
+                ],
+              ),
+              backgroundColor: Colors.green.shade400,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
             ),
-            backgroundColor: Colors.green.shade400,
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(10),
-            ),
-          ),
-        );
-        // Close dialog to refresh data
-        Navigator.of(context).pop();
+          );
+
+          // Trigger HomeBloc to refresh user data
+          context.read<HomeBloc>().add(const UpdateUserAge(dateOfBirth: ""));
+        }
+
+        // Close dialog
+        if (context.mounted) Navigator.of(context).pop();
       } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.error, color: Colors.white, size: 20),
+                  const SizedBox(width: 8),
+                  Expanded(child: Text('Lỗi: ${response.message}')),
+                ],
+              ),
+              backgroundColor: Colors.red.shade400,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      // Hide loading
+      if (context.mounted) Navigator.of(context).pop();
+
+      if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Row(
               children: [
-                const Icon(Icons.error, color: Colors.white, size: 20),
+                const Icon(Icons.warning, color: Colors.white, size: 20),
                 const SizedBox(width: 8),
-                Expanded(child: Text('Lỗi: ${response.message}')),
+                Expanded(child: Text('Có lỗi xảy ra: $e')),
               ],
             ),
-            backgroundColor: Colors.red.shade400,
+            backgroundColor: Colors.orange.shade500,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -529,26 +558,6 @@ class UserDetailDialog extends StatelessWidget {
           ),
         );
       }
-    } catch (e) {
-      // Hide loading
-      Navigator.of(context).pop();
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Row(
-            children: [
-              const Icon(Icons.warning, color: Colors.white, size: 20),
-              const SizedBox(width: 8),
-              Expanded(child: Text('Có lỗi xảy ra: $e')),
-            ],
-          ),
-          backgroundColor: Colors.orange.shade500,
-          behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(10),
-          ),
-        ),
-      );
     }
   }
 
@@ -563,7 +572,6 @@ class UserDetailDialog extends StatelessWidget {
 
   Future<void> _handleLogout(BuildContext context) async {
     try {
-      // Show loading dialog
       showDialog(
         context: context,
         barrierDismissible: false,
@@ -581,16 +589,19 @@ class UserDetailDialog extends StatelessWidget {
         ),
       );
 
-      // Get refresh token from storage
       final tokenStorage = TokenStorage.instance;
       final refreshToken = await tokenStorage.getRefreshToken();
 
       if (refreshToken == null) {
-        // Close loading dialog
-        if (context.mounted) Navigator.of(context).pop();
-        // Close user detail dialog
-        if (context.mounted) Navigator.of(context).pop();
-        // Navigate to login
+        if (context.mounted) {
+          Navigator.of(context).pop();
+          Navigator.of(context).pop();
+        }
+
+        if (context.mounted) {
+          context.read<HomeBloc>().reset();
+        }
+
         if (context.mounted) {
           context.router.popUntilRoot();
           context.router.replace(const LoginRoute());
@@ -598,32 +609,42 @@ class UserDetailDialog extends StatelessWidget {
         return;
       }
 
-      // Call logout API through AuthBloc
-      if (!context.mounted) return;
+      if (!context.mounted) {
+        return;
+      }
+
       final authBloc = context.read<AuthBloc>();
       authBloc.add(AuthLogoutSubmitted(refreshToken: refreshToken));
 
-      // Listen for logout result
-      await authBloc.stream.firstWhere((state) =>
-      state is AuthLogoutSuccess || state is AuthFailure
-      );
+      try {
+        await authBloc.stream
+            .firstWhere(
+              (state) => state is AuthLogoutSuccess || state is AuthFailure,
+        )
+            .timeout(const Duration(seconds: 10));
+      } catch (e) {
+      }
 
-      // Close loading dialog
-      if (context.mounted) Navigator.of(context).pop();
-      // Close user detail dialog
-      if (context.mounted) Navigator.of(context).pop();
+      if (context.mounted) {
+        Navigator.of(context).pop();
+        Navigator.of(context).pop();
+      }
 
-      // Navigate to login screen
+      if (context.mounted) {
+        context.read<HomeBloc>().reset();
+      }
+
       if (context.mounted) {
         context.router.popUntilRoot();
         context.router.replace(const LoginRoute());
       }
-
     } catch (e) {
-      // Close loading dialog if still open
-      if (context.mounted) Navigator.of(context).pop();
+      try {
+        if (context.mounted) {
+          Navigator.of(context, rootNavigator: true).pop();
+        }
+      } catch (_) {}
 
-      // Show error message
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(

@@ -38,7 +38,7 @@ class LearningCardWidget extends StatelessWidget {
             ],
             stops: const [0.0, 0.8, 1.0],
           ),
-          borderRadius: BorderRadius.circular(24),
+          borderRadius: BorderRadius.circular(20),
           boxShadow: [
             BoxShadow(
               color: color.withOpacity(0.3),
@@ -62,8 +62,8 @@ class LearningCardWidget extends StatelessWidget {
           children: [
             // Container cho hình ảnh hoặc icon
             Container(
-              width: 80,
-              height: 80,
+              width: 140,
+              height: 120,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   begin: Alignment.topLeft,
@@ -93,7 +93,7 @@ class LearningCardWidget extends StatelessWidget {
                           return Icon(
                             icon,
                             color: Colors.white,
-                            size: 20,
+                            size: 40,
                           );
                         },
                       ),
@@ -104,13 +104,13 @@ class LearningCardWidget extends StatelessWidget {
                       size: 40,
                     ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 8),
             // Title với style đẹp hơn
             Text(
               title,
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.bold,
                 color: color,
                 height: 1.2,
