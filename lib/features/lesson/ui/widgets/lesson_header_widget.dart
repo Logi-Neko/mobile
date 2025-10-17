@@ -39,15 +39,6 @@ class LessonHeaderWidget extends StatelessWidget {
               ),
               Row(
                 children: [
-                  _buildActionButton(
-                    icon: Icons.favorite_outline,
-                    onPressed: () {},
-                  ),
-                  const SizedBox(width: 8),
-                  _buildActionButton(
-                    icon: Icons.share_outlined,
-                    onPressed: () {},
-                  ),
                   const SizedBox(width: 8),
                   _buildActionButton(
                     icon: Icons.more_vert,
