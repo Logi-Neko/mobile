@@ -142,7 +142,7 @@ class CharacterView extends StatelessWidget {
             child: Text(
               'Cửa Hàng Nhân Vật',
               style: TextStyle(
-                color: Colors.white,
+                color: Colors.black87,
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
               ),
@@ -153,7 +153,7 @@ class CharacterView extends StatelessWidget {
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.3),
+              color: Colors.white.withValues(alpha: 0.4),
               borderRadius: BorderRadius.circular(15),
             ),
             child: Row(
@@ -164,7 +164,7 @@ class CharacterView extends StatelessWidget {
                 Text(
                   '$userStars',
                   style: const TextStyle(
-                    color: Colors.white,
+                    color: Colors.black87,
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                   ),

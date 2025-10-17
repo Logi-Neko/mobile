@@ -26,6 +26,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   late LeaderboardBloc _leaderboardBloc;
   late AnimationController _starController;
   late AnimationController _bounceController;
+  int _currentTabIndex = 0;
 
   @override
   void initState() {
@@ -33,7 +34,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     _tabController = TabController(length: 2, vsync: this);
     _leaderboardBloc = LeaderboardBloc();
 
-    // Animation controllers for fun effects
     _starController = AnimationController(
       duration: const Duration(seconds: 2),
       vsync: this,
@@ -44,8 +44,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       vsync: this,
     )..repeat(reverse: true);
 
-    // Load initial data
     _leaderboardBloc.add(LoadGlobalLeaderboard());
+    _leaderboardBloc.add(LoadFriendsLeaderboard());
   }
 
   bool _isCurrentUser(AccountShowResponse user) {
@@ -61,6 +61,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     super.dispose();
   }
 
+  void _switchTab(int index) {
+    setState(() {
+      _currentTabIndex = index;
+    });
+    _tabController.animateTo(index);
+
+    if (index == 0) {
+      _leaderboardBloc.add(LoadGlobalLeaderboard());
+    } else {
+      _leaderboardBloc.add(LoadFriendsLeaderboard());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider.value(
@@ -68,16 +81,22 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       child: Scaffold(
         body: Container(
           decoration: const BoxDecoration(
-            gradient: AppColors.primaryGradient,
-          ),
+            gradient: LinearGradient(
+              colors: [
+                Color(0xFF0D47A1),
+                Color(0xFF002171),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),          ),
           child: SafeArea(
             child: Column(
               children: [
-                _buildCustomAppBar(),
-                _buildTabBar(),
+                _buildCompactAppBar(),
                 Expanded(
                   child: TabBarView(
                     controller: _tabController,
+                    physics: const NeverScrollableScrollPhysics(),
                     children: [
                       _buildGlobalLeaderboard(),
                       _buildFriendsLeaderboard(),
@@ -88,107 +107,90 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             ),
           ),
         ),
+        floatingActionButton: _buildFloatingNavigation(),
       ),
     );
   }
 
-  Widget _buildCustomAppBar() {
+  Widget _buildCompactAppBar() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       child: Row(
         children: [
-          // Back button with fun design
+          // Back button
           GestureDetector(
-            onTap: () => context.router.push(
-              const HomeRoute(),
-            ),
+            onTap: () => context.router.push(const HomeRoute()),
             child: Container(
-              width: 45,
-              height: 45,
+              width: 40,
+              height: 40,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
+                borderRadius: BorderRadius.circular(10),
                 gradient: const LinearGradient(
                   colors: [AppColors.accent, AppColors.primaryPink],
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: AppColors.accent.withOpacity(0.3),
-                    blurRadius: 8,
-                    offset: const Offset(0, 4),
+                    blurRadius: 6,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
               child: const Icon(
                 Icons.arrow_back_ios_new,
                 color: Colors.white,
-                size: 24,
+                size: 18,
               ),
             ),
           ),
-          const Expanded(
-            child: Center(
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.emoji_events,
-                    color: AppColors.warning,
-                    size: 28,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Bảng Xếp Hạng',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.5,
-                      shadows: [
-                        Shadow(
-                          offset: Offset(2, 2),
-                          blurRadius: 4,
-                          color: Color(0x40000000),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Icon(
-                    Icons.stars,
-                    color: AppColors.warning,
-                    size: 24,
-                  ),
-                ],
+          const SizedBox(width: 12),
+
+          // Title
+          Expanded(
+            child: Text(
+              _currentTabIndex == 0 ? 'Bảng Xếp Hạng' : 'Bạn Bè',
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 0.5,
               ),
             ),
           ),
+
+          // Notification/Friends request button
           AnimatedBuilder(
             animation: _bounceController,
             builder: (context, child) {
               return Transform.scale(
-                scale: 1.0 + (_bounceController.value * 0.1),
+                scale: 1.0 + (_bounceController.value * 0.08),
                 child: Container(
                   decoration: BoxDecoration(
                     gradient: LinearGradient(
                       colors: [AppColors.accent, AppColors.gradientMiddle],
                     ),
-                    borderRadius: BorderRadius.circular(20),
+                    borderRadius: BorderRadius.circular(12),
                     boxShadow: [
                       BoxShadow(
                         color: AppColors.accent.withOpacity(0.3),
-                        blurRadius: 8,
-                        offset: const Offset(0, 4),
+                        blurRadius: 6,
+                        offset: const Offset(0, 2),
                       ),
                     ],
                   ),
                   child: IconButton(
-                    icon: const Icon(Icons.mail, color: Colors.white, size: 20),
+                    icon: const Icon(Icons.mail, color: Colors.white, size: 18),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(
+                      minWidth: 40,
+                      minHeight: 40,
+                    ),
                     onPressed: () {
                       showDialog(
                         context: context,
                         builder: (context) => BlocProvider.value(
                           value: _leaderboardBloc,
-                          child: FriendRequestDialog(),
+                          child: const FriendRequestDialog(),
                         ),
                       );
                     },
@@ -202,73 +204,75 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     );
   }
 
-  Widget _buildTabBar() {
+  Widget _buildFloatingNavigation() {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 20, vertical: 5),
+      margin: const EdgeInsets.only(bottom: 12, right: 8),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: [AppColors.cardBackground.withOpacity(0.4), AppColors.cardBackground.withOpacity(0.2)],
+          colors: [AppColors.primaryPink, AppColors.accent],
         ),
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(color: Colors.white.withOpacity(0.3), width: 2),
-        boxShadow: AppColors.cardShadow,
-      ),
-      child: TabBar(
-        controller: _tabController,
-        indicator: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [AppColors.primaryPink, AppColors.accent],
-          ),
-          borderRadius: BorderRadius.circular(30),
-          boxShadow: [
-            BoxShadow(
-              color: AppColors.primaryPink.withOpacity(0.4),
-              blurRadius: 8,
-              offset: const Offset(0, 2),
-            ),
-          ],
-        ),
-        labelColor: Colors.white,
-        unselectedLabelColor: Colors.white,
-        labelStyle: const TextStyle(
-          fontWeight: FontWeight.w800,
-          fontSize: 16,
-          letterSpacing: 0.5,
-        ),
-        unselectedLabelStyle: const TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-        ),
-        dividerColor: Colors.transparent,
-        onTap: (index) {
-          if (index == 0) {
-            _leaderboardBloc.add(LoadGlobalLeaderboard());
-          } else {
-            _leaderboardBloc.add(LoadFriendsLeaderboard());
-          }
-        },
-        tabs: const [
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.public, size: 18),
-                SizedBox(width: 6),
-                Text('BẢNG XẾP HẠNG'),
-              ],
-            ),
-          ),
-          Tab(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.group, size: 18),
-                SizedBox(width: 6),
-                Text('BẠN BÈ'),
-              ],
-            ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primaryPink.withOpacity(0.4),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
           ),
         ],
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          _buildFabButton(
+            icon: Icons.public,
+            label: 'Bảng Xếp Hạng',
+            isActive: _currentTabIndex == 0,
+            onTap: () => _switchTab(0),
+          ),
+          const SizedBox(width: 4),
+          _buildFabButton(
+            icon: Icons.group,
+            label: 'Bạn Bè',
+            isActive: _currentTabIndex == 1,
+            onTap: () => _switchTab(1),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildFabButton({
+    required IconData icon,
+    required String label,
+    required bool isActive,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(
+          color: isActive ? Colors.white.withOpacity(0.25) : Colors.transparent,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, color: Colors.white, size: 24),
+            if (isActive) ...[
+              const SizedBox(width: 6),
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }
@@ -310,15 +314,13 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       ..sort((a, b) => b.totalStar.compareTo(a.totalStar));
 
     return SingleChildScrollView(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       child: Column(
         children: [
-          // Leaderboard list
           ...sortedLeaderboard.asMap().entries.map((entry) {
             final index = entry.key;
             final user = entry.value;
             final rank = index + 1;
-
             return _buildUserCard(user, rank);
           }).toList(),
         ],
@@ -333,70 +335,49 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
         final isFriend = _leaderboardBloc.isFriend(user.id);
         final hasPending = _leaderboardBloc.hasPendingRequest(user.id);
 
-        // Get rank colors and icons
         List<Color> getRankColors() {
           switch (rank) {
             case 1:
-              return [AppColors.warning, const Color(0xFFFFD700)]; // Gold
+              return [AppColors.warning, const Color(0xFFFFD700)];
             case 2:
-              return [const Color(0xFFC0C0C0), const Color(0xFFE8E8E8)]; // Silver
+              return [const Color(0xFFD3D3D3), const Color(0xFFC0C0C0)];
             case 3:
-              return [const Color(0xFFCD7F32), const Color(0xFFDEB887)]; // Bronze
+              return [const Color(0xFFCD7F32), const Color(0xFFDEB887)];
             default:
               return [AppColors.primaryBlue, AppColors.accent];
           }
         }
 
         Widget getRankIcon() {
+          final colors = getRankColors();
+          IconData icon;
+
           switch (rank) {
             case 1:
-              return Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: getRankColors()),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.looks_one, color: Colors.white, size: 24),
-              );
+              icon = Icons.looks_one;
+              break;
             case 2:
-              return Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: getRankColors()),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.looks_two, color: Colors.white, size: 24),
-              );
+              icon = Icons.looks_two;
+              break;
             case 3:
-              return Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: getRankColors()),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(Icons.looks_3, color: Colors.white, size: 24),
-              );
+              icon = Icons.looks_3;
+              break;
             default:
-              return Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: getRankColors()),
-                  shape: BoxShape.circle,
-                ),
-                child: Text(
-                  '$rank',
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-              );
+              icon = Icons.star;
           }
+
+          return Container(
+            padding: const EdgeInsets.all(6),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(colors: colors),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(icon, color: Colors.white, size: 18),
+          );
         }
 
         return Container(
-          margin: const EdgeInsets.only(bottom: 16),
+          margin: const EdgeInsets.only(bottom: 12),
           child: AnimatedBuilder(
             animation: _bounceController,
             builder: (context, child) {
@@ -418,59 +399,37 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     );
                   },
                   child: Container(
-                    padding: const EdgeInsets.all(16),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      gradient: isCurrentUser
-                          ? LinearGradient(
-                        colors: [
-                          AppColors.accent.withOpacity(0.4),
-                          AppColors.primaryPink.withOpacity(0.2),
-                        ],
-                      )
-                          : rank <= 3
-                          ? LinearGradient(
-                        colors: [
-                          getRankColors().first.withOpacity(0.3),
-                          getRankColors().last.withOpacity(0.1),
-                        ],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                          : LinearGradient(
-                        colors: [
-                          AppColors.cardBackground.withOpacity(0.3),
-                          AppColors.cardBackground.withOpacity(0.1),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(20),
+                      color: Colors.white.withOpacity(0.4),
+                      borderRadius: BorderRadius.circular(16),
                       border: Border.all(
-                        color: isCurrentUser ? AppColors.accent.withOpacity(0.8) :
-                        isFriend ? AppColors.success.withOpacity(0.8) :
-                        hasPending ? AppColors.warning.withOpacity(0.8) :
-                        rank <= 3 ? getRankColors().first.withOpacity(0.5) :
-                        Colors.white.withOpacity(0.2),
-                        width: 2,
+                        color: isCurrentUser ? AppColors.accent.withOpacity(0.9) :
+                        isFriend ? AppColors.success.withOpacity(0.9) :
+                        hasPending ? AppColors.warning.withOpacity(0.9) :
+                        rank <= 3 ? getRankColors().first.withOpacity(1) :
+                        Colors.white.withOpacity(0.4),
+                        width: 2.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: isCurrentUser ? AppColors.accent.withOpacity(0.2) :
-                          isFriend ? AppColors.success.withOpacity(0.2) :
-                          hasPending ? AppColors.warning.withOpacity(0.2) :
+                          color: isCurrentUser ? AppColors.accent.withOpacity(0.15) :
+                          isFriend ? AppColors.success.withOpacity(0.15) :
+                          hasPending ? AppColors.warning.withOpacity(0.15) :
                           rank <= 3
                               ? getRankColors().first.withOpacity(0.2)
-                              : Colors.black.withOpacity(0.1),
-                          blurRadius: 15,
-                          offset: const Offset(0, 6),
+                              : Colors.black.withOpacity(0.2),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
                         ),
                       ],
                     ),
                     child: Row(
                       children: [
-                        // Rank icon
                         getRankIcon(),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 12),
 
-                        // Avatar with decorative border
+                        // Avatar
                         Container(
                           decoration: BoxDecoration(
                             shape: BoxShape.circle,
@@ -479,21 +438,21 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                               isFriend ? AppColors.success :
                               hasPending ? AppColors.warning :
                               rank <= 3 ? getRankColors().first : AppColors.primaryBlue,
-                              width: 3,
+                              width: 2,
                             ),
                             boxShadow: [
                               BoxShadow(
                                 color: (isCurrentUser ? AppColors.accent :
                                 isFriend ? AppColors.success :
                                 hasPending ? AppColors.warning :
-                                rank <= 3 ? getRankColors().first : AppColors.primaryBlue).withOpacity(0.3),
-                                blurRadius: 8,
+                                rank <= 3 ? getRankColors().first : AppColors.primaryBlue).withOpacity(0.2),
+                                blurRadius: 6,
                                 offset: const Offset(0, 2),
                               ),
                             ],
                           ),
                           child: CircleAvatar(
-                            radius: 30,
+                            radius: 24,
                             backgroundColor: AppColors.cardBackground.withOpacity(0.2),
                             backgroundImage: user.avatarUrl != null
                                 ? NetworkImage(user.avatarUrl!)
@@ -512,8 +471,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                                 child: ClipOval(
                                   child: Image.asset(
                                     "lib/shared/assets/images/LOGO.jpg",
-                                    width: 50,
-                                    height: 50,
+                                    width: 44,
+                                    height: 44,
                                     fit: BoxFit.cover,
                                   ),
                                 ),
@@ -522,175 +481,126 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                                 : null,
                           ),
                         ),
-                        const SizedBox(width: 16),
+                        const SizedBox(width: 12),
 
                         // User info
                         Expanded(
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
                             children: [
-                              // Name with status indicator
                               Row(
                                 children: [
                                   Expanded(
                                     child: Text(
                                       user.fullName,
-                                      style: TextStyle(
-                                        color: Colors.white,
-                                        fontSize: 18,
-                                        fontWeight: FontWeight.w800,
-                                        shadows: [
-                                          Shadow(
-                                            offset: const Offset(1, 1),
-                                            blurRadius: 2,
-                                            color: Colors.black.withOpacity(0.3),
-                                          ),
-                                        ],
+                                      style: const TextStyle(
+                                        color: Colors.black87,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                       overflow: TextOverflow.ellipsis,
                                     ),
                                   ),
                                   if (isCurrentUser) ...[
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 6),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
                                           colors: [AppColors.accent, AppColors.primaryPink],
                                         ),
-                                        borderRadius: BorderRadius.circular(6),
+                                        borderRadius: BorderRadius.circular(4),
                                       ),
-                                      child: const Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.person, color: Colors.white, size: 12),
-                                          SizedBox(width: 2),
-                                          Text(
-                                            'BẠN',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                        ],
+                                      child: const Text(
+                                        'Bạn',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 7,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                     ),
                                   ] else if (isFriend) ...[
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 6),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
                                           colors: [AppColors.success, AppColors.buttonPrimary],
                                         ),
-                                        borderRadius: BorderRadius.circular(6),
+                                        borderRadius: BorderRadius.circular(4),
                                       ),
-                                      child: const Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.check_circle, color: Colors.white, size: 12),
-                                          SizedBox(width: 2),
-                                          Text(
-                                            'BẠN BÈ',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                        ],
+                                      child: const Text(
+                                        'Bạn Bè',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 7,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                     ),
                                   ] else if (hasPending) ...[
-                                    const SizedBox(width: 8),
+                                    const SizedBox(width: 6),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                                       decoration: BoxDecoration(
                                         gradient: LinearGradient(
                                           colors: [AppColors.warning, AppColors.accent],
                                         ),
-                                        borderRadius: BorderRadius.circular(6),
+                                        borderRadius: BorderRadius.circular(4),
                                       ),
-                                      child: const Row(
-                                        mainAxisSize: MainAxisSize.min,
-                                        children: [
-                                          Icon(Icons.hourglass_empty, color: Colors.white, size: 12),
-                                          SizedBox(width: 2),
-                                          Text(
-                                            'CHỜ',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 8,
-                                              fontWeight: FontWeight.w800,
-                                            ),
-                                          ),
-                                        ],
+                                      child: const Text(
+                                        'Chờ',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 7,
+                                          fontWeight: FontWeight.w700,
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ],
                               ),
-                              const SizedBox(height: 8),
-                              Row(
-                                children: [
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      gradient: LinearGradient(
-                                        colors: [AppColors.warning.withOpacity(0.3), AppColors.accent.withOpacity(0.2)],
-                                      ),
-                                      borderRadius: BorderRadius.circular(12),
-                                      border: Border.all(color: AppColors.warning.withOpacity(0.5)),
-                                    ),
-                                    child: Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Icon(
-                                          Icons.star,
-                                          color: Color.fromARGB(255, 252, 244, 243),
-                                          size: 16,
-                                        ),
-                                        const SizedBox(width: 4),
-                                        Text(
-                                          '${user.totalStar}',
-                                          style: TextStyle(
-                                            color: Color.fromARGB(255, 241, 223, 218),
-                                            fontSize: 14,
-                                            fontWeight: FontWeight.w900,
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                              const SizedBox(height: 6),
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                decoration: BoxDecoration(
+                                  gradient: LinearGradient(
+                                    colors: [AppColors.warning.withOpacity(0.3), AppColors.accent.withOpacity(0.2)],
                                   ),
-                                  if (user.premium == true && !isCurrentUser && !isFriend && !hasPending) ...[
-                                    const SizedBox(width: 8),
-                                    Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                                      decoration: BoxDecoration(
-                                        gradient: LinearGradient(
-                                          colors: [AppColors.primaryPink, AppColors.accent],
-                                        ),
-                                        borderRadius: BorderRadius.circular(8),
-                                      ),
-                                      child: const Text(
-                                        'PREMIUM',
-                                        style: TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w800,
-                                        ),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: AppColors.warning.withOpacity(0.5)),
+                                ),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(
+                                      Icons.star,
+                                      color: Colors.yellowAccent,
+                                      size: 14,
+                                    ),
+                                    const SizedBox(width: 3),
+                                    Text(
+                                      '${user.totalStar}',
+                                      style: const TextStyle(
+                                        color: Colors.black,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w700,
                                       ),
                                     ),
                                   ],
-                                ],
+                                ),
                               ),
                             ],
                           ),
                         ),
 
-                        // Trophy for top 3 + Status icon
+                        const SizedBox(width: 8),
+
+                        // Trophy + Status icon
                         Column(
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             if (rank <= 3)
                               AnimatedBuilder(
@@ -701,29 +611,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                                     child: Icon(
                                       Icons.emoji_events,
                                       color: getRankColors().first,
-                                      size: 32,
+                                      size: 24,
                                     ),
                                   );
                                 },
-                              ),
-                            const SizedBox(height: 8),
-                            // THAY ĐỔI: Icon khác nhau dựa trên relationship
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: (isCurrentUser ? AppColors.accent :
-                                isFriend ? AppColors.success :
-                                hasPending ? AppColors.warning : AppColors.primaryPink).withOpacity(0.2),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Icon(
+                              )
+                            else
+                              Icon(
                                 isCurrentUser ? Icons.person :
                                 isFriend ? Icons.people :
                                 hasPending ? Icons.hourglass_empty : Icons.person_add,
-                                color: Colors.white.withOpacity(0.8),
-                                size: 16,
+                                color: Colors.white.withOpacity(0.7),
+                                size: 20,
                               ),
-                            ),
                           ],
                         ),
                       ],
@@ -780,7 +680,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   'Đang tải...',
                   style: TextStyle(
                     color: Colors.white,
-                    fontSize: 18,
+                    fontSize: 16,
                     fontWeight: FontWeight.bold,
                   ),
                 ),
@@ -808,7 +708,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   Widget _buildFriendsLeaderboard() {
     return BlocListener<LeaderboardBloc, LeaderboardState>(
       listener: (context, state) {
-        // Handle FriendRemoved state
         if (state is FriendRemoved) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -827,9 +726,6 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               duration: const Duration(seconds: 2),
             ),
           );
-
-          // Reload friends list after successful removal
-          _leaderboardBloc.add(LoadFriendsLeaderboard());
         }
       },
       child: BlocBuilder<LeaderboardBloc, LeaderboardState>(
@@ -873,7 +769,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     'Đang tải bạn bè...',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 18,
+                      fontSize: 16,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
@@ -936,19 +832,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             ),
             const SizedBox(height: 20),
             const Text(
-              '🎈 Chưa có bạn bè nào! 🎈',
+              'Chưa có bạn bè nào!',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 24,
+                fontSize: 20,
                 fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 12),
             const Text(
-              '✨ Hãy thêm bạn bè để cùng thi đấu nhé! ✨',
+              'Hãy thêm bạn bè để cùng thi đấu!',
               style: TextStyle(
                 color: Colors.white,
-                fontSize: 16,
+                fontSize: 14,
                 fontWeight: FontWeight.w600,
               ),
               textAlign: TextAlign.center,
@@ -958,12 +854,11 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
       );
     }
 
-    // Sort friends by totalStar in descending order
     final sortedFriends = List<FriendDto>.from(friends)
       ..sort((a, b) => b.friendAccount.totalStar.compareTo(a.friendAccount.totalStar));
 
     return ListView.builder(
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.all(16),
       itemCount: sortedFriends.length,
       itemBuilder: (context, index) {
         return _buildFriendItem(sortedFriends[index], index + 1);
@@ -974,19 +869,27 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
   Widget _buildFriendItem(FriendDto friend, int rank) {
     List<Color> getRankColors() {
       switch (rank) {
-        case 1: return [const Color(0xFFFFD700), const Color(0xFFFFB347)]; // Gold
-        case 2: return [const Color(0xFFC0C0C0), const Color(0xFF9E9E9E)]; // Silver
-        case 3: return [const Color(0xFFCD7F32), const Color(0xFF8D4E00)]; // Bronze
-        default: return [const Color(0xFF81C784), const Color(0xFF66BB6A)]; // Green
+        case 1: return [const Color(0xFFFFD700), const Color(0xFFFFB347)];
+        case 2: return [const Color(0xFFC0C0C0), const Color(0xFF9E9E9E)];
+        case 3: return [const Color(0xFFCD7F32), const Color(0xFF8D4E00)];
+        default: return [const Color(0xFF81C784), const Color(0xFF66BB6A)];
       }
     }
 
     Widget getRankIcon() {
       final colors = getRankColors();
+      IconData icon;
+
+      switch (rank) {
+        case 1: icon = Icons.emoji_events; break;
+        case 2: icon = Icons.military_tech; break;
+        case 3: icon = Icons.workspace_premium; break;
+        default: icon = Icons.star;
+      }
 
       return Container(
-        width: 55,
-        height: 55,
+        width: 48,
+        height: 48,
         decoration: BoxDecoration(
           gradient: LinearGradient(colors: colors),
           shape: BoxShape.circle,
@@ -998,32 +901,19 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
             ),
           ],
         ),
-        child: rank == 1
-            ? const Icon(Icons.emoji_events, color: Colors.white, size: 28)
-            : rank == 2
-            ? const Icon(Icons.military_tech, color: Colors.white, size: 28)
-            : rank == 3
-            ? const Icon(Icons.workspace_premium, color: Colors.white, size: 28)
+        child: rank <= 3
+            ? Icon(icon, color: Colors.white, size: 22)
             : Center(
           child: Text(
             '$rank',
             style: const TextStyle(
               color: Colors.white,
-              fontSize: 20,
+              fontSize: 18,
               fontWeight: FontWeight.w900,
             ),
           ),
         ),
       );
-    }
-
-    String getRankEmoji() {
-      switch (rank) {
-        case 1: return '👑';
-        case 2: return '🥈';
-        case 3: return '🥉';
-        default: return '🌟';
-      }
     }
 
     void _showRemoveFriendDialog(BuildContext context) {
@@ -1066,7 +956,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                 context.read<LeaderboardBloc>().add(RemoveFriend(friend.id));
               },
               child: const Text(
-                'XÓA BẠN',
+                'XÓA',
                 style: TextStyle(
                   color: Colors.red,
                   fontSize: 16,
@@ -1080,57 +970,45 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
     }
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(bottom: 12),
       child: AnimatedBuilder(
         animation: _bounceController,
         builder: (context, child) {
           return Transform.scale(
             scale: rank <= 3 ? 1.0 + (_bounceController.value * 0.02) : 1.0,
             child: Container(
-              padding: const EdgeInsets.all(20),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                gradient: rank <= 3
-                    ? LinearGradient(
-                  colors: [
-                    getRankColors().first.withOpacity(0.3),
-                    Colors.white.withOpacity(0.1),
-                  ],
-                )
-                    : const LinearGradient(
-                  colors: [
-                    Color(0x30FFFFFF),
-                    Color(0x15FFFFFF),
-                  ],
-                ),
-                borderRadius: BorderRadius.circular(25),
+                color: Colors.white.withOpacity(0.4),
+                borderRadius: BorderRadius.circular(16),
                 border: Border.all(
                     color: rank <= 3
-                        ? getRankColors().first.withOpacity(0.6)
-                        : Colors.white.withOpacity(0.3),
-                    width: 2
+                        ? getRankColors().first.withOpacity(0.8)
+                        : Colors.white.withOpacity(0.4),
+                    width: 2.5
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: rank <= 3
                         ? getRankColors().first.withOpacity(0.2)
                         : Colors.black.withOpacity(0.1),
-                    blurRadius: 15,
-                    offset: const Offset(0, 6),
+                    blurRadius: 12,
+                    offset: const Offset(0, 4),
                   ),
                 ],
               ),
               child: Row(
                 children: [
                   getRankIcon(),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
 
-                  // Avatar with decorative border
+                  // Avatar
                   Container(
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: rank <= 3 ? getRankColors().first : const Color(0xFF81C784),
-                        width: 3,
+                        width: 2,
                       ),
                       boxShadow: [
                         BoxShadow(
@@ -1141,7 +1019,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                       ],
                     ),
                     child: CircleAvatar(
-                      radius: 30,
+                      radius: 24,
                       backgroundColor: AppColors.cardBackground.withOpacity(0.2),
                       backgroundImage: friend.friendAccount.avatarUrl != null
                           ? NetworkImage(friend.friendAccount.avatarUrl!)
@@ -1160,8 +1038,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                           child: ClipOval(
                             child: Image.asset(
                               "lib/shared/assets/images/LOGO.jpg",
-                              width: 50,
-                              height: 50,
+                              width: 44,
+                              height: 44,
                               fit: BoxFit.cover,
                             ),
                           ),
@@ -1170,32 +1048,33 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                           : null,
                     ),
                   ),
-                  const SizedBox(width: 16),
+                  const SizedBox(width: 12),
 
                   // Friend Info
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '${getRankEmoji()} ${friend.friendAccount.fullName.toUpperCase()}',
+                          friend.friendAccount.fullName.toUpperCase(),
                           style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 18,
+                            color: Colors.black,
+                            fontSize: 14,
                             fontWeight: FontWeight.w800,
-                            letterSpacing: 0.5,
+                            letterSpacing: 0.3,
                           ),
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 8),
+                        const SizedBox(height: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [Color(0x40FFFFFF), Color(0x20FFFFFF)],
                             ),
-                            borderRadius: BorderRadius.circular(15),
-                            border: Border.all(color: Colors.white.withOpacity(0.3)),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(color: Colors.yellow),
                           ),
                           child: Row(
                             mainAxisSize: MainAxisSize.min,
@@ -1203,14 +1082,14 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                               const Icon(
                                 Icons.star,
                                 color: Color(0xFFFFD700),
-                                size: 16,
+                                size: 14,
                               ),
-                              const SizedBox(width: 6),
+                              const SizedBox(width: 4),
                               Text(
-                                '${friend.friendAccount.totalStar} ⭐',
+                                '${friend.friendAccount.totalStar}',
                                 style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 14,
+                                  color: Colors.black,
+                                  fontSize: 13,
                                   fontWeight: FontWeight.w700,
                                 ),
                               ),
@@ -1221,42 +1100,45 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     ),
                   ),
 
-                  // Action buttons column
+                  const SizedBox(width: 8),
+
+                  // Action buttons
                   Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Gift icon with fun animation
                       AnimatedBuilder(
                         animation: _starController,
                         builder: (context, child) {
                           return Transform.scale(
                             scale: 1.0 + (_starController.value * 0.1).abs(),
-                            child: Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                gradient: const LinearGradient(
-                                  colors: [Color(0xFFFF6B9D), Color(0xFFFF8A65)],
-                                ),
-                                borderRadius: BorderRadius.circular(15),
-                                boxShadow: [
-                                  BoxShadow(
-                                    color: Colors.pink.withOpacity(0.3),
-                                    blurRadius: 6,
-                                    offset: const Offset(0, 2),
+                            child: GestureDetector(
+                              onTap: () {},
+                              child: Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [Color(0xFFFF6B9D), Color(0xFFFF8A65)],
                                   ),
-                                ],
-                              ),
-                              child: const Icon(
-                                Icons.card_giftcard,
-                                color: Colors.white,
-                                size: 24,
+                                  borderRadius: BorderRadius.circular(10),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: Colors.pink.withOpacity(0.3),
+                                      blurRadius: 6,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
+                                ),
+                                child: const Icon(
+                                  Icons.card_giftcard,
+                                  color: Colors.white,
+                                  size: 18,
+                                ),
                               ),
                             ),
                           );
                         },
                       ),
-                      const SizedBox(height: 12),
-
-                      // Remove friend button
+                      const SizedBox(height: 8),
                       BlocBuilder<LeaderboardBloc, LeaderboardState>(
                         builder: (context, state) {
                           final isLoading = state is LeaderboardOperationLoading;
@@ -1264,7 +1146,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                           return GestureDetector(
                             onTap: isLoading ? null : () => _showRemoveFriendDialog(context),
                             child: Container(
-                              padding: const EdgeInsets.all(10),
+                              padding: const EdgeInsets.all(8),
                               decoration: BoxDecoration(
                                 gradient: LinearGradient(
                                   colors: [
@@ -1272,7 +1154,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                                     AppColors.error.withOpacity(0.6),
                                   ],
                                 ),
-                                borderRadius: BorderRadius.circular(12),
+                                borderRadius: BorderRadius.circular(10),
                                 boxShadow: [
                                   BoxShadow(
                                     color: AppColors.error.withOpacity(0.3),
@@ -1283,8 +1165,8 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                               ),
                               child: isLoading
                                   ? const SizedBox(
-                                width: 20,
-                                height: 20,
+                                width: 18,
+                                height: 18,
                                 child: CircularProgressIndicator(
                                   strokeWidth: 2,
                                   valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
@@ -1293,7 +1175,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                                   : const Icon(
                                 Icons.person_remove,
                                 color: Colors.white,
-                                size: 20,
+                                size: 18,
                               ),
                             ),
                           );
@@ -1349,10 +1231,10 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
               ),
               const SizedBox(height: 25),
               const Text(
-                '😢 Ôi không! Có lỗi xảy ra rồi!',
+                'Ôi không! Có lỗi xảy ra rồi!',
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 22,
+                  fontSize: 20,
                   fontWeight: FontWeight.w800,
                 ),
                 textAlign: TextAlign.center,
@@ -1370,7 +1252,7 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                     color: Colors.white,
-                    fontSize: 16,
+                    fontSize: 14,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
@@ -1383,18 +1265,18 @@ class _LeaderboardScreenState extends State<LeaderboardScreen>
                     scale: 1.0 + (_bounceController.value * 0.05),
                     child: ElevatedButton.icon(
                       onPressed: onRetry,
-                      icon: const Icon(Icons.refresh, size: 24),
+                      icon: const Icon(Icons.refresh, size: 20),
                       label: const Text(
-                        '🔄 Thử lại nhé!',
+                        'Thử lại nhé!',
                         style: TextStyle(
-                          fontSize: 18,
+                          fontSize: 16,
                           fontWeight: FontWeight.w700,
                         ),
                       ),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFF66BB6A),
                         foregroundColor: Colors.white,
-                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(30),
                         ),
