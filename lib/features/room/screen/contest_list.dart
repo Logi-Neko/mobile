@@ -75,27 +75,22 @@ class _ContestListScreenState extends State<ContestListScreen> {
 
       await _contestService.joinContest(contestId, accountId);
 
-      // Try to get participantId from join response
       final participantId = await _contestService.joinContest(contestId, accountId);
-      
+
       int? finalParticipantId = participantId;
-      
-      // If not in response, get from participants list
+
       if (finalParticipantId == null) {
         print('⚠️ [ContestList] No participantId in join response, fetching from participants list...');
         final participants = await _contestService.getAllParticipantsInContest(contestId);
         print('📋 [ContestList] All participants after join: ${participants.length} participants');
-        
-        // Find the newest participant (the one we just created)
+
         if (participants.isNotEmpty) {
-          // Sort by joinAt to find the most recent
           participants.sort((a, b) {
             if (a.joinAt == null) return 1;
             if (b.joinAt == null) return -1;
             return b.joinAt!.compareTo(a.joinAt!);
           });
-          
-          // The first one after sorting is the newest
+
           final myParticipant = participants.first;
           finalParticipantId = myParticipant.id;
           print('📋 [ContestList] Found newest participant: id=${myParticipant.id}, name=${myParticipant.accountName}, joinAt=${myParticipant.joinAt}');
@@ -208,7 +203,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
                     ? _buildLoadingState()
                     : _contests.isEmpty
                     ? _buildEmptyState()
-                    : _buildContestList(),
+                    : _buildContestGrid(),
               ),
               if (_totalPages > 1 && !_isLoading) _buildPagination(),
             ],
@@ -232,17 +227,16 @@ class _ContestListScreenState extends State<ContestListScreen> {
       ),
       child: Row(
         children: [
-          // Back button
           Container(
             decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF0D47A1),
-                    Color(0xFF002171),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xFF0D47A1),
+                  Color(0xFF002171),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
               shape: BoxShape.circle,
               boxShadow: [
                 BoxShadow(
@@ -268,8 +262,6 @@ class _ContestListScreenState extends State<ContestListScreen> {
             ),
           ),
           const SizedBox(width: 14),
-
-          // Title and subtitle
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -296,8 +288,6 @@ class _ContestListScreenState extends State<ContestListScreen> {
               ],
             ),
           ),
-
-          // History button
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -398,13 +388,41 @@ class _ContestListScreenState extends State<ContestListScreen> {
     );
   }
 
-  Widget _buildContestList() {
-    return ListView.builder(
-      controller: _scrollController,
-      padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
-      itemCount: _contests.length,
-      itemBuilder: (context, index) {
-        return _buildContestCard(_contests[index], index);
+  Widget _buildContestGrid() {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        // Tính số cột dựa trên chiều rộng màn hình
+        int crossAxisCount;
+        double childAspectRatio;
+
+        if (constraints.maxWidth > 600) {
+          // Tablet hoặc màn hình rộng: 3 cột
+          crossAxisCount = 3;
+          childAspectRatio = 0.85;
+        } else if (constraints.maxWidth > 400) {
+          // Màn hình trung bình: 2 cột
+          crossAxisCount = 2;
+          childAspectRatio = 0.8;
+        } else {
+          // Màn hình nhỏ: 2 cột với tỷ lệ điều chỉnh
+          crossAxisCount = 2;
+          childAspectRatio = 0.75;
+        }
+
+        return GridView.builder(
+          controller: _scrollController,
+          padding: const EdgeInsets.fromLTRB(12, 4, 12, 16),
+          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+            crossAxisCount: crossAxisCount,
+            crossAxisSpacing: 12,
+            mainAxisSpacing: 12,
+            childAspectRatio: childAspectRatio,
+          ),
+          itemCount: _contests.length,
+          itemBuilder: (context, index) {
+            return _buildContestCard(_contests[index], index);
+          },
+        );
       },
     );
   }
@@ -417,8 +435,8 @@ class _ContestListScreenState extends State<ContestListScreen> {
       tween: Tween<double>(begin: 0, end: 1),
       curve: Curves.easeOutCubic,
       builder: (context, double value, child) {
-        return Transform.translate(
-          offset: Offset(0, 20 * (1 - value)),
+        return Transform.scale(
+          scale: value,
           child: Opacity(
             opacity: value,
             child: child,
@@ -426,7 +444,6 @@ class _ContestListScreenState extends State<ContestListScreen> {
         );
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(20),
@@ -442,17 +459,19 @@ class _ContestListScreenState extends State<ContestListScreen> {
           color: Colors.transparent,
           child: InkWell(
             borderRadius: BorderRadius.circular(20),
-            onTap: () {},
+            onTap: isJoinable ? () => _joinContest(contest.id) : null,
             child: Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.all(14),
               child: Column(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
+                  // Icon và Status
+                  Column(
                     children: [
                       Container(
-                        width: 56,
-                        height: 56,
+                        width: double.infinity,
+                        height: 40,
                         decoration: BoxDecoration(
                           gradient: _getStatusGradient(contest.status),
                           borderRadius: BorderRadius.circular(16),
@@ -467,62 +486,48 @@ class _ContestListScreenState extends State<ContestListScreen> {
                         child: Icon(
                           _getStatusIcon(contest.status),
                           color: Colors.white,
-                          size: 28,
+                          size: 40,
                         ),
                       ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              contest.title,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                                color: AppColors.textPrimary,
-                                letterSpacing: -0.3,
-                              ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                            const SizedBox(height: 4),
-                            _buildStatusBadge(contest.status),
-                          ],
-                        ),
-                      ),
+                      const SizedBox(height: 10),
+                      _buildStatusBadge(contest.status),
                     ],
                   ),
-                  const SizedBox(height: 12),
+
+                  // Title
                   Text(
-                    contest.description,
+                    contest.title,
                     style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                      height: 1.5,
+                      fontSize: 14,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                      letterSpacing: -0.3,
+                      height: 1.3,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
+
+                  // Info chips
+                  Column(
                     children: [
-                      _buildInfoChip(
+                      _buildCompactInfoChip(
                         Icons.qr_code_scanner_rounded,
                         contest.code,
                         AppColors.primaryPurple,
                       ),
-                      _buildInfoChip(
+                      const SizedBox(height: 6),
+                      _buildCompactInfoChip(
                         Icons.calendar_today_rounded,
                         _formatDate(contest.startTime),
                         AppColors.primaryBlue,
                       ),
                     ],
                   ),
-                  const SizedBox(height: 14),
-                  _buildJoinButton(isJoinable, contest.id),
+
+                  // Join button
+                  _buildCompactJoinButton(isJoinable, contest.id),
                 ],
               ),
             ),
@@ -532,12 +537,12 @@ class _ContestListScreenState extends State<ContestListScreen> {
     );
   }
 
-  Widget _buildJoinButton(bool isJoinable, int contestId) {
+  Widget _buildCompactJoinButton(bool isJoinable, int contestId) {
     return Container(
       width: double.infinity,
-      height: 46,
+      height: 40,
       decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(12),
         gradient: isJoinable
             ? AppColors.primaryGradient
             : LinearGradient(colors: [Colors.grey.shade300, Colors.grey.shade400]),
@@ -545,8 +550,8 @@ class _ContestListScreenState extends State<ContestListScreen> {
             ? [
           BoxShadow(
             color: AppColors.primaryPurple.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
+            blurRadius: 8,
+            offset: const Offset(0, 3),
           ),
         ]
             : null,
@@ -554,7 +559,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(12),
           onTap: isJoinable ? () => _joinContest(contestId) : null,
           child: Row(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -562,15 +567,15 @@ class _ContestListScreenState extends State<ContestListScreen> {
               Icon(
                 isJoinable ? Icons.login_rounded : Icons.lock_rounded,
                 color: Colors.white,
-                size: 20,
+                size: 18,
               ),
-              const SizedBox(width: 8),
+              const SizedBox(width: 6),
               Text(
-                isJoinable ? 'Tham gia ngay' : 'Không khả dụng',
+                isJoinable ? 'Tham gia' : 'Đã đóng',
                 style: const TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 14,
+                  fontSize: 12,
                   letterSpacing: 0.3,
                 ),
               ),
@@ -590,12 +595,12 @@ class _ContestListScreenState extends State<ContestListScreen> {
       },
       'RUNNING': {
         'color': AppColors.primaryBlue,
-        'text': 'Đang diễn ra',
+        'text': 'Đang chạy',
         'icon': Icons.circle,
       },
       'CLOSED': {
         'color': AppColors.textLight,
-        'text': 'Đã kết thúc',
+        'text': 'Đã đóng',
         'icon': Icons.circle,
       },
     };
@@ -603,7 +608,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
     final config = statusConfig[status.toUpperCase()] ?? statusConfig['CLOSED']!;
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: (config['color'] as Color).withOpacity(0.1),
         borderRadius: BorderRadius.circular(8),
@@ -614,14 +619,14 @@ class _ContestListScreenState extends State<ContestListScreen> {
         children: [
           Icon(
             config['icon'] as IconData,
-            size: 8,
+            size: 7,
             color: config['color'] as Color,
           ),
-          const SizedBox(width: 6),
+          const SizedBox(width: 5),
           Text(
             config['text'] as String,
             style: TextStyle(
-              fontSize: 11,
+              fontSize: 10,
               fontWeight: FontWeight.w600,
               color: config['color'] as Color,
             ),
@@ -631,9 +636,10 @@ class _ContestListScreenState extends State<ContestListScreen> {
     );
   }
 
-  Widget _buildInfoChip(IconData icon, String text, Color color) {
+  Widget _buildCompactInfoChip(IconData icon, String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
       decoration: BoxDecoration(
         color: color.withOpacity(0.08),
         borderRadius: BorderRadius.circular(10),
@@ -641,14 +647,15 @@ class _ContestListScreenState extends State<ContestListScreen> {
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(icon, size: 14, color: color),
-          const SizedBox(width: 6),
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 5),
           Flexible(
             child: Text(
               text,
               style: TextStyle(
-                fontSize: 12,
+                fontSize: 11,
                 fontWeight: FontWeight.w600,
                 color: color,
               ),
