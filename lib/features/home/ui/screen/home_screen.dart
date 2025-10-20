@@ -61,20 +61,12 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       'imagePath': 'lib/shared/assets/images/leaderboard.jpg',
     },
   ];
-  bool _initialized = false;
 
   @override
   void initState() {
     super.initState();
-    if (!_initialized) {
-      _homeBloc = context.read<HomeBloc>();
-
-      if (_homeBloc.currentUser == null) {
-        _homeBloc.add(GetUserInfo());
-      }
-
-      _initialized = true;
-    }
+    _homeBloc = HomeBloc(HomeRepositoryImpl());
+    _homeBloc.add(GetUserInfo());
 
     _setupAnimations();
   }
@@ -278,9 +270,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
   Widget _buildHeader(HomeState state) {
     Widget headerContent;
 
-    if (state is HomeLoading) {
-      headerContent = const HeaderLoadingWidget();
-    } else if (state is UserInfoLoaded) {
+    if (state is UserInfoLoaded) {
       headerContent = HeaderWidget(
         user: state.user,
         isUpdating: false,
@@ -294,8 +284,11 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
       headerContent = HeaderErrorWidget(
         onRetry: () => _homeBloc.add(GetUserInfo()),
       );
-    } else {
-      headerContent = const HeaderLoadingWidget();
+    } else  {
+      headerContent = HeaderWidget(
+        user: null,
+        isUpdating: false,
+      );
     }
 
     return Container(

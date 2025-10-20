@@ -139,7 +139,7 @@ class HeaderWidget extends StatelessWidget {
                     ),
                       const SizedBox(height: 2),
                       Text(
-                        user?.displayAge ?? '',
+                        user?.displayAge ?? '0 tuổi',
                         style: const TextStyle(
                           color: Colors.white70,
                           fontSize: 12,
