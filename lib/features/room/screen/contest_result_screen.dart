@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:logi_neko/core/router/app_router.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
 import '../api/contest_api.dart';
 import '../dto/leaderboard_entry.dart';
@@ -60,6 +61,15 @@ class _ContestResultScreenState extends State<ContestResultScreen> with TickerPr
   Future<void> _loadLeaderboard() async {
     try {
       print('🏆 [ContestResult] Loading leaderboard for contest ${widget.contestId}');
+
+      // End contest to update status
+      try {
+        print('🏁 [ContestResult] Ending contest ${widget.contestId}...');
+        await _contestService.endContest(widget.contestId);
+        print('✅ [ContestResult] Contest ended successfully');
+      } catch (e) {
+        print('⚠️ [ContestResult] Error ending contest (may already be ended): $e');
+      }
 
       await _contestService.refreshLeaderboard(widget.contestId);
       await Future.delayed(const Duration(milliseconds: 500));
@@ -750,7 +760,7 @@ Widget _buildActionButtons({bool isLandscape = false}) {
       height: isLandscape ? 48 : 54,
       child: ElevatedButton.icon(
         onPressed: () {
-          context.router.popUntilRoot();
+          context.router.navigate(const HomeRoute());
         },
         icon: const Icon(Icons.home_rounded, size: 22),
         label: const Text(

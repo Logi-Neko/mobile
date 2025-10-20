@@ -66,16 +66,16 @@ class RoomQuizView extends StatelessWidget {
                 return _buildQuestionContent(context, state);
               }
 
+              if (state is ShowCorrectAnswer) {
+                return _buildQuestionContentWithResult(context, state);
+              }
+
               if (state is ShowLeaderboard) {
                 return _buildLeaderboardContent(context, state);
               }
 
               if (state is WaitingForQuestion) {
                 return _buildWaitingContent(context);
-              }
-
-              if (state is ShowCorrectAnswer) {
-                return _buildQuestionWithCorrectAnswer(context, state);
               }
 
               if (state is RoomError) {
@@ -226,7 +226,6 @@ class RoomQuizView extends StatelessWidget {
       children: [
         _buildQuestionHeader(context, state),
         _buildProgressBar(state),
-        if (state.isSubmitted) _buildSubmittedBadge(),
         Expanded(
           child: SingleChildScrollView(
             physics: const BouncingScrollPhysics(),
@@ -243,6 +242,358 @@ class RoomQuizView extends StatelessWidget {
     );
   }
 
+  Widget _buildQuestionContentWithResult(BuildContext context, ShowCorrectAnswer state) {
+    final isLandscape = MediaQuery.of(context).orientation == Orientation.landscape;
+
+    if (isLandscape) {
+      return _buildLandscapeQuestionWithResult(context, state);
+    }
+
+    return Column(
+      children: [
+        _buildQuestionHeaderWithResult(context, state),
+        _buildProgressBarForResult(state),
+        Expanded(
+          child: SingleChildScrollView(
+            physics: const BouncingScrollPhysics(),
+            child: Column(
+              children: [
+                // Result banner
+                _buildResultBanner(state.isCorrect),
+                const SizedBox(height: 8),
+                _buildQuestionCard(state.question ?? ''),
+                const SizedBox(height: 8),
+                _buildAnswerOptionsWithResult(
+                  context,
+                  state.options ?? [],
+                  state.userAnswer,
+                  state.correctAnswer,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLandscapeQuestionWithResult(
+      BuildContext context,
+      ShowCorrectAnswer state,
+      ) {
+    return Row(
+      children: [
+        Expanded(
+          flex: 5,
+          child: Column(
+            children: [
+              _buildQuestionHeaderWithResult(context, state),
+              _buildProgressBarForResult(state),
+              Expanded(
+                child: Center(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(24),
+                    child: Column(
+                      children: [
+                        _buildResultBanner(state.isCorrect),
+                        const SizedBox(height: 16),
+                        _buildQuestionCard(state.question ?? ''),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          flex: 7,
+          child: _buildAnswerOptionsWithResult(
+            context,
+            state.options ?? [],
+            state.userAnswer,
+            state.correctAnswer,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildQuestionHeaderWithResult(BuildContext context, ShowCorrectAnswer state) {
+    return Padding(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.15),
+              shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+            child: IconButton(
+              onPressed: () => Navigator.of(context).pop(),
+              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
+              padding: EdgeInsets.zero,
+            ),
+          ),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [AppColors.primaryBlue, Color(0xFF3B82F6)],
+              ),
+              borderRadius: BorderRadius.circular(30),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.timer, color: Colors.white, size: 20),
+                const SizedBox(width: 8),
+                Text(
+                  '${state.countdown}s',
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildProgressBarForResult(ShowCorrectAnswer state) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(10),
+        child: LinearProgressIndicator(
+          value: 0, // Câu hỏi đã kết thúc
+          backgroundColor: Colors.white.withOpacity(0.2),
+          minHeight: 8,
+          valueColor: AlwaysStoppedAnimation<Color>(
+            state.isCorrect ? AppColors.success : AppColors.error,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildResultBanner(bool isCorrect) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: isCorrect
+              ? [AppColors.success.withOpacity(0.3), AppColors.success.withOpacity(0.15)]
+              : [AppColors.error.withOpacity(0.3), AppColors.error.withOpacity(0.15)],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: isCorrect ? AppColors.success : AppColors.error,
+          width: 2,
+        ),
+      ),
+      child: Row(
+        children: [
+          Container(
+            width: 50,
+            height: 50,
+            decoration: BoxDecoration(
+              color: isCorrect ? AppColors.success : AppColors.error,
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  isCorrect ? '🎉 Chính xác!' : '❌ Sai rồi!',
+                  style: TextStyle(
+                    color: isCorrect ? AppColors.success : AppColors.error,
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  isCorrect 
+                      ? 'Câu trả lời của bạn đúng rồi!'
+                      : 'Xem đáp án đúng bên dưới',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.9),
+                    fontSize: 14,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildAnswerOptionsWithResult(
+    BuildContext context,
+    List<String> options,
+    String userAnswer,
+    String correctAnswer,
+  ) {
+    return ListView.builder(
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      itemCount: options.length,
+      itemBuilder: (context, index) {
+        final option = options[index];
+        final isUserAnswer = userAnswer == option;
+        final isCorrectAnswer = correctAnswer == option;
+        final labels = ['A', 'B', 'C', 'D'];
+        
+        return Container(
+          margin: const EdgeInsets.only(bottom: 12),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 300),
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              gradient: isCorrectAnswer
+                  ? LinearGradient(
+                      colors: [
+                        AppColors.success.withOpacity(0.4),
+                        AppColors.success.withOpacity(0.2),
+                      ],
+                    )
+                  : (isUserAnswer && !isCorrectAnswer)
+                      ? LinearGradient(
+                          colors: [
+                            AppColors.error.withOpacity(0.4),
+                            AppColors.error.withOpacity(0.2),
+                          ],
+                        )
+                      : null,
+              color: isCorrectAnswer || (isUserAnswer && !isCorrectAnswer)
+                  ? null
+                  : Colors.white.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: isCorrectAnswer
+                    ? AppColors.success
+                    : (isUserAnswer && !isCorrectAnswer)
+                        ? AppColors.error
+                        : Colors.white.withOpacity(0.2),
+                width: isCorrectAnswer || (isUserAnswer && !isCorrectAnswer) ? 2.5 : 1.5,
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: isCorrectAnswer || (isUserAnswer && !isCorrectAnswer)
+                        ? Colors.white
+                        : Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Center(
+                    child: isCorrectAnswer
+                        ? const Icon(
+                            Icons.check_rounded,
+                            color: AppColors.success,
+                            size: 20,
+                          )
+                        : (isUserAnswer && !isCorrectAnswer)
+                            ? const Icon(
+                                Icons.close_rounded,
+                                color: AppColors.error,
+                                size: 20,
+                              )
+                            : Text(
+                                labels[index],
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    option,
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 16,
+                      fontWeight: isCorrectAnswer || (isUserAnswer && !isCorrectAnswer)
+                          ? FontWeight.w600
+                          : FontWeight.w500,
+                      height: 1.4,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (isCorrectAnswer)
+                  Container(
+                    margin: const EdgeInsets.only(left: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.success,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Đúng',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                if (isUserAnswer && !isCorrectAnswer)
+                  Container(
+                    margin: const EdgeInsets.only(left: 12),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: AppColors.error,
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: const Text(
+                      'Sai',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
   Widget _buildLandscapeQuestion(
       BuildContext context,
       QuestionInProgress state,
@@ -256,7 +607,6 @@ class RoomQuizView extends StatelessWidget {
             children: [
               _buildQuestionHeader(context, state),
               _buildProgressBar(state),
-              if (state.isSubmitted) _buildSubmittedBadge(),
               Expanded(
                 child: Center(
                   child: SingleChildScrollView(
@@ -357,62 +707,57 @@ class RoomQuizView extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 16),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(10),
-        child: TweenAnimationBuilder<double>(
-          key: ValueKey('${state.countdown}_${state.isSubmitted}'),
-          tween: Tween<double>(
-            begin: state.countdown / 30.0,
-            end: state.countdown / 30.0,
-          ),
-          duration: const Duration(milliseconds: 1000),
-          curve: Curves.linear,
-          builder: (context, value, child) {
-            return LinearProgressIndicator(
-              value: value,
-              backgroundColor: Colors.white.withOpacity(0.2),
-              minHeight: 8,
-              valueColor: AlwaysStoppedAnimation<Color>(
-                state.isSubmitted
-                    ? AppColors.success
-                    : (state.countdown <= 5 ? AppColors.error : AppColors.primaryBlue),
+        child: Stack(
+          children: [
+            TweenAnimationBuilder<double>(
+              key: ValueKey('${state.countdown}_${state.selectedAnswer}'),
+              tween: Tween<double>(
+                begin: state.countdown / 30.0,
+                end: state.countdown / 30.0,
               ),
-            );
-          },
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSubmittedBadge() {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [AppColors.success, const Color(0xFF059669)],
-        ),
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: AppColors.success.withOpacity(0.3),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
-          const SizedBox(width: 10),
-          const Text(
-            'Đã nộp bài! Chờ công bố đáp án...',
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
+              duration: const Duration(milliseconds: 1000),
+              curve: Curves.linear,
+              builder: (context, value, child) {
+                return LinearProgressIndicator(
+                  value: value,
+                  backgroundColor: Colors.white.withOpacity(0.2),
+                  minHeight: 8,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    state.selectedAnswer != null
+                        ? AppColors.success
+                        : (state.countdown <= 5 ? AppColors.error : AppColors.primaryBlue),
+                  ),
+                );
+              },
             ),
-          ),
-        ],
+            // Vết lưu ở vị trí người chơi chọn đáp án
+            if (state.selectedAnswer != null)
+              Positioned(
+                left: 0,
+                top: 0,
+                bottom: 0,
+                child: Container(
+                  width: 3,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [
+                        Colors.white.withOpacity(0.8),
+                        Colors.white.withOpacity(0.3),
+                      ],
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.white.withOpacity(0.6),
+                        blurRadius: 8,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -479,41 +824,35 @@ class RoomQuizView extends StatelessWidget {
       child: Material(
         color: Colors.transparent,
         child: InkWell(
-          onTap: state.isSubmitted ? null : () => _selectAnswer(context, option),
+          onTap: state.selectedAnswer == null ? () => _selectAnswer(context, option) : null,
           borderRadius: BorderRadius.circular(20),
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 250),
             curve: Curves.easeOut,
             padding: const EdgeInsets.all(18),
             decoration: BoxDecoration(
-              gradient: isSelected && !state.isSubmitted
+              gradient: isSelected
                   ? LinearGradient(
-                colors: [
-                  AppColors.primaryPurple,
-                  AppColors.primaryPink,
-                ],
-              )
+                      colors: [
+                        AppColors.primaryPurple,
+                        AppColors.primaryPink,
+                      ],
+                    )
                   : null,
-              color: isSelected && !state.isSubmitted
-                  ? null
-                  : state.isSubmitted
-                  ? (isSelected ? AppColors.primaryPurple.withOpacity(0.3) : Colors.white.withOpacity(0.1))
-                  : Colors.white.withOpacity(0.15),
+              color: isSelected ? null : Colors.white.withOpacity(0.15),
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isSelected
-                    ? Colors.white.withOpacity(0.8)
-                    : Colors.white.withOpacity(0.3),
+                color: isSelected ? Colors.white.withOpacity(0.8) : Colors.white.withOpacity(0.3),
                 width: isSelected ? 2.5 : 1.5,
               ),
-              boxShadow: isSelected && !state.isSubmitted
+              boxShadow: isSelected
                   ? [
-                BoxShadow(
-                  color: AppColors.primaryPurple.withOpacity(0.4),
-                  blurRadius: 16,
-                  offset: const Offset(0, 6),
-                ),
-              ]
+                      BoxShadow(
+                        color: AppColors.primaryPurple.withOpacity(0.4),
+                        blurRadius: 16,
+                        offset: const Offset(0, 6),
+                      ),
+                    ]
                   : null,
             ),
             child: Row(
@@ -522,9 +861,7 @@ class RoomQuizView extends StatelessWidget {
                   width: 40,
                   height: 40,
                   decoration: BoxDecoration(
-                    color: isSelected
-                        ? Colors.white
-                        : Colors.white.withOpacity(0.2),
+                    color: isSelected ? Colors.white : Colors.white.withOpacity(0.2),
                     shape: BoxShape.circle,
                     border: Border.all(
                       color: Colors.white.withOpacity(isSelected ? 0.8 : 0.4),
@@ -556,430 +893,10 @@ class RoomQuizView extends StatelessWidget {
                     overflow: TextOverflow.ellipsis,
                   ),
                 ),
-                if (state.isSubmitted && isSelected)
-                  Container(
-                    margin: const EdgeInsets.only(left: 12),
-                    padding: const EdgeInsets.all(8),
-                    decoration: const BoxDecoration(
-                      color: Colors.white,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(
-                      Icons.check_rounded,
-                      color: AppColors.primaryPurple,
-                      size: 18,
-                    ),
-                  ),
               ],
             ),
           ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildQuestionWithCorrectAnswer(BuildContext context, ShowCorrectAnswer state) {
-    // Lấy thông tin câu hỏi từ state nếu có, hoặc hiển thị placeholder
-    final question = state.question ?? 'Câu hỏi';
-    final options = state.options ?? [];
-
-    return Column(
-      children: [
-        _buildCorrectAnswerHeader(context, state),
-        _buildResultBanner(state),
-        Expanded(
-          child: SingleChildScrollView(
-            physics: const BouncingScrollPhysics(),
-            child: Column(
-              children: [
-                _buildQuestionCard(question),
-                const SizedBox(height: 16),
-                options.isNotEmpty
-                    ? _buildAnswerOptionsWithResult(context, state, options)
-                    : _buildSimpleAnswerDisplay(state),
-                _buildCountdownMessage(state),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-  Widget _buildSimpleAnswerDisplay(ShowCorrectAnswer state) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Column(
-        children: [
-          if (state.userAnswer.isNotEmpty)
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(20),
-              margin: const EdgeInsets.only(bottom: 12),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: state.isCorrect
-                      ? [AppColors.success.withOpacity(0.3), AppColors.success.withOpacity(0.2)]
-                      : [AppColors.error.withOpacity(0.3), AppColors.error.withOpacity(0.2)],
-                ),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: state.isCorrect ? AppColors.success : AppColors.error,
-                  width: 2,
-                ),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Icon(
-                        state.isCorrect ? Icons.check_circle_rounded : Icons.cancel_rounded,
-                        color: Colors.white,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      const Text(
-                        'Câu trả lời của bạn:',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    state.userAnswer,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(20),
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [AppColors.success.withOpacity(0.3), AppColors.success.withOpacity(0.2)],
-              ),
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.success,
-                width: 2,
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Row(
-                  children: [
-                    Icon(
-                      Icons.lightbulb_rounded,
-                      color: AppColors.success,
-                      size: 20,
-                    ),
-                    SizedBox(width: 8),
-                    Text(
-                      'Đáp án đúng:',
-                      style: TextStyle(
-                        color: AppColors.success,
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(
-                  state.correctAnswer,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildCorrectAnswerHeader(BuildContext context, ShowCorrectAnswer state) {
-    return Padding(
-      padding: const EdgeInsets.all(16),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-        children: [
-          Container(
-            width: 44,
-            height: 44,
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.15),
-              shape: BoxShape.circle,
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
-            ),
-            child: IconButton(
-              onPressed: () => Navigator.of(context).pop(),
-              icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 18),
-              padding: EdgeInsets.zero,
-            ),
-          ),
-          TweenAnimationBuilder<int>(
-            key: ValueKey(state.countdown),
-            tween: IntTween(begin: state.countdown, end: state.countdown),
-            duration: const Duration(milliseconds: 300),
-            builder: (context, value, child) {
-              return Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [AppColors.primaryBlue, Color(0xFF3B82F6)],
-                  ),
-                  borderRadius: BorderRadius.circular(30),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryBlue.withOpacity(0.4),
-                      blurRadius: 12,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    const Icon(
-                      Icons.timer_outlined,
-                      color: Colors.white,
-                      size: 20,
-                    ),
-                    const SizedBox(width: 8),
-                    Text(
-                      '${value}s',
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildResultBanner(ShowCorrectAnswer state) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: state.isCorrect
-              ? [AppColors.success, const Color(0xFF059669)]
-              : [AppColors.error, const Color(0xFFDC2626)],
-        ),
-        borderRadius: BorderRadius.circular(30),
-        boxShadow: [
-          BoxShadow(
-            color: (state.isCorrect ? AppColors.success : AppColors.error).withOpacity(0.4),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(
-            state.isCorrect ? Icons.celebration_rounded : Icons.close_rounded,
-            color: Colors.white,
-            size: 24,
-          ),
-          const SizedBox(width: 12),
-          Text(
-            state.isCorrect ? 'Chính xác! Tuyệt vời! 🎉' : 'Chưa chính xác! 💪',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildAnswerOptionsWithResult(
-      BuildContext context,
-      ShowCorrectAnswer state,
-      List<String> options,
-      ) {
-    return ListView.builder(
-      shrinkWrap: true,
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-      itemCount: options.length,
-      itemBuilder: (context, index) => _buildAnswerOptionWithResult(
-        options[index],
-        index,
-        state.userAnswer,
-        state.correctAnswer,
-      ),
-    );
-  }
-
-  Widget _buildAnswerOptionWithResult(
-      String option,
-      int index,
-      String userAnswer,
-      String correctAnswer,
-      ) {
-    final labels = ['A', 'B', 'C', 'D'];
-    final isUserAnswer = userAnswer == option;
-    final isCorrectAnswer = correctAnswer == option;
-    final isWrongAnswer = isUserAnswer && !isCorrectAnswer;
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        padding: const EdgeInsets.all(18),
-        decoration: BoxDecoration(
-          gradient: isCorrectAnswer
-              ? LinearGradient(
-            colors: [AppColors.success.withOpacity(0.3), AppColors.success.withOpacity(0.2)],
-          )
-              : isWrongAnswer
-              ? LinearGradient(
-            colors: [AppColors.error.withOpacity(0.3), AppColors.error.withOpacity(0.2)],
-          )
-              : null,
-          color: isCorrectAnswer || isWrongAnswer ? null : Colors.white.withOpacity(0.1),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: isCorrectAnswer
-                ? AppColors.success
-                : isWrongAnswer
-                ? AppColors.error
-                : Colors.white.withOpacity(0.3),
-            width: isCorrectAnswer || isWrongAnswer ? 2.5 : 1.5,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              width: 40,
-              height: 40,
-              decoration: BoxDecoration(
-                color: isCorrectAnswer
-                    ? AppColors.success
-                    : isWrongAnswer
-                    ? AppColors.error
-                    : Colors.white.withOpacity(0.2),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.white.withOpacity(0.5),
-                  width: 1.5,
-                ),
-              ),
-              child: Center(
-                child: isCorrectAnswer || isWrongAnswer
-                    ? Icon(
-                  isCorrectAnswer ? Icons.check_rounded : Icons.close_rounded,
-                  color: Colors.white,
-                  size: 20,
-                )
-                    : Text(
-                  labels[index],
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-            ),
-            const SizedBox(width: 16),
-            Expanded(
-              child: Text(
-                option,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 16,
-                  fontWeight: isCorrectAnswer || isWrongAnswer ? FontWeight.w600 : FontWeight.w500,
-                  height: 1.4,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-            if (isCorrectAnswer)
-              Container(
-                margin: const EdgeInsets.only(left: 12),
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(
-                  color: AppColors.success,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: const Text(
-                  'Đúng',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCountdownMessage(ShowCorrectAnswer state) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(25),
-        border: Border.all(
-          color: Colors.white.withOpacity(0.3),
-          width: 1.5,
-        ),
-      ),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          const Icon(
-            Icons.arrow_forward_rounded,
-            color: Colors.white,
-            size: 18,
-          ),
-          const SizedBox(width: 8),
-          Text(
-            'Câu tiếp theo sau ${state.countdown}s',
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
       ),
     );
   }
@@ -1342,7 +1259,7 @@ class RoomQuizView extends StatelessWidget {
   void _navigateToResult(BuildContext context) {
     final bloc = context.read<RoomBloc>();
     final state = bloc.state;
-    
+
     if (state is QuizFinished) {
       // Navigate to contest result screen
       context.router.replace(
