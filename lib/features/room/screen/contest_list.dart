@@ -215,7 +215,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
 
   Widget _buildHeader() {
     return Container(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 2),
       decoration: BoxDecoration(
         boxShadow: [
           BoxShadow(
@@ -332,7 +332,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(12, 6, 12, 4),
+      padding: const EdgeInsets.fromLTRB(12, 4, 12, 2),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -398,15 +398,15 @@ class _ContestListScreenState extends State<ContestListScreen> {
         if (constraints.maxWidth > 600) {
           // Tablet hoặc màn hình rộng: 3 cột
           crossAxisCount = 3;
-          childAspectRatio = 0.85;
+          childAspectRatio = 1.02;
         } else if (constraints.maxWidth > 400) {
           // Màn hình trung bình: 2 cột
           crossAxisCount = 2;
-          childAspectRatio = 0.8;
+          childAspectRatio = 1;
         } else {
           // Màn hình nhỏ: 2 cột với tỷ lệ điều chỉnh
           crossAxisCount = 2;
-          childAspectRatio = 0.75;
+          childAspectRatio = 1;
         }
 
         return GridView.builder(
@@ -451,7 +451,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
             BoxShadow(
               color: Color(0x08000000),
               blurRadius: 20,
-              offset: Offset(0, 4),
+              offset: Offset(0, 2),
             ),
           ],
         ),
@@ -461,7 +461,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
             borderRadius: BorderRadius.circular(20),
             onTap: isJoinable ? () => _joinContest(contest.id) : null,
             child: Padding(
-              padding: const EdgeInsets.all(14),
+              padding: const EdgeInsets.all(12),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -471,7 +471,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
                     children: [
                       Container(
                         width: double.infinity,
-                        height: 40,
+                        height: 50,
                         decoration: BoxDecoration(
                           gradient: _getStatusGradient(contest.status),
                           borderRadius: BorderRadius.circular(16),
@@ -489,8 +489,6 @@ class _ContestListScreenState extends State<ContestListScreen> {
                           size: 40,
                         ),
                       ),
-                      const SizedBox(height: 10),
-                      _buildStatusBadge(contest.status),
                     ],
                   ),
 
@@ -501,8 +499,7 @@ class _ContestListScreenState extends State<ContestListScreen> {
                       fontSize: 14,
                       fontWeight: FontWeight.bold,
                       color: AppColors.textPrimary,
-                      letterSpacing: -0.3,
-                      height: 1.3,
+                      height: 0.4,
                     ),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
