@@ -20,6 +20,16 @@ class GetUserInfo extends HomeEvent {
   const GetUserInfo();
 }
 
+// New event for force refresh
+class RefreshUserInfo extends HomeEvent {
+  final bool silent; // If true, doesn't show loading state
+
+  const RefreshUserInfo({this.silent = false});
+
+  @override
+  List<Object?> get props => [silent];
+}
+
 class UpdateUserAge extends HomeEvent {
   final String dateOfBirth;
 
@@ -35,6 +45,16 @@ class ClearError extends HomeEvent {
 
 class ClearCurrentUser extends HomeEvent {
   const ClearCurrentUser();
+}
+
+// New event for updating stars
+class UpdateUserStars extends HomeEvent {
+  final int starChange; // Positive or negative change
+
+  const UpdateUserStars({required this.starChange});
+
+  @override
+  List<Object?> get props => [starChange];
 }
 
 // ============ STATES ============
@@ -55,11 +75,15 @@ class HomeLoading extends HomeState {
 
 class UserInfoLoaded extends HomeState {
   final User user;
+  final DateTime? timestamp; // Add timestamp to force rebuild
 
-  const UserInfoLoaded({required this.user});
+  const UserInfoLoaded({
+    required this.user,
+    this.timestamp,
+  });
 
   @override
-  List<Object?> get props => [user];
+  List<Object?> get props => [user, timestamp];
 }
 
 class UserInfoUpdating extends HomeState {
@@ -96,7 +120,9 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
   HomeBloc(this._homeRepository) : super(const HomeInitial()) {
     on<GetUserInfo>(_onGetUserInfo);
+    on<RefreshUserInfo>(_onRefreshUserInfo);
     on<UpdateUserAge>(_onUpdateUserAge);
+    on<UpdateUserStars>(_onUpdateUserStars);
     on<ClearError>(_onClearError);
     on<ClearCurrentUser>(_onClearCurrentUser);
   }
@@ -106,6 +132,19 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
   bool get hasUser => _currentUser != null;
   String get userName => _currentUser?.fullName ?? 'User';
   String get userEmail => _currentUser?.email ?? '';
+  int get userStars => _currentUser?.totalStar ?? 0;
+
+  // ============ PUBLIC METHODS ============
+
+  /// Force reload user info from server
+  void refreshUser({bool silent = false}) {
+    add(RefreshUserInfo(silent: silent));
+  }
+
+  /// Update star count locally and refresh from server
+  void updateStars(int change) {
+    add(UpdateUserStars(starChange: change));
+  }
 
   // ============ HANDLERS ============
 
@@ -115,7 +154,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       ) async {
     if (_hasLoaded && _currentUser != null) {
       logger.i('HomeBloc: Dữ liệu đã load, không load lại');
-      emit(UserInfoLoaded(user: _currentUser!));
+      emit(UserInfoLoaded(user: _currentUser!, timestamp: DateTime.now()));
       return;
     }
 
@@ -133,7 +172,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       logger.i('HomeBloc: Saved userId: ${user.id}');
 
       logger.i('HomeBloc: Tải thông tin user thành công');
-      emit(UserInfoLoaded(user: user));
+      emit(UserInfoLoaded(user: user, timestamp: DateTime.now()));
     } on NotFoundException catch (e) {
       logger.e('HomeBloc: Không tìm thấy user - ${e.message}');
       emit(HomeError('Không tìm thấy thông tin người dùng',
@@ -147,6 +186,54 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     } catch (e) {
       logger.e('HomeBloc: Lỗi không xác định - $e');
       emit(const HomeError('Có lỗi xảy ra khi tải thông tin'));
+    }
+  }
+
+  Future<void> _onRefreshUserInfo(
+      RefreshUserInfo event,
+      Emitter<HomeState> emit,
+      ) async {
+    // If silent refresh, don't show loading
+    if (!event.silent && _currentUser != null) {
+      emit(UserInfoUpdating(currentUser: _currentUser!));
+    } else if (!event.silent) {
+      emit(const HomeLoading());
+    }
+
+    try {
+      logger.i('HomeBloc: Refreshing user info...');
+
+      final user = await _homeRepository.getUserInfo();
+      _currentUser = user;
+      _hasLoaded = true;
+
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setInt('currentUserId', user.id);
+
+      logger.i('HomeBloc: User info refreshed successfully');
+      emit(UserInfoLoaded(user: user, timestamp: DateTime.now()));
+    } on NetworkException catch (e) {
+      logger.e('HomeBloc: Network error during refresh - ${e.message}');
+
+      // If we have cached user, show it with error message
+      if (_currentUser != null) {
+        emit(UserInfoLoaded(user: _currentUser!, timestamp: DateTime.now()));
+        // Optionally emit error state briefly
+        await Future.delayed(Duration(milliseconds: 100));
+        emit(HomeError('Không thể cập nhật thông tin', errorCode: e.errorCode));
+        await Future.delayed(Duration(seconds: 2));
+        emit(UserInfoLoaded(user: _currentUser!, timestamp: DateTime.now()));
+      } else {
+        emit(HomeError('Không có kết nối mạng', errorCode: e.errorCode));
+      }
+    } catch (e) {
+      logger.e('HomeBloc: Error during refresh - $e');
+
+      if (_currentUser != null) {
+        emit(UserInfoLoaded(user: _currentUser!, timestamp: DateTime.now()));
+      } else {
+        emit(const HomeError('Có lỗi xảy ra khi cập nhật'));
+      }
     }
   }
 
@@ -173,20 +260,45 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
         final updatedUser = await _homeRepository.getUserInfo();
         _currentUser = updatedUser;
         logger.i('HomeBloc: Cập nhật ngày sinh thành công');
-        emit(UserInfoLoaded(user: updatedUser));
+        emit(UserInfoLoaded(user: updatedUser, timestamp: DateTime.now()));
       } else {
         logger.e('HomeBloc: Cập nhật thất bại - ${response.message}');
-        emit(UserInfoLoaded(user: _currentUser!));
+        emit(UserInfoLoaded(user: _currentUser!, timestamp: DateTime.now()));
         emit(HomeError(response.message ?? 'Cập nhật thất bại'));
       }
     } on NetworkException catch (e) {
       logger.e('HomeBloc: Lỗi mạng khi cập nhật - ${e.message}');
-      emit(UserInfoLoaded(user: _currentUser!));
+      emit(UserInfoLoaded(user: _currentUser!, timestamp: DateTime.now()));
       emit(const HomeError('Không có kết nối mạng'));
     } catch (e) {
       logger.e('HomeBloc: Lỗi cập nhật - $e');
-      emit(UserInfoLoaded(user: _currentUser!));
+      emit(UserInfoLoaded(user: _currentUser!, timestamp: DateTime.now()));
       emit(const HomeError('Có lỗi xảy ra khi cập nhật'));
+    }
+  }
+
+  Future<void> _onUpdateUserStars(
+      UpdateUserStars event,
+      Emitter<HomeState> emit,
+      ) async {
+    if (_currentUser == null) return;
+
+    // Optimistically update local state
+    final optimisticUser = _currentUser!.copyWith(
+      totalStar: _currentUser!.totalStar + event.starChange,
+    );
+    _currentUser = optimisticUser;
+    emit(UserInfoLoaded(user: optimisticUser, timestamp: DateTime.now()));
+
+    // Then refresh from server to get actual value
+    try {
+      logger.i('HomeBloc: Refreshing user stars from server...');
+      final updatedUser = await _homeRepository.getUserInfo();
+      _currentUser = updatedUser;
+      emit(UserInfoLoaded(user: updatedUser, timestamp: DateTime.now()));
+    } catch (e) {
+      logger.e('HomeBloc: Failed to refresh stars - $e');
+      // Keep optimistic update if refresh fails
     }
   }
 
@@ -195,7 +307,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
       Emitter<HomeState> emit,
       ) async {
     if (_currentUser != null) {
-      emit(UserInfoLoaded(user: _currentUser!));
+      emit(UserInfoLoaded(user: _currentUser!, timestamp: DateTime.now()));
     } else {
       emit(const HomeInitial());
     }
@@ -218,6 +330,13 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     _currentUser = null;
     _hasLoaded = false;
     emit(const HomeInitial());
+  }
+
+  /// Check if user data needs refresh (e.g., older than 5 minutes)
+  bool shouldRefresh() {
+    if (!_hasLoaded || _currentUser == null) return true;
+
+    return false;
   }
 
   @override
