@@ -908,9 +908,7 @@ class RoomQuizView extends StatelessWidget {
       children: [
         _buildLeaderboardHeader(context, state),
         Expanded(
-          child: state.leaderboardEvent.leaderboard.isEmpty
-              ? _buildEmptyLeaderboard()
-              : GridView.builder(
+          child: GridView.builder(
             padding: EdgeInsets.all(isLandscape ? 12 : 16),
             gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
               crossAxisCount: isLandscape ? 2 : 1,
@@ -927,37 +925,6 @@ class RoomQuizView extends StatelessWidget {
           ),
         ),
       ],
-    );
-  }
-
-  Widget _buildEmptyLeaderboard() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(24),
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.1),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.emoji_events_outlined,
-              color: Colors.white,
-              size: 48,
-            ),
-          ),
-          const SizedBox(height: 16),
-          const Text(
-            'Chưa có dữ liệu',
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 16,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
     );
   }
 
@@ -1384,9 +1351,7 @@ class RoomQuizView extends StatelessWidget {
                   color: Colors.white.withOpacity(0.2),
                 ),
                 Flexible(
-                  child: state.leaderboardEvent.leaderboard.isEmpty
-                      ? _buildEmptyLeaderboard()
-                      : ListView.builder(
+                  child: ListView.builder(
                     shrinkWrap: true,
                     padding: const EdgeInsets.all(24),
                     itemCount: state.leaderboardEvent.leaderboard.length,

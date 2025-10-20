@@ -332,7 +332,7 @@ class _ContestResultScreenState extends State<ContestResultScreen> with TickerPr
                 ),
               ),
               child: Text(
-                '${widget.correctAnswers}/${widget.totalQuestions} câu đúng • ${widget.totalScore} điểm',
+                '${widget.correctAnswers}/${widget.totalQuestions} câu đúng ',
                 style: const TextStyle(
                   color: Colors.white,
                   fontSize: 15,
