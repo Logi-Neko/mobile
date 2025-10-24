@@ -3,6 +3,7 @@ import 'package:logi_neko/core/router/app_router.dart';
 import 'package:logi_neko/features/home/dto/user.dart';
 import 'package:logi_neko/features/home/ui/widgets/user_detail_dialog.dart';
 import 'package:auto_route/auto_route.dart';
+import 'package:logi_neko/features/subcription/ui/screen/subcription.dart';
 
 class HeaderWidget extends StatelessWidget {
   final User? user;
@@ -282,7 +283,16 @@ class HeaderWidget extends StatelessWidget {
   Widget _buildPremiumContainer(BuildContext context, bool isVerySmallScreen) {
     return GestureDetector(
       onTap: () {
-        context.router.push(const SubscriptionRoute());
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => SubscriptionScreen(
+              accountId: user!.id,
+              isPremium: user!.isPremium,
+              premiumUntil: user!.premiumUntil,
+            ),
+          ),
+        );
       },
       child: Container(
         padding: EdgeInsets.symmetric(

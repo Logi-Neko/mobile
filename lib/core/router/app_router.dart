@@ -20,7 +20,7 @@ import 'package:logi_neko/features/splash/screen/splash_screen.dart';
 import 'package:logi_neko/features/board/ui/screen/leaderboard_screen.dart';
 
 import 'package:auto_route/auto_route.dart';
-import 'package:logi_neko/features/subcription/screen/subcription.dart';
+import 'package:logi_neko/features/subcription/ui/screen/subcription.dart';
 
 import '../../features/course/ui/screen/course_main_screen.dart';
 import '../../features/login/screen/forgot_password_screen.dart';

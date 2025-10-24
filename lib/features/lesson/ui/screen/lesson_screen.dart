@@ -1,7 +1,5 @@
-import 'package:auto_route/auto_route.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:logi_neko/core/router/app_router.dart';
 import 'package:logi_neko/features/lesson/ui/widgets/lesson_detail_screen.dart';
 import 'package:logi_neko/features/video/video_quiz/ui/screen/screen.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
@@ -274,68 +272,8 @@ class _LessonViewState extends State<LessonView>
             onPressed: () => Navigator.pop(context),
             child: Text("Đóng"),
           ),
-          ElevatedButton(
-            onPressed: () {
-              context.router.pushAndPopUntil(
-                const SubscriptionRoute(),
-                predicate: (route) => false,
-              );
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.orange,
-              foregroundColor: Colors.white,
-            ),
-            child: Text("Nâng cấp"),
-          ),
         ],
       ),
-    );
-  }
-
-  Widget _buildProgressSection(Lesson lesson) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            const Text(
-              "Tiến độ học tập",
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: lesson.isCompleted ? Colors.green : Colors.blue,
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                lesson.progressText,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 12,
-                  fontWeight: FontWeight.bold,
-                ),
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 8),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(10),
-          child: LinearProgressIndicator(
-            value: lesson.progressPercentage / 100,
-            backgroundColor: Colors.grey[300],
-            valueColor: AlwaysStoppedAnimation<Color>(
-              lesson.isCompleted ? Colors.green : Colors.blue,
-            ),
-            minHeight: 8,
-          ),
-        ),
-      ],
     );
   }
 
