@@ -156,7 +156,7 @@ class _CourseViewState extends State<CourseView>
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isSmallScreen ? 16 : 20,
-        vertical: isSmallScreen ? 12 : 16,
+        vertical: isSmallScreen ? 8 : 12,
       ),
       child: LayoutBuilder(
         builder: (context, constraints) {
@@ -168,7 +168,6 @@ class _CourseViewState extends State<CourseView>
                   children: [
                     _buildBackButton(isSmallScreen),
                     const Spacer(),
-                    _buildPremiumContainer(context, isSmallScreen),
                   ],
                 ),
                 const SizedBox(height: 12),
@@ -176,14 +175,21 @@ class _CourseViewState extends State<CourseView>
               ],
             );
           } else {
-            // Desktop/Tablet layout - horizontal
             return Row(
               children: [
                 _buildBackButton(isSmallScreen),
                 const Spacer(),
                 _buildTitle(isSmallScreen),
                 const Spacer(),
-                _buildPremiumContainer(context, isSmallScreen),
+                Row(
+                  children: [
+                    const SizedBox(width: 8),
+                    _buildActionButton(
+                      icon: Icons.more_vert,
+                      onPressed: () {},
+                    ),
+                  ],
+                ),
               ],
             );
           }
@@ -191,6 +197,26 @@ class _CourseViewState extends State<CourseView>
       ),
     );
   }
+
+  Widget _buildActionButton({
+    required IconData icon,
+    required VoidCallback onPressed,
+  }) {
+    return Container(
+      width: 40,
+      height: 40,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: IconButton(
+        onPressed: onPressed,
+        icon: Icon(icon, color: Colors.white, size: 20),
+        padding: EdgeInsets.zero,
+      ),
+    );
+  }
+
 
   Widget _buildBackButton(bool isSmallScreen) {
     return Container(
@@ -572,39 +598,6 @@ class _CourseViewState extends State<CourseView>
                       ),
                     ),
                     const SizedBox(width: 12),
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [Colors.orange.shade400, Colors.orange.shade600],
-                          ),
-                          borderRadius: BorderRadius.circular(25),
-                        ),
-                        child: ElevatedButton(
-                          onPressed: () {
-                            Navigator.pop(context);
-                            context.router.pushAndPopUntil(
-                              const SubscriptionRoute(),
-                              predicate: (route) => false,
-                            );
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.transparent,
-                            shadowColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(25),
-                            ),
-                          ),
-                          child: const Text(
-                            "Nâng cấp",
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                   ],
                 ),
               ],
@@ -685,82 +678,6 @@ class _CourseViewState extends State<CourseView>
               ],
             ),
           ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildPremiumContainer(BuildContext context, [bool isSmallScreen = false]) {
-    return GestureDetector(
-      onTap: () {
-        context.router.pushAndPopUntil(
-          const SubscriptionRoute(),
-          predicate: (route) => false,
-        );
-      },
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isSmallScreen ? 12 : 16,
-          vertical: isSmallScreen ? 10 : 12,
-        ),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Colors.amber.shade400,
-              Colors.orange.shade500,
-            ],
-          ),
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.orange.withOpacity(0.4),
-              blurRadius: 8,
-              offset: const Offset(0, 4),
-            ),
-          ],
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: isSmallScreen ? 20 : 24,
-              height: isSmallScreen ? 20 : 24,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.white, Colors.amber.shade100],
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.white.withOpacity(0.5),
-                    blurRadius: 4,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Icon(
-                Icons.star,
-                color: Colors.orange.shade600,
-                size: isSmallScreen ? 12 : 14,
-              ),
-            ),
-            SizedBox(width: isSmallScreen ? 6 : 8),
-            Text(
-              'Premium',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: isSmallScreen ? 12 : 14,
-                fontWeight: FontWeight.bold,
-                shadows: [
-                  const Shadow(
-                    color: Colors.black26,
-                    offset: Offset(0, 1),
-                    blurRadius: 2,
-                  ),
-                ],
-              ),
-            ),
-          ],
         ),
       ),
     );

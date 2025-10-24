@@ -100,7 +100,7 @@ class LessonHeaderWidget extends StatelessWidget {
           onTap: onBack,
           child: Container(
             padding: EdgeInsets.symmetric(
-              horizontal: 16,
+              horizontal: 8,
               vertical: 8,
             ),
             child: Row(

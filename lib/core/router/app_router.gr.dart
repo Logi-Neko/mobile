@@ -190,12 +190,6 @@ abstract class _$AppRouter extends RootStackRouter {
         child: const StartScreen(),
       );
     },
-    SubscriptionRoute.name: (routeData) {
-      return AutoRoutePage<dynamic>(
-        routeData: routeData,
-        child: const SubscriptionScreen(),
-      );
-    },
     WaitingRoomRoute.name: (routeData) {
       final args = routeData.argsAs<WaitingRoomRouteArgs>();
       return AutoRoutePage<dynamic>(
