@@ -20,9 +20,9 @@ class ApiService {
 
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 60),
-      receiveTimeout: const Duration(seconds: 60),
-      sendTimeout: const Duration(seconds: 60),
+      connectTimeout: const Duration(seconds: 60),   // GIẢM XUỐNG 5s
+      receiveTimeout: const Duration(seconds: 60),    // GIẢM XUỐNG 5s
+      sendTimeout: const Duration(seconds: 60),       // GIẢM XUỐNG 5s
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -33,7 +33,91 @@ class ApiService {
     _setupInterceptors();
     await _syncTokenOnStartup();
   }
+  static Future<ApiResponse<List<T>>> getListDebug<T>(
+      String path, {
+        required T Function(Map<String, dynamic>) fromJson,
+        Map<String, dynamic>? queryParameters,
+        Options? options,
+        CancelToken? cancelToken,
+      }) async {
+    return await ExceptionHelper.handleApiCall<ApiResponse<List<T>>>(() async {
+      print('\n🎯 [GET] START: $path');
+      final getTotalStart = Stopwatch()..start();
 
+      // === BEFORE DIO REQUEST ===
+      print('📊 [PRE-REQUEST] Checking interceptors count: ${_dio.interceptors.length}');
+      for (int i = 0; i < _dio.interceptors.length; i++) {
+        print('  Interceptor[$i]: ${_dio.interceptors[i].runtimeType}');
+      }
+
+      // === DIO GET REQUEST ===
+      print('🚀 [DIO.GET] About to call _dio.get() at ${DateTime.now()}');
+      final dioStart = Stopwatch()..start();
+
+      final response = await _dio.get(
+        path,
+        queryParameters: queryParameters,
+        options: options,
+        cancelToken: cancelToken,
+      );
+
+      dioStart.stop();
+      print('✅ [DIO.GET] Response received in ${dioStart.elapsedMilliseconds}ms at ${DateTime.now()}');
+      print('   Status: ${response.statusCode}');
+
+      // === RESPONSE SIZE ===
+      print('📦 Response size: ${response.data.toString().length} bytes');
+
+      // === PARSE ===
+      final parseStart = Stopwatch()..start();
+
+      if (response.statusCode == null ||
+          response.statusCode! < 200 ||
+          response.statusCode! >= 300) {
+        throw ClientException(
+          message: 'Invalid response status: ${response.statusCode}',
+          statusCode: response.statusCode,
+        );
+      }
+
+      final responseData = response.data;
+
+      if (responseData == null) {
+        parseStart.stop();
+        print('✅ [PARSE] ${parseStart.elapsedMilliseconds}ms (null response)');
+        return ApiResponse<List<T>>(
+          status: response.statusCode!,
+          message: 'Success',
+          data: null,
+        );
+      }
+
+      final json = responseData as Map<String, dynamic>;
+      final dataList = json['data'] as List<dynamic>? ?? [];
+
+      List<T> parsedItems = [];
+      for (int i = 0; i < dataList.length; i++) {
+        final item = fromJson(dataList[i] as Map<String, dynamic>);
+        parsedItems.add(item);
+      }
+
+      final result = ApiResponse<List<T>>(
+        status: response.statusCode!,
+        code: json['code'],
+        message: json['message'],
+        data: parsedItems,
+        path: json['path'],
+      );
+
+      parseStart.stop();
+      print('✅ [PARSE] ${parseStart.elapsedMilliseconds}ms');
+
+      getTotalStart.stop();
+      print('🏁 [TOTAL] ${getTotalStart.elapsedMilliseconds}ms\n');
+
+      return result;
+    });
+  }
   static Future<void> _syncTokenOnStartup() async {
     try {
       await _authInterceptor.syncTokenFromStorage();
@@ -48,10 +132,11 @@ class ApiService {
 
     if (kDebugMode) {
       _dio.interceptors.add(LogInterceptor(
-        requestBody: true,
-        responseBody: true,
-        requestHeader: true,
-        responseHeader: true,
+        request: true,
+        requestBody: false,
+        responseBody: false,
+        requestHeader: false,
+        responseHeader: false,
         error: true,
         logPrint: (obj) {
           final logMessage = obj.toString();

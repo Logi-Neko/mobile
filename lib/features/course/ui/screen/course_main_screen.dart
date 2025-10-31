@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:logi_neko/core/router/app_router.dart';
-import 'package:logi_neko/features/home/bloc/home_bloc.dart';
 import 'package:logi_neko/features/lesson/ui/screen/lesson_screen.dart';
 import 'package:logi_neko/shared/color/app_color.dart';
 import '../../bloc/course_bloc.dart';
@@ -21,8 +20,10 @@ class CourseScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final repository = CourseRepositoryImpl();
+
     return BlocProvider(
-      create: (context) => CourseBloc(CourseRepositoryImpl())..add(LoadCourses()),
+      create: (context) => CourseBloc(repository)..add(LoadCourses()),
       child: CourseView(userIsPremium: userIsPremium),
     );
   }
@@ -40,35 +41,12 @@ class CourseView extends StatefulWidget {
 class _CourseViewState extends State<CourseView>
     with SingleTickerProviderStateMixin {
   AnimationController? _backgroundController;
-  Animation<double>? _backgroundAnimation;
 
   @override
   void initState() {
     super.initState();
-    _setupAnimations();
   }
 
-  void _setupAnimations() {
-    _backgroundController = AnimationController(
-      duration: const Duration(seconds: 8),
-      vsync: this,
-    );
-
-    _backgroundAnimation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(
-      parent: _backgroundController!,
-      curve: Curves.easeInOut,
-    ));
-
-    // Start animations after initialization
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted && _backgroundController != null) {
-        _backgroundController!.repeat(reverse: true);
-      }
-    });
-  }
 
   @override
   void dispose() {
@@ -78,9 +56,6 @@ class _CourseViewState extends State<CourseView>
 
   @override
   Widget build(BuildContext context) {
-    // Provide default values if animations are not ready
-    final backgroundAnimationValue = _backgroundAnimation?.value ?? 0.0;
-
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -114,30 +89,23 @@ class _CourseViewState extends State<CourseView>
       animation: backgroundController,
       builder: (context, child) {
         return Stack(
-          children: List.generate(12, (index) {
-            final delay = index * 0.3;
+          children: List.generate(6, (index) {
+            final delay = index * 0.4;
             final animationValue = (backgroundController.value + delay) % 1.0;
 
             return Positioned(
-              left: (index * 80.0 + 30) % MediaQuery.of(context).size.width,
-              top: (index * 120.0 + 80) % MediaQuery.of(context).size.height,
+              left: (index * 120.0 + 40) % MediaQuery.of(context).size.width,
+              top: (index * 150.0 + 100) % MediaQuery.of(context).size.height,
               child: Transform.scale(
-                scale: 0.3 + (animationValue * 0.7),
+                scale: 0.4 + (animationValue * 0.6),
                 child: Opacity(
-                  opacity: (1 - animationValue) * 0.4,
+                  opacity: (1 - animationValue) * 0.3,
                   child: Container(
-                    width: 12,
-                    height: 12,
+                    width: 10,
+                    height: 10,
                     decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.6),
+                      color: Colors.white.withOpacity(0.5),
                       shape: BoxShape.circle,
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.white.withOpacity(0.2),
-                          blurRadius: 6,
-                          spreadRadius: 2,
-                        ),
-                      ],
                     ),
                   ),
                 ),
@@ -161,7 +129,6 @@ class _CourseViewState extends State<CourseView>
       child: LayoutBuilder(
         builder: (context, constraints) {
           if (constraints.maxWidth < 600) {
-            // Mobile layout - stacked vertically
             return Column(
               children: [
                 Row(
@@ -216,7 +183,6 @@ class _CourseViewState extends State<CourseView>
       ),
     );
   }
-
 
   Widget _buildBackButton(bool isSmallScreen) {
     return Container(
@@ -298,13 +264,27 @@ class _CourseViewState extends State<CourseView>
                   color: Colors.white.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Text(
-                  "${state.courses.where((course) => course.isActive).length} khóa học",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: isSmallScreen ? 10 : 12,
-                    fontWeight: FontWeight.w500,
-                  ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    if (state.isFromCache)
+                      Padding(
+                        padding: const EdgeInsets.only(right: 6),
+                        child: Icon(
+                          Icons.cloud_off_outlined,
+                          color: Colors.white70,
+                          size: 12,
+                        ),
+                      ),
+                    Text(
+                      "${state.courses.where((course) => course.isActive).length} khóa học",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: isSmallScreen ? 10 : 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
                 ),
               ),
           ],
@@ -312,7 +292,6 @@ class _CourseViewState extends State<CourseView>
       },
     );
   }
-
   Widget _buildContent() {
     return BlocConsumer<CourseBloc, CourseState>(
       listener: (context, state) {
@@ -321,23 +300,20 @@ class _CourseViewState extends State<CourseView>
         }
       },
       builder: (context, state) {
-        if (state is CourseLoading) {
-          return _buildLoadingContent();
-        }
-
         if (state is CourseLoaded) {
-          final allCourses = state.courses.where((course) => course.isActive).toList();
+          final allCourses = state.courses;
           return RefreshIndicator(
             onRefresh: () async {
-              context.read<CourseBloc>().add(LoadCourses());
+              context.read<CourseBloc>().add(RefreshCourses());
+              // Chờ state thay đổi
+              await Future.delayed(const Duration(milliseconds: 500));
             },
             child: CourseGridWidget(
               courses: allCourses,
               userIsPremium: widget.userIsPremium,
-              isLoading: false,
-              error: null,
-              errorCode: null,
-              onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
+              onRetry: () => context.read<CourseBloc>().add(
+                LoadCourses(forceRefresh: true),
+              ),
               onCourseSelected: _onCourseSelected,
               emptyMessage: "Chưa có khóa học nào",
             ),
@@ -352,49 +328,10 @@ class _CourseViewState extends State<CourseView>
       },
     );
   }
-
-  Widget _buildLoadingContent() {
-    return const Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          SizedBox(
-            width: 60,
-            height: 60,
-            child: CircularProgressIndicator(
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-              strokeWidth: 4,
-            ),
-          ),
-          SizedBox(height: 24),
-          Text(
-            "Đang tải khóa học...",
-            style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-          SizedBox(height: 8),
-          Text(
-            "Vui lòng chờ một chút",
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 14,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
   Widget _buildErrorContent(CourseError state) {
     return CourseGridWidget(
       courses: const [],
       userIsPremium: widget.userIsPremium,
-      isLoading: false,
-      error: state.message,
-      errorCode: state.errorCode,
       onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
       onCourseSelected: _onCourseSelected,
       emptyMessage: "Chưa có khóa học nào",
@@ -405,9 +342,6 @@ class _CourseViewState extends State<CourseView>
     return CourseGridWidget(
       courses: const [],
       userIsPremium: widget.userIsPremium,
-      isLoading: false,
-      error: null,
-      errorCode: null,
       onRetry: () => context.read<CourseBloc>().add(LoadCourses()),
       onCourseSelected: _onCourseSelected,
       emptyMessage: "Chưa có khóa học nào",
