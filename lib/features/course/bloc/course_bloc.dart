@@ -1,6 +1,5 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:equatable/equatable.dart';
-import 'package:logi_neko/core/exception/exceptions.dart';
 import '../repository/course_repository.dart';
 import '../dto/course.dart';
 
@@ -9,15 +8,17 @@ abstract class CourseEvent extends Equatable {
   List<Object?> get props => [];
 }
 
-class LoadCourses extends CourseEvent {}
-
-class LoadCourseById extends CourseEvent {
-  final int id;
-  LoadCourseById(this.id);
+class LoadCourses extends CourseEvent {
+  final bool forceRefresh;
+  LoadCourses({this.forceRefresh = false});
 
   @override
-  List<Object?> get props => [id];
+  List<Object?> get props => [forceRefresh];
 }
+
+class RefreshCourses extends CourseEvent {}
+
+class ClearCourseCache extends CourseEvent {}
 
 abstract class CourseState extends Equatable {
   @override
@@ -30,32 +31,20 @@ class CourseLoading extends CourseState {}
 
 class CourseLoaded extends CourseState {
   final List<Course> courses;
-  CourseLoaded(this.courses);
+  final bool isFromCache;  // Để biết data từ cache hay mới
+
+  CourseLoaded(this.courses, {this.isFromCache = false});
 
   @override
-  List<Object?> get props => [courses];
-}
-
-class CourseDetailLoaded extends CourseState {
-  final Course course;
-  CourseDetailLoaded(this.course);
-
-  @override
-  List<Object?> get props => [course];
-}
-
-class CourseOperationSuccess extends CourseState {
-  final String message;
-  CourseOperationSuccess(this.message);
-
-  @override
-  List<Object?> get props => [message];
+  List<Object?> get props => [courses, isFromCache];
 }
 
 class CourseError extends CourseState {
   final String message;
   final String? errorCode;
+
   CourseError(this.message, {this.errorCode});
+
   @override
   List<Object?> get props => [message, errorCode];
 }
@@ -65,39 +54,58 @@ class CourseBloc extends Bloc<CourseEvent, CourseState> {
 
   CourseBloc(this._courseRepository) : super(CourseInitial()) {
     on<LoadCourses>(_onLoadCourses);
-    on<LoadCourseById>(_onLoadCourseById);
+    on<RefreshCourses>(_onRefreshCourses);
+    on<ClearCourseCache>(_onClearCache);
   }
 
-  Future<void> _onLoadCourses(LoadCourses event, Emitter<CourseState> emit) async {
-    emit(CourseLoading());
+  // Load courses (dùng cache nếu có)
+  Future<void> _onLoadCourses(
+      LoadCourses event, Emitter<CourseState> emit) async {
     try {
-      final courses = await _courseRepository.getCourses();
-      emit(CourseLoaded(courses));
-    } on AppException catch (e) {
-      final errorMessage = ExceptionHelper.getLocalizedErrorMessage(e);
-      emit(CourseError(errorMessage, errorCode: e.errorCode));
-    } catch (e) {
-      emit(CourseError('Có lỗi không xác định xảy ra khi tải danh sách khóa học'));
-    }
-  }
+      final courses = await _courseRepository.getCourses(
+        forceRefresh: event.forceRefresh,
+      );
 
-  Future<void> _onLoadCourseById(LoadCourseById event, Emitter<CourseState> emit) async {
-    emit(CourseLoading());
-    try {
-      final course = await _courseRepository.getCourseById(event.id);
-      emit(CourseDetailLoaded(course));
-    } on NotFoundException catch (e) {
-      emit(CourseError('Không tìm thấy khóa học này', errorCode: e.errorCode));
-    } on NetworkException catch (e) {
-      emit(CourseError('Không có kết nối mạng', errorCode: e.errorCode));
-    } on UnauthorizedException catch (e) {
-      emit(CourseError('Phiên đăng nhập đã hết hạn', errorCode: e.errorCode));
-    } on AppException catch (e) {
-      final errorMessage = ExceptionHelper.getLocalizedErrorMessage(e);
-      emit(CourseError(errorMessage, errorCode: e.errorCode));
+      emit(CourseLoaded(courses, isFromCache: !event.forceRefresh));
     } catch (e) {
       emit(CourseError(
-          'Có lỗi không xác định xảy ra khi tải thông tin khóa học'));
+        'Có lỗi không xác định xảy ra khi tải danh sách khóa học',
+        errorCode: _getErrorCode(e),
+      ));
     }
+  }
+
+  // Refresh courses (luôn gọi API)
+  Future<void> _onRefreshCourses(
+      RefreshCourses event, Emitter<CourseState> emit) async {
+    try {
+      final courses = await _courseRepository.getCourses(forceRefresh: true);
+      emit(CourseLoaded(courses, isFromCache: false));
+    } catch (e) {
+      emit(CourseError(
+        'Không thể làm mới danh sách khóa học',
+        errorCode: _getErrorCode(e),
+      ));
+    }
+  }
+
+  // Clear cache
+  Future<void> _onClearCache(
+      ClearCourseCache event, Emitter<CourseState> emit) async {
+    try {
+      if (_courseRepository is CourseRepositoryImpl) {
+        await (_courseRepository as CourseRepositoryImpl).clearCache();
+      }
+      emit(CourseInitial());
+    } catch (e) {
+      emit(CourseError('Không thể xóa cache'));
+    }
+  }
+
+  String _getErrorCode(dynamic error) {
+    if (error.toString().contains('Network')) return 'NETWORK_ERROR';
+    if (error.toString().contains('401')) return 'UNAUTHORIZED';
+    if (error.toString().contains('timeout')) return 'TIMEOUT_ERROR';
+    return 'UNKNOWN_ERROR';
   }
 }

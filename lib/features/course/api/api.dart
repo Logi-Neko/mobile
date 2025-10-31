@@ -10,10 +10,22 @@ class CourseApi {
     );
   }
 
-  static Future<ApiResponse<Course>> getCourseById(int id) async {
-    return await ApiService.getObject<Course>(
-      '/courses/$id',
-      fromJson: Course.fromJson,
+  static Future<ApiResponse<List<Course>>> getCoursesDebug() async {
+    return await ApiService.getListDebug<Course>(
+      '/courses',
+      fromJson: (json) {
+        print('    📍 Parsing course: ${json['name']}');
+        final courseStart = Stopwatch()..start();
+
+        final result = Course.fromJson(json);
+
+        courseStart.stop();
+        if (courseStart.elapsedMilliseconds > 50) {
+          print('    ⚠️ SLOW: ${courseStart.elapsedMilliseconds}ms - ${json['name']}');
+        }
+
+        return result;
+      },
     );
   }
 }

@@ -10,6 +10,7 @@ class Course {
   final double price;
   final DateTime createdAt;
   final DateTime updatedAt;
+  final double star;
 
   Course({
     required this.id,
@@ -23,7 +24,36 @@ class Course {
     required this.price,
     required this.createdAt,
     required this.updatedAt,
+    this.star = 0,
   });
+
+  // Cache cho DateTime parsing
+  static final Map<String, DateTime> _dateCache = {};
+
+  static DateTime _parseDateTime(String? dateString) {
+    if (dateString == null || dateString.isEmpty) {
+      return DateTime.now();
+    }
+
+    if (_dateCache.containsKey(dateString)) {
+      return _dateCache[dateString]!;
+    }
+
+    try {
+      final parsed = DateTime.parse(dateString);
+      _dateCache[dateString] = parsed;
+
+      // Limit cache size
+      if (_dateCache.length > 5000) {
+        _dateCache.clear();
+      }
+
+      return parsed;
+    } catch (e) {
+      print('❌ DateTime parse error: $e for $dateString');
+      return DateTime.now();
+    }
+  }
 
   factory Course.fromJson(Map<String, dynamic> json) {
     return Course(
@@ -35,10 +65,18 @@ class Course {
       totalLesson: json['totalLesson'] ?? 0,
       isPremium: json['isPremium'] ?? false,
       isActive: json['isActive'] ?? true,
-      price: (json['price'] ?? 0).toDouble(),
-      createdAt: DateTime.parse(json['createdAt'] ?? DateTime.now().toIso8601String()),
-      updatedAt: DateTime.parse(json['updatedAt'] ?? DateTime.now().toIso8601String()),
+      price: _toDouble(json['price']),
+      star: _toDouble(json['star']),
+      createdAt: _parseDateTime(json['createdAt']),
+      updatedAt: _parseDateTime(json['updatedAt']),
     );
+  }
+
+  static double _toDouble(dynamic value) {
+    if (value is double) return value;
+    if (value is int) return value.toDouble();
+    if (value is String) return double.tryParse(value) ?? 0.0;
+    return 0.0;
   }
 
   Map<String, dynamic> toJson() {
@@ -52,6 +90,7 @@ class Course {
       'isPremium': isPremium,
       'isActive': isActive,
       'price': price,
+      'star': star,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt.toIso8601String(),
     };
