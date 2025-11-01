@@ -20,9 +20,9 @@ class ApiService {
 
     _dio = Dio(BaseOptions(
       baseUrl: baseUrl,
-      connectTimeout: const Duration(seconds: 60),   // GIẢM XUỐNG 5s
-      receiveTimeout: const Duration(seconds: 60),    // GIẢM XUỐNG 5s
-      sendTimeout: const Duration(seconds: 60),       // GIẢM XUỐNG 5s
+      connectTimeout: const Duration(seconds: 60),
+      receiveTimeout: const Duration(seconds: 60),
+      sendTimeout: const Duration(seconds: 60),
       headers: {
         'Content-Type': 'application/json',
         'Accept': 'application/json',
@@ -133,10 +133,10 @@ class ApiService {
     if (kDebugMode) {
       _dio.interceptors.add(LogInterceptor(
         request: true,
-        requestBody: false,
-        responseBody: false,
-        requestHeader: false,
-        responseHeader: false,
+        requestBody: true,  // Show request body
+        responseBody: true, // Show response body
+        requestHeader: true, // Show request headers
+        responseHeader: true, // Show response headers
         error: true,
         logPrint: (obj) {
           final logMessage = obj.toString();

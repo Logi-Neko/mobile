@@ -21,6 +21,7 @@ class AuthApiService {
               baseUrl:  dotenv.env['AUTH_URL']!,
               connectTimeout: const Duration(seconds: 60),
               receiveTimeout: const Duration(seconds: 60),
+              sendTimeout: const Duration(seconds: 60),
             )) {
     // Khởi tạo interceptors
     _authInterceptor = AuthInterceptor(_dio);

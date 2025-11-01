@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import '../config/logger.dart';
 import '../storage/token_storage.dart';
 import '../common/ApiResponse.dart';
@@ -14,20 +15,30 @@ class AuthInterceptor extends Interceptor {
   Completer<void>? _refreshCompleter;
   final List<_QueuedRequest> _requestQueue = [];
 
+  // Cache the token in memory to avoid slow storage reads on every request
+  String? _cachedAccessToken;
+  bool _hasAttemptedStorageLoad = false;
+
   AuthInterceptor(this._dio);
 
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     try {
       if (!_isAuthEndpoint(options.path)) {
-        final accessToken = await _tokenStorage.getAccessToken();
-        if (accessToken != null) {
-          options.headers['Authorization'] = 'Bearer $accessToken';
-          if (!_dio.options.headers.containsKey('Authorization') ||
-              _dio.options.headers['Authorization'] != 'Bearer $accessToken') {
+        // Fast path: use cached token if available
+        if (_cachedAccessToken != null) {
+          options.headers['Authorization'] = 'Bearer $_cachedAccessToken';
+        } else if (!_hasAttemptedStorageLoad) {
+          // Fallback: if cache is empty and we haven't tried storage yet, load once
+          _hasAttemptedStorageLoad = true;
+          final accessToken = await _tokenStorage.getAccessToken();
+          if (accessToken != null) {
+            _cachedAccessToken = accessToken;
+            options.headers['Authorization'] = 'Bearer $accessToken';
             _dio.options.headers['Authorization'] = 'Bearer $accessToken';
           }
         }
+        // If cache is null and we already tried storage, just proceed without auth header
       }
       options.headers['Content-Type'] ??= 'application/json';
     } catch (e) {
@@ -133,13 +144,14 @@ class AuthInterceptor extends Interceptor {
       }
 
       final refreshDio = Dio(BaseOptions(
-        baseUrl: 'http://10.0.2.2:8081',
-        connectTimeout: const Duration(seconds: 15),
-        receiveTimeout: const Duration(seconds: 15),
+        baseUrl: dotenv.env['AUTH_URL'] ?? 'https://api.logineko.edu.vn/api',
+        connectTimeout: const Duration(seconds: 60),
+        receiveTimeout: const Duration(seconds: 60),
+        sendTimeout: const Duration(seconds: 60),
       ));
 
       final response = await refreshDio.post(
-        '/api/refresh-token',
+        '/refresh-token',
         queryParameters: {'refresh_token': refreshToken},
         options: Options(headers: {
           'Content-Type': 'application/json',
@@ -158,6 +170,7 @@ class AuthInterceptor extends Interceptor {
           await _tokenStorage.saveTokenResponse(apiResponse.data!);
 
           final newAccessToken = apiResponse.data!.accessToken;
+          _cachedAccessToken = newAccessToken;
           _dio.options.headers['Authorization'] = 'Bearer $newAccessToken';
 
           logger.i('Token refreshed successfully');
@@ -181,8 +194,8 @@ class AuthInterceptor extends Interceptor {
   Future<void> _processQueue() async {
     if (_requestQueue.isEmpty) return;
 
-    final newAccessToken = await _tokenStorage.getAccessToken();
-    if (newAccessToken == null) {
+    // Use cached token instead of reading from storage
+    if (_cachedAccessToken == null) {
       _clearQueueAndReject('No access token after refresh');
       return;
     }
@@ -192,7 +205,7 @@ class AuthInterceptor extends Interceptor {
 
     for (final queuedRequest in requests) {
       try {
-        queuedRequest.requestOptions.headers['Authorization'] = 'Bearer $newAccessToken';
+        queuedRequest.requestOptions.headers['Authorization'] = 'Bearer $_cachedAccessToken';
 
         final retryResponse = await _dio.fetch(queuedRequest.requestOptions);
 
@@ -248,6 +261,7 @@ class AuthInterceptor extends Interceptor {
   Future<void> _clearTokensAndRedirectToLogin() async {
     try {
       await _tokenStorage.clearAll();
+      _cachedAccessToken = null;
       _dio.options.headers.remove('Authorization');
       _requestQueue.clear();
       logger.i('All tokens cleared due to authentication failure');
@@ -260,11 +274,14 @@ class AuthInterceptor extends Interceptor {
 
   Future<void> syncTokenFromStorage() async {
     try {
+      _hasAttemptedStorageLoad = true;
       final accessToken = await _tokenStorage.getAccessToken();
       if (accessToken != null) {
+        _cachedAccessToken = accessToken;
         _dio.options.headers['Authorization'] = 'Bearer $accessToken';
-        logger.d('Token synced from storage to Dio headers');
+        logger.d('Token synced from storage to memory cache and Dio headers');
       } else {
+        _cachedAccessToken = null;
         _dio.options.headers.remove('Authorization');
       }
     } catch (e) {
@@ -273,10 +290,12 @@ class AuthInterceptor extends Interceptor {
   }
 
   void updateToken(String newAccessToken) {
+    _cachedAccessToken = newAccessToken;
     _dio.options.headers['Authorization'] = 'Bearer $newAccessToken';
   }
 
   void clearToken() {
+    _cachedAccessToken = null;
     _dio.options.headers.remove('Authorization');
     _requestQueue.clear();
   }

@@ -24,7 +24,7 @@ void main() async {
   ]);
 
   // Initialize services
-  ApiService.initialize();
+  await ApiService.initialize();
   GoogleSignInService.instance.initialize();
 
   runApp(const MyApp());
